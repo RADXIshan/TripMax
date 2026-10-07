@@ -44,7 +44,7 @@ class StayAgent:
                 why_recommended=f"Ranked #1 for couples and culture lovers in {dest}. Walking distance to top cafes, bistros, and iconic sights.",
                 booking_url=booking_link,
                 provider="Booking.com",
-                badge="✨ Agent's Top Pick"
+                badge="Top Pick - Curated Choice"
             ),
             StayOption(
                 id="stay-authentic",

@@ -3,8 +3,7 @@ import confetti from 'canvas-confetti';
 import { 
   Compass, 
   ArrowRight, 
-  MessageSquare,
-  FolderArchive
+  MessageSquare
 } from 'lucide-react';
 import type { TripPlan, ChatMessage, TripPreferences, SuggestedReply } from './types/trip';
 import { Sidebar, type NavView } from './components/Sidebar';
@@ -17,15 +16,15 @@ import { BudgetTab } from './components/BudgetTab';
 import { BookingChecklistTab } from './components/BookingChecklistTab';
 import { ResearchSourcesTab } from './components/ResearchSourcesTab';
 import { SavedTripsTab, type SavedTripRecord } from './components/SavedTripsTab';
-import { SettingsModal } from './components/SettingsModal';
 import { LiveSearchModal } from './components/LiveSearchModal';
+import { SUPPORTED_CURRENCIES } from './components/CurrencyDropdown';
 
 const API_BASE = "";
 
 const initialGreeting: ChatMessage = {
   id: 'init-msg-1',
   role: 'assistant',
-  content: "Hello! I am TripMax, your autonomous multi-agent travel planner.\n\nWhere in the world would you love to travel to?",
+  content: "Hello! I am TripMax, your intelligent travel architect.\n\nWhere in the world would you love to travel to?",
   agent_name: "Discovery Agent",
   stage: "discovery",
   suggested_replies: [
@@ -36,6 +35,11 @@ const initialGreeting: ChatMessage = {
     { label: "Bali, Indonesia", value: "Want to travel to Bali, Indonesia" },
   ]
 };
+
+const RATES_MAP: Record<string, number> = SUPPORTED_CURRENCIES.reduce((acc, c) => {
+  acc[c.code] = c.rateToUSD;
+  return acc;
+}, {} as Record<string, number>);
 
 export const App = () => {
   const [plan, setPlan] = useState<TripPlan | null>(null);
@@ -51,12 +55,12 @@ export const App = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isGeneratingPlan, setIsGeneratingPlan] = useState(false);
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isLiveSearchOpen, setIsLiveSearchOpen] = useState(false);
   const [currency, setCurrency] = useState('USD');
-  const [darkMode, setDarkMode] = useState<boolean>(() => {
-    return localStorage.getItem('tripmax_theme') === 'dark';
-  });
+
+  useEffect(() => {
+    document.documentElement.classList.add('dark');
+  }, []);
 
   const [savedTrips, setSavedTrips] = useState<SavedTripRecord[]>(() => {
     try {
@@ -66,16 +70,6 @@ export const App = () => {
       return [];
     }
   });
-
-  useEffect(() => {
-    if (darkMode) {
-      document.documentElement.classList.add('dark');
-      localStorage.setItem('tripmax_theme', 'dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-      localStorage.setItem('tripmax_theme', 'light');
-    }
-  }, [darkMode]);
 
   const savePlanToHistory = (newPlan: TripPlan) => {
     setSavedTrips((prev) => {
@@ -121,6 +115,7 @@ export const App = () => {
 
   const handleSelectTrip = (selectedPlan: TripPlan) => {
     setPlan(selectedPlan);
+    setCurrency(selectedPlan.budget.currency || 'USD');
     setPreferences({
       destination: selectedPlan.destination,
       origin: selectedPlan.origin,
@@ -151,7 +146,10 @@ export const App = () => {
         body: JSON.stringify({
           message: text,
           history: updatedMessages,
-          preferences: preferences
+          preferences: {
+            ...preferences,
+            budget_currency: currency
+          }
         })
       });
 
@@ -191,7 +189,10 @@ export const App = () => {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          preferences: currentPrefs,
+          preferences: {
+            ...currentPrefs,
+            budget_currency: currency
+          },
           user_prompt: prompt
         })
       });
@@ -279,11 +280,68 @@ export const App = () => {
   };
 
   const handleCurrencyChange = (newCurr: string) => {
+    const oldCurr = currency;
     setCurrency(newCurr);
     setPreferences((prev) => ({
       ...prev,
       budget_currency: newCurr
     }));
+
+    // If an active plan is already displayed, dynamically convert all prices
+    if (plan && oldCurr !== newCurr) {
+      const oldRate = RATES_MAP[oldCurr] || 1.0;
+      const newRate = RATES_MAP[newCurr] || 1.0;
+      const ratio = newRate / oldRate;
+
+      setPlan((prev) => {
+        if (!prev) return null;
+        return {
+          ...prev,
+          budget: {
+            ...prev.budget,
+            currency: newCurr,
+            total_estimated: Math.round(prev.budget.total_estimated * ratio),
+            target_budget: prev.budget.target_budget ? Math.round(prev.budget.target_budget * ratio) : undefined,
+            stay_cost: Math.round(prev.budget.stay_cost * ratio),
+            transit_cost: Math.round(prev.budget.transit_cost * ratio),
+            food_dining_cost: Math.round(prev.budget.food_dining_cost * ratio),
+            activities_cost: Math.round(prev.budget.activities_cost * ratio),
+            buffer_local_transit_cost: Math.round(prev.budget.buffer_local_transit_cost * ratio),
+          },
+          flights: prev.flights.map((f) => ({
+            ...f,
+            currency: newCurr,
+            estimated_price: Math.round(f.estimated_price * ratio)
+          })),
+          trains: prev.trains.map((t) => ({
+            ...t,
+            currency: newCurr,
+            estimated_price: Math.round(t.estimated_price * ratio)
+          })),
+          stays: prev.stays.map((s) => ({
+            ...s,
+            currency: newCurr,
+            price_per_night: Math.round(s.price_per_night * ratio),
+            total_price: Math.round(s.total_price * ratio)
+          })),
+          itinerary: prev.itinerary.map((day) => ({
+            ...day,
+            morning: {
+              ...day.morning,
+              estimated_cost: Math.round(day.morning.estimated_cost * ratio)
+            },
+            afternoon: {
+              ...day.afternoon,
+              estimated_cost: Math.round(day.afternoon.estimated_cost * ratio)
+            },
+            evening: {
+              ...day.evening,
+              estimated_cost: Math.round(day.evening.estimated_cost * ratio)
+            }
+          }))
+        };
+      });
+    }
   };
 
   const handleExportPlan = () => {
@@ -329,18 +387,13 @@ ${plan.itinerary.map((d) => `### Day ${d.day}: ${d.title}
   };
 
   return (
-    <div className="h-screen w-screen overflow-hidden bg-[#FAF9F5] dark:bg-[#121110] text-stone-900 dark:text-stone-100 flex font-sans transition-colors">
+    <div className="h-screen w-screen overflow-hidden bg-[#121110] text-stone-100 flex font-sans transition-colors">
       {/* Sleek, User-Friendly Vertical Sidebar */}
       <Sidebar
         currentView={currentView}
         onViewChange={setCurrentView}
         plan={plan}
         savedTripsCount={savedTrips.length}
-        currency={currency}
-        onCurrencyChange={handleCurrencyChange}
-        darkMode={darkMode}
-        onToggleDarkMode={() => setDarkMode(!darkMode)}
-        onOpenSettings={() => setIsSettingsOpen(true)}
         onNewTrip={handleNewTrip}
         collapsed={sidebarCollapsed}
         onToggleCollapsed={() => setSidebarCollapsed(!sidebarCollapsed)}
@@ -352,6 +405,8 @@ ${plan.itinerary.map((d) => `### Day ${d.day}: ${d.title}
         <MinimalNavbar
           currentView={currentView}
           plan={plan}
+          currency={currency}
+          onCurrencyChange={handleCurrencyChange}
           onOpenLiveSearch={() => setIsLiveSearchOpen(true)}
           onExport={handleExportPlan}
           onLoadSample={loadSamplePlan}
@@ -359,7 +414,7 @@ ${plan.itinerary.map((d) => `### Day ${d.day}: ${d.title}
           isGeneratingPlan={isGeneratingPlan}
         />
 
-        {/* Viewport Canvas (fits naturally in screen) */}
+        {/* Viewport Canvas */}
         <main className="flex-1 min-h-0 overflow-y-auto">
           {currentView === 'chat' && (
             <div className="h-full flex flex-col lg:flex-row">
@@ -380,37 +435,37 @@ ${plan.itinerary.map((d) => `### Day ${d.day}: ${d.title}
 
               {/* Side Glance Pane if plan is active */}
               {plan && (
-                <div className="hidden xl:flex w-96 border-l border-stone-200 dark:border-stone-800 p-5 flex-col justify-between bg-white dark:bg-stone-900/60 overflow-y-auto">
+                <div className="hidden xl:flex w-96 border-l border-stone-800 p-5 flex-col justify-between bg-stone-900/60 overflow-y-auto">
                   <div className="space-y-4">
                     <span className="text-[10px] font-bold uppercase tracking-wider text-stone-400">
                       Active Plan Glance
                     </span>
-                    <h3 className="text-base font-bold text-stone-900 dark:text-stone-100">
+                    <h3 className="text-base font-bold text-stone-100">
                       {plan.destination}
                     </h3>
-                    <p className="text-xs text-stone-600 dark:text-stone-300 leading-relaxed">
+                    <p className="text-xs text-stone-300 leading-relaxed">
                       {plan.tagline}
                     </p>
 
-                    <div className="space-y-2 pt-2 border-t border-stone-100 dark:border-stone-800 text-xs">
-                      <div className="flex justify-between py-1 border-b border-stone-100 dark:border-stone-800/60">
+                    <div className="space-y-2 pt-2 border-t border-stone-800 text-xs">
+                      <div className="flex justify-between py-1 border-b border-stone-800/60">
                         <span className="text-stone-400">Duration:</span>
-                        <span className="font-semibold text-stone-800 dark:text-stone-200">{plan.duration_days} Days</span>
+                        <span className="font-semibold text-stone-200">{plan.duration_days} Days</span>
                       </div>
-                      <div className="flex justify-between py-1 border-b border-stone-100 dark:border-stone-800/60">
+                      <div className="flex justify-between py-1 border-b border-stone-800/60">
                         <span className="text-stone-400">Est. Total:</span>
-                        <span className="font-semibold text-stone-800 dark:text-stone-200">{plan.budget.currency} {plan.budget.total_estimated.toLocaleString()}</span>
+                        <span className="font-semibold text-stone-200">{plan.budget.currency} {plan.budget.total_estimated.toLocaleString()}</span>
                       </div>
                       <div className="flex justify-between py-1">
                         <span className="text-stone-400">Flights / Trains:</span>
-                        <span className="font-semibold text-stone-800 dark:text-stone-200">{plan.flights.length} flights, {plan.trains.length} rail</span>
+                        <span className="font-semibold text-stone-200">{plan.flights.length} flights, {plan.trains.length} rail</span>
                       </div>
                     </div>
                   </div>
 
                   <button
                     onClick={() => setCurrentView('itinerary')}
-                    className="w-full mt-4 py-2.5 rounded-xl bg-stone-900 dark:bg-stone-100 text-white dark:text-stone-900 text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer shadow-xs"
+                    className="w-full mt-4 py-2.5 rounded-xl bg-stone-100 text-stone-900 text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer shadow-xs hover:bg-stone-200"
                   >
                     <span>View Full Itinerary</span>
                     <ArrowRight className="w-3.5 h-3.5" />
@@ -450,28 +505,27 @@ ${plan.itinerary.map((d) => `### Day ${d.day}: ${d.title}
                   )}
                 </>
               ) : (
-                /* Empty state prompting chat or sample */
                 <div className="py-16 text-center max-w-md mx-auto space-y-4">
-                  <div className="w-12 h-12 rounded-2xl bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 mx-auto flex items-center justify-center text-stone-700 dark:text-stone-300 shadow-2xs">
+                  <div className="w-12 h-12 rounded-2xl bg-white border border-stone-200 mx-auto flex items-center justify-center text-stone-700 shadow-2xs">
                     <Compass className="w-6 h-6" />
                   </div>
-                  <h3 className="text-base font-bold text-stone-900 dark:text-stone-100">
+                  <h3 className="text-base font-bold text-stone-900">
                     No Trip Generated Yet
                   </h3>
-                  <p className="text-xs text-stone-500 dark:text-stone-400 leading-relaxed">
+                  <p className="text-xs text-stone-500 leading-relaxed">
                     Begin chatting in the Discovery Studio to define your trip, or load our instant sample preview.
                   </p>
                   <div className="flex items-center justify-center gap-2 pt-2">
                     <button
                       onClick={() => setCurrentView('chat')}
-                      className="px-4 py-2 rounded-xl bg-stone-900 dark:bg-stone-100 text-white dark:text-stone-900 text-xs font-semibold flex items-center gap-1.5 cursor-pointer shadow-xs"
+                      className="px-4 py-2 rounded-xl bg-stone-900 text-white text-xs font-semibold flex items-center gap-1.5 cursor-pointer shadow-xs"
                     >
                       <MessageSquare className="w-3.5 h-3.5" />
                       <span>Open Discovery Studio</span>
                     </button>
                     <button
                       onClick={loadSamplePlan}
-                      className="px-4 py-2 rounded-xl border border-stone-300 dark:border-stone-700 hover:bg-stone-100 dark:hover:bg-stone-800 text-stone-800 dark:text-stone-200 text-xs font-semibold cursor-pointer"
+                      className="px-4 py-2 rounded-xl border border-stone-300 hover:bg-stone-100 text-stone-800 text-xs font-semibold cursor-pointer"
                     >
                       Load Sample Preview
                     </button>
@@ -482,13 +536,6 @@ ${plan.itinerary.map((d) => `### Day ${d.day}: ${d.title}
           )}
         </main>
       </div>
-
-      {/* Settings Modal */}
-      <SettingsModal
-        isOpen={isSettingsOpen}
-        onClose={() => setIsSettingsOpen(false)}
-        apiBase={API_BASE}
-      />
 
       {/* Live Search Modal */}
       <LiveSearchModal

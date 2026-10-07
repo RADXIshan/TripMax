@@ -4,15 +4,17 @@ import {
   Search, 
   Download, 
   ChevronRight,
-  ShieldCheck,
-  FolderArchive
+  Loader2
 } from 'lucide-react';
 import type { TripPlan } from '../types/trip';
 import type { NavView } from './Sidebar';
+import { CurrencyDropdown } from './CurrencyDropdown';
 
 interface MinimalNavbarProps {
   currentView: NavView;
   plan: TripPlan | null;
+  currency: string;
+  onCurrencyChange: (c: string) => void;
   onOpenLiveSearch: () => void;
   onExport: () => void;
   onLoadSample: () => void;
@@ -23,6 +25,8 @@ interface MinimalNavbarProps {
 export const MinimalNavbar: React.FC<MinimalNavbarProps> = ({
   currentView,
   plan,
+  currency,
+  onCurrencyChange,
   onOpenLiveSearch,
   onExport,
   onLoadSample,
@@ -41,7 +45,7 @@ export const MinimalNavbar: React.FC<MinimalNavbarProps> = ({
   };
 
   return (
-    <header className="h-12 border-b border-stone-200 dark:border-stone-800 bg-white/80 dark:bg-stone-900/80 backdrop-blur-md px-4 sm:px-6 flex items-center justify-between z-10 transition-colors shrink-0 select-none">
+    <header className="h-14 border-b border-stone-200 dark:border-stone-800 bg-white/90 dark:bg-stone-900/90 backdrop-blur-md px-4 sm:px-6 flex items-center justify-between z-10 transition-colors shrink-0 select-none">
       {/* Breadcrumb Path */}
       <div className="flex items-center gap-2 text-xs truncate">
         <span className="font-semibold text-stone-900 dark:text-stone-100">
@@ -57,23 +61,23 @@ export const MinimalNavbar: React.FC<MinimalNavbarProps> = ({
         </span>
       </div>
 
-      {/* Center Multi-Agent Sync Status Pill */}
-      <div className="hidden md:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-stone-100 dark:bg-stone-800 text-[11px] font-medium text-stone-600 dark:text-stone-400 border border-stone-200 dark:border-stone-700">
-        {isGeneratingPlan ? (
-          <>
-            <span className="w-1.5 h-1.5 rounded-full bg-stone-900 dark:bg-stone-100 animate-ping"></span>
-            <span>Agents Synchronizing Intelligence...</span>
-          </>
-        ) : (
-          <>
-            <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-            <span>6 Autonomous Agents Ready</span>
-          </>
-        )}
-      </div>
+      {/* Generating Status Indicator (Only appears while building plan) */}
+      {isGeneratingPlan && (
+        <div className="hidden md:flex items-center gap-2 px-3 py-1 rounded-full bg-stone-100 dark:bg-stone-800 text-[11px] font-medium text-stone-700 dark:text-stone-300 border border-stone-200 dark:border-stone-700 animate-pulse">
+          <Loader2 className="w-3 h-3 text-stone-600 dark:text-stone-300 animate-spin" />
+          <span>Architecting Trip Itinerary...</span>
+        </div>
+      )}
 
-      {/* Right Action Icons */}
-      <div className="flex items-center gap-1.5">
+      {/* Right Action Icons & Currency Dropdown */}
+      <div className="flex items-center gap-2">
+        {/* Sleek Currency Selector */}
+        <CurrencyDropdown
+          currency={currency}
+          onCurrencyChange={onCurrencyChange}
+          align="right"
+        />
+
         {!plan && (
           <button
             onClick={onLoadSample}

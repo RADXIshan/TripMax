@@ -1,10 +1,6 @@
-import React from 'react';
 import { 
   FolderArchive, 
   ArrowRight, 
-  Calendar, 
-  CreditCard, 
-  Plane, 
   Trash2, 
   Plus, 
   MapPin,

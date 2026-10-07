@@ -136,7 +136,7 @@ class AgentOrchestrator:
                 enhanced_text = await cls._enhance_with_gemini(plan, preferences, gemini_key)
                 if enhanced_text:
                     plan.overview = enhanced_text
-                    logs.append("✨ [Gemini Engine] Enhanced trip narrative with generative reasoning.")
+                    logs.append("[Gemini Engine] Enhanced trip narrative with generative reasoning.")
             except Exception as e:
                 logs.append(f"ℹ️ [Gemini Engine] Using high-fidelity base synthesis: {e}")
 
@@ -144,7 +144,7 @@ class AgentOrchestrator:
 
     @classmethod
     async def _enhance_with_gemini(cls, plan: TripPlan, prefs: TripPreferences, api_key: str) -> Optional[str]:
-        """Optionally invoke Gemini to provide custom editorial color"""
+        """Invoke Gemini to provide custom editorial color with fallback models"""
         from google import genai
         client = genai.Client(api_key=api_key)
         prompt = (
@@ -152,11 +152,19 @@ class AgentOrchestrator:
             f"departing from {plan.origin}. Traveling as {prefs.party_type or 'adventurers'} with interests in {', '.join(prefs.interests)}. "
             f"Highlight both scenic train and flight connectivity. Do not use markdown double asterisks (**) or raw bullet asterisks; keep sentences smooth, clean, and natural."
         )
-        response = await client.aio.models.generate_content(
-            model='gemini-2.5-flash',
-            contents=prompt,
-        )
-        return response.text if response and response.text else None
+        
+        models_to_try = ['gemini-flash-latest', 'gemini-3.8-flash', 'gemini-3.5-flash-lite', 'gemini-3.5-flash']
+        for model_name in models_to_try:
+            try:
+                response = await client.aio.models.generate_content(
+                    model=model_name,
+                    contents=prompt,
+                )
+                if response and response.text:
+                    return response.text.strip()
+            except Exception as e:
+                continue
+        return None
 
     @classmethod
     async def refine_plan(
