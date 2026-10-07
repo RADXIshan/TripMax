@@ -73,8 +73,8 @@ export const ItineraryTab: React.FC<ItineraryTabProps> = ({ plan }) => {
             onClick={() => setSelectedDay(d.day)}
             className={`px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
               selectedDay === d.day
-                ? 'bg-stone-900 text-white dark:bg-stone-100 dark:text-stone-900 shadow-xs'
-                : 'bg-white dark:bg-stone-800 text-stone-600 dark:text-stone-400 hover:bg-stone-100 dark:hover:bg-stone-700 border border-stone-200 dark:border-stone-700'
+                ? 'bg-stone-800 text-stone-100 border border-stone-600 shadow-xs'
+                : 'bg-stone-900 text-stone-400 hover:bg-stone-800 hover:text-stone-200 border border-stone-800'
             }`}
           >
             <span>Day {d.day}</span>

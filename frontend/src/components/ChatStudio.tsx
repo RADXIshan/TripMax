@@ -184,8 +184,8 @@ export const ChatStudio: React.FC<ChatStudioProps> = ({
               <div
                 className={`p-3.5 rounded-2xl text-xs sm:text-sm leading-relaxed ${
                   msg.role === 'user'
-                    ? 'bg-stone-900 text-white dark:bg-stone-100 dark:text-stone-900 rounded-br-xs'
-                    : 'bg-stone-100 dark:bg-stone-800 text-stone-800 dark:text-stone-200 rounded-bl-xs border border-stone-200/80 dark:border-stone-700/80 shadow-2xs'
+                    ? 'bg-stone-800 text-stone-100 border border-stone-700 rounded-br-xs shadow-2xs'
+                    : 'bg-stone-850/90 text-stone-200 rounded-bl-xs border border-stone-800 shadow-2xs'
                 }`}
               >
                 {renderCleanMessage(msg.content)}
@@ -209,7 +209,7 @@ export const ChatStudio: React.FC<ChatStudioProps> = ({
             </div>
 
             {msg.role === 'user' && (
-              <div className="w-8 h-8 rounded-lg bg-stone-900 dark:bg-stone-100 text-white dark:text-stone-900 flex items-center justify-center shrink-0 mt-0.5">
+              <div className="w-8 h-8 rounded-lg bg-stone-800 border border-stone-700 text-stone-300 flex items-center justify-center shrink-0 mt-0.5">
                 <User className="w-4 h-4" />
               </div>
             )}
@@ -218,7 +218,7 @@ export const ChatStudio: React.FC<ChatStudioProps> = ({
 
         {/* Loading Spinner / Agent Thinking */}
         {isLoading && (
-          <div className="flex items-center gap-2 text-xs text-stone-500 dark:text-stone-400 italic py-2">
+          <div className="flex items-center gap-2 text-xs text-stone-400 italic py-2">
             <span className="w-2 h-2 rounded-full bg-stone-400 animate-ping"></span>
             <span>Agent analyzing parameters...</span>
           </div>
@@ -226,13 +226,13 @@ export const ChatStudio: React.FC<ChatStudioProps> = ({
 
         {/* Generation in progress pill */}
         {isGeneratingPlan && (
-          <div className="p-4 rounded-xl bg-stone-100 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 flex items-center gap-3">
-            <Loader2 className="w-5 h-5 text-stone-800 dark:text-stone-200 animate-spin" />
+          <div className="p-4 rounded-xl bg-stone-850 border border-stone-700 flex items-center gap-3">
+            <Loader2 className="w-5 h-5 text-stone-300 animate-spin" />
             <div>
-              <p className="text-xs font-semibold text-stone-900 dark:text-stone-100">
+              <p className="text-xs font-semibold text-stone-100">
                 Multi-Agent Synthesis Underway
               </p>
-              <p className="text-[11px] text-stone-500 dark:text-stone-400">
+              <p className="text-[11px] text-stone-400">
                 Web Researcher, Transit Specialist, Lodging Agent, and Itinerary Architect are synchronizing...
               </p>
             </div>
@@ -241,20 +241,20 @@ export const ChatStudio: React.FC<ChatStudioProps> = ({
 
         {/* Generate Plan Prominent CTA Banner */}
         {!isGeneratingPlan && (preferences.destination || isPlanReady) && (
-          <div className="p-3.5 rounded-xl bg-stone-900 dark:bg-stone-100 text-white dark:text-stone-900 flex items-center justify-between gap-3 shadow-sm">
+          <div className="p-3.5 rounded-xl bg-stone-850/95 border border-stone-700 text-stone-100 flex items-center justify-between gap-3 shadow-md">
             <div>
-              <div className="text-xs font-semibold flex items-center gap-1.5">
-                <Compass className="w-3.5 h-3.5" />
+              <div className="text-xs font-semibold flex items-center gap-1.5 text-stone-100">
+                <Compass className="w-3.5 h-3.5 text-stone-400" />
                 <span>Ready to Build Trip Architecture?</span>
               </div>
-              <p className="text-[11px] opacity-80 mt-0.5">
+              <p className="text-[11px] text-stone-400 mt-0.5">
                 {preferences.destination ? `Destination: ${preferences.destination}` : 'Ready to synthesize complete plan'}
               </p>
             </div>
             <button
               onClick={onGeneratePlan}
               disabled={isGeneratingPlan}
-              className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-white dark:bg-stone-900 text-stone-900 dark:text-white hover:opacity-90 transition-opacity cursor-pointer whitespace-nowrap shadow-xs"
+              className="text-xs font-semibold px-3.5 py-1.5 rounded-lg bg-stone-800 hover:bg-stone-700 border border-stone-600 text-stone-100 transition-colors cursor-pointer whitespace-nowrap shadow-xs"
             >
               {isPlanReady ? "Regenerate Plan" : "Generate Plan"}
             </button>
@@ -265,7 +265,7 @@ export const ChatStudio: React.FC<ChatStudioProps> = ({
       </div>
 
       {/* Input bar */}
-      <form onSubmit={handleSubmit} className="p-3 border-t border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900">
+      <form onSubmit={handleSubmit} className="p-3 border-t border-stone-800 bg-stone-900">
         <div className="flex items-center gap-2">
           <input
             type="text"
@@ -273,12 +273,12 @@ export const ChatStudio: React.FC<ChatStudioProps> = ({
             onChange={(e) => setInput(e.target.value)}
             placeholder="Type preferences, change budget, or ask questions..."
             disabled={isLoading || isGeneratingPlan}
-            className="flex-1 text-xs sm:text-sm bg-stone-50 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-xl px-3.5 py-2.5 text-stone-900 dark:text-stone-100 placeholder-stone-400 focus:outline-none focus:ring-1 focus:ring-stone-400 transition-all"
+            className="flex-1 text-xs sm:text-sm bg-stone-800 border border-stone-700 rounded-xl px-3.5 py-2.5 text-stone-100 placeholder-stone-500 focus:outline-none focus:ring-1 focus:ring-stone-600 transition-all"
           />
           <button
             type="submit"
             disabled={!input.trim() || isLoading || isGeneratingPlan}
-            className="p-2.5 rounded-xl bg-stone-900 dark:bg-stone-100 text-white dark:text-stone-900 hover:bg-stone-800 dark:hover:bg-stone-200 transition-colors disabled:opacity-40 cursor-pointer shadow-xs"
+            className="p-2.5 rounded-xl bg-stone-800 hover:bg-stone-700 border border-stone-700 hover:border-stone-600 text-stone-200 hover:text-stone-100 transition-colors disabled:opacity-40 cursor-pointer shadow-xs"
           >
             <Send className="w-4 h-4" />
           </button>

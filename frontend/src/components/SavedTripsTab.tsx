@@ -60,7 +60,7 @@ export const SavedTripsTab: React.FC<SavedTripsTabProps> = ({
 
         <button
           onClick={onNewTrip}
-          className="px-4 py-2 rounded-xl bg-stone-900 dark:bg-stone-100 text-white dark:text-stone-900 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer self-start sm:self-auto shadow-xs"
+          className="px-4 py-2 rounded-xl bg-stone-800 hover:bg-stone-750 border border-stone-700 hover:border-stone-600 text-stone-100 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer self-start sm:self-auto shadow-xs"
         >
           <Plus className="w-3.5 h-3.5" />
           <span>Plan New Journey</span>
@@ -90,7 +90,7 @@ export const SavedTripsTab: React.FC<SavedTripsTabProps> = ({
                     </span>
 
                     {isCurrent && (
-                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-stone-900 text-white dark:bg-stone-100 dark:text-stone-900">
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-stone-700 border border-stone-600 text-stone-200">
                         Active Plan
                       </span>
                     )}
@@ -136,7 +136,7 @@ export const SavedTripsTab: React.FC<SavedTripsTabProps> = ({
 
                   <button
                     onClick={() => onSelectTrip(record.plan)}
-                    className="px-3.5 py-1.5 rounded-xl bg-stone-900 dark:bg-stone-100 text-white dark:text-stone-900 text-xs font-semibold flex items-center gap-1 hover:opacity-90 transition-opacity cursor-pointer shadow-2xs"
+                    className="px-3.5 py-1.5 rounded-xl bg-stone-800 hover:bg-stone-750 border border-stone-700 hover:border-stone-600 text-stone-100 text-xs font-semibold flex items-center gap-1 transition-colors cursor-pointer shadow-2xs"
                   >
                     <span>{isCurrent ? 'Viewing Now' : 'Open Plan'}</span>
                     <ArrowRight className="w-3.5 h-3.5" />
@@ -166,7 +166,7 @@ export const SavedTripsTab: React.FC<SavedTripsTabProps> = ({
             </button>
             <button
               onClick={onNewTrip}
-              className="text-xs px-3 py-1.5 rounded-xl bg-stone-900 dark:bg-stone-100 text-white dark:text-stone-900 font-semibold cursor-pointer"
+              className="text-xs px-3 py-1.5 rounded-xl bg-stone-800 hover:bg-stone-750 border border-stone-700 hover:border-stone-600 text-stone-100 font-semibold cursor-pointer"
             >
               Start New Discovery
             </button>

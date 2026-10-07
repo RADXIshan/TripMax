@@ -55,12 +55,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
         {/* Brand Bar */}
         <div className="h-14 px-3.5 flex items-center justify-between border-b border-stone-200 dark:border-stone-800 shrink-0">
           <div className="flex items-center gap-2.5 overflow-hidden">
-            <div className="w-8 h-8 rounded-xl bg-stone-900 dark:bg-stone-100 flex items-center justify-center text-white dark:text-stone-900 shrink-0 shadow-2xs">
+            <div className="w-8 h-8 rounded-xl bg-stone-800 border border-stone-700 flex items-center justify-center text-stone-200 shrink-0 shadow-2xs">
               <Compass className="w-4 h-4" />
             </div>
             {!collapsed && (
               <div className="truncate">
-                <span className="font-bold text-sm tracking-tight text-stone-900 dark:text-stone-100 block">
+                <span className="font-bold text-sm tracking-tight text-stone-100 block">
                   TripMax
                 </span>
                 <span className="text-[10px] text-stone-400 block -mt-0.5 tracking-wide">
@@ -72,7 +72,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
           <button
             onClick={onToggleCollapsed}
-            className="p-1 rounded-lg text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 hover:bg-stone-100 dark:hover:bg-stone-800 cursor-pointer border-[1.5px] border-transparent hover:border-stone-300 dark:hover:border-stone-700 transition-all"
+            className="p-1 rounded-lg text-stone-400 hover:text-stone-200 hover:bg-stone-800 cursor-pointer border-[1.5px] border-transparent hover:border-stone-700 transition-all"
             title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
           >
             {collapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
@@ -84,7 +84,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <button
             onClick={onNewTrip}
             title={collapsed ? 'Plan New Trip' : undefined}
-            className={`w-full flex items-center gap-2 py-2 px-3 rounded-xl bg-stone-900 dark:bg-stone-100 text-white dark:text-stone-900 hover:bg-stone-800 dark:hover:bg-stone-200 text-xs font-semibold shadow-xs transition-all cursor-pointer border-[1.5px] border-stone-900 dark:border-stone-100 hover:border-stone-700 dark:hover:border-stone-300 ${
+            className={`w-full flex items-center gap-2 py-2 px-3 rounded-xl bg-stone-800 hover:bg-stone-750 border-[1.5px] border-stone-700 hover:border-stone-600 text-stone-100 text-xs font-semibold shadow-xs transition-all cursor-pointer ${
               collapsed ? 'justify-center px-0' : ''
             }`}
           >

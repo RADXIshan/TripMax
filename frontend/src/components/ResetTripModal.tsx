@@ -80,9 +80,9 @@ export const ResetTripModal: React.FC<ResetTripModalProps> = ({
           {/* Option 1: Save & Reset */}
           <button
             onClick={onSaveAndReset}
-            className="w-full py-2.5 px-4 rounded-xl bg-stone-100 text-stone-900 hover:bg-stone-200 text-xs font-semibold flex items-center justify-center gap-2 transition-all cursor-pointer shadow-xs"
+            className="w-full py-2.5 px-4 rounded-xl bg-stone-800 hover:bg-stone-750 border border-stone-700 hover:border-stone-600 text-stone-100 text-xs font-semibold flex items-center justify-center gap-2 transition-all cursor-pointer shadow-xs"
           >
-            <BookmarkCheck className="w-4 h-4 text-stone-900" />
+            <BookmarkCheck className="w-4 h-4 text-emerald-400" />
             <span>Save to All Trips & Reset</span>
           </button>
 

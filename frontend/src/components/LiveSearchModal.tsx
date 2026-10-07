@@ -63,7 +63,7 @@ export const LiveSearchModal: React.FC<LiveSearchModalProps> = ({ isOpen, onClos
             <button
               type="submit"
               disabled={isSearching || !query.trim()}
-              className="px-4 py-2 rounded-xl bg-stone-900 dark:bg-stone-100 text-white dark:text-stone-900 hover:bg-stone-800 dark:hover:bg-stone-200 text-xs font-semibold flex items-center gap-1.5 cursor-pointer disabled:opacity-40"
+              className="px-4 py-2 rounded-xl bg-stone-800 hover:bg-stone-750 border border-stone-700 hover:border-stone-600 text-stone-100 text-xs font-semibold flex items-center gap-1.5 cursor-pointer disabled:opacity-40"
             >
               {isSearching ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Search className="w-3.5 h-3.5" />}
               <span>Search</span>

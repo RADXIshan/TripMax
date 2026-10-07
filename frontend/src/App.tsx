@@ -536,7 +536,7 @@ ${plan.itinerary.map((d) => `### Day ${d.day}: ${d.title}
 
                   <button
                     onClick={() => setCurrentView('itinerary')}
-                    className="w-full mt-4 py-2.5 rounded-xl bg-stone-100 text-stone-900 text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer shadow-xs hover:bg-stone-200"
+                    className="w-full mt-4 py-2.5 rounded-xl bg-stone-800 hover:bg-stone-750 border border-stone-700 hover:border-stone-600 text-stone-100 text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer shadow-xs"
                   >
                     <span>View Full Itinerary</span>
                     <ArrowRight className="w-3.5 h-3.5" />
@@ -589,7 +589,7 @@ ${plan.itinerary.map((d) => `### Day ${d.day}: ${d.title}
                   <div className="flex items-center justify-center gap-2 pt-2">
                     <button
                       onClick={() => setCurrentView('chat')}
-                      className="px-4 py-2 rounded-xl bg-stone-100 text-stone-900 hover:bg-stone-200 text-xs font-semibold flex items-center gap-1.5 cursor-pointer shadow-xs"
+                      className="px-4 py-2 rounded-xl bg-stone-800 hover:bg-stone-750 border border-stone-700 hover:border-stone-600 text-stone-100 text-xs font-semibold flex items-center gap-1.5 cursor-pointer shadow-xs"
                     >
                       <MessageSquare className="w-3.5 h-3.5" />
                       <span>Open Discovery Studio</span>
