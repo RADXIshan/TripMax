@@ -1,10 +1,11 @@
 import React from 'react';
 import { 
-  Sparkles, 
+  Compass, 
   Search, 
   Download, 
   ChevronRight,
-  ShieldCheck
+  ShieldCheck,
+  FolderArchive
 } from 'lucide-react';
 import type { TripPlan } from '../types/trip';
 import type { NavView } from './Sidebar';
@@ -30,6 +31,7 @@ export const MinimalNavbar: React.FC<MinimalNavbarProps> = ({
 }) => {
   const viewTitles: Record<NavView, string> = {
     chat: 'Discovery & Clarification Studio',
+    trips: 'All Trips & Journey Archive',
     itinerary: 'Day-by-Day Travel Architecture',
     transit: 'Transit Logistics: Air & Rail',
     stays: 'Curated Accommodations & Neighborhoods',
@@ -64,7 +66,7 @@ export const MinimalNavbar: React.FC<MinimalNavbarProps> = ({
           </>
         ) : (
           <>
-            <ShieldCheck className="w-3 h-3 text-emerald-600" />
+            <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
             <span>6 Autonomous Agents Ready</span>
           </>
         )}
@@ -76,9 +78,9 @@ export const MinimalNavbar: React.FC<MinimalNavbarProps> = ({
           <button
             onClick={onLoadSample}
             disabled={isLoading || isGeneratingPlan}
-            className="text-xs px-2.5 py-1 rounded-lg border border-stone-300 dark:border-stone-700 hover:bg-stone-100 dark:hover:bg-stone-800 text-stone-700 dark:text-stone-300 transition-colors flex items-center gap-1 cursor-pointer disabled:opacity-50"
+            className="text-xs px-2.5 py-1 rounded-lg border border-stone-300 dark:border-stone-700 hover:bg-stone-100 dark:hover:bg-stone-800 text-stone-700 dark:text-stone-300 transition-colors flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
           >
-            <Sparkles className="w-3 h-3 text-stone-500" />
+            <Compass className="w-3.5 h-3.5 text-stone-500" />
             <span>Sample Trip</span>
           </button>
         )}

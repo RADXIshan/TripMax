@@ -1,13 +1,14 @@
 import { useState, useRef, useEffect } from 'react';
 import { 
   Send, 
-  Sparkles, 
+  Compass, 
   Bot, 
   User, 
   RotateCcw, 
   ChevronRight,
   SlidersHorizontal,
-  Flame
+  Flame,
+  Loader2
 } from 'lucide-react';
 import type { ChatMessage, SuggestedReply, TripPreferences } from '../types/trip';
 import { renderCleanMessage } from '../utils/formatText';
@@ -207,7 +208,7 @@ export const ChatStudio: React.FC<ChatStudioProps> = ({
         {/* Generation in progress pill */}
         {isGeneratingPlan && (
           <div className="p-4 rounded-xl bg-stone-100 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 flex items-center gap-3">
-            <Sparkles className="w-5 h-5 text-stone-800 dark:text-stone-200 animate-spin" />
+            <Loader2 className="w-5 h-5 text-stone-800 dark:text-stone-200 animate-spin" />
             <div>
               <p className="text-xs font-semibold text-stone-900 dark:text-stone-100">
                 Multi-Agent Synthesis Underway
@@ -224,7 +225,7 @@ export const ChatStudio: React.FC<ChatStudioProps> = ({
           <div className="p-3.5 rounded-xl bg-stone-900 dark:bg-stone-100 text-white dark:text-stone-900 flex items-center justify-between gap-3 shadow-sm">
             <div>
               <div className="text-xs font-semibold flex items-center gap-1.5">
-                <Sparkles className="w-3.5 h-3.5" />
+                <Compass className="w-3.5 h-3.5" />
                 <span>Ready to Build Trip Architecture?</span>
               </div>
               <p className="text-[11px] opacity-80 mt-0.5">
@@ -236,7 +237,7 @@ export const ChatStudio: React.FC<ChatStudioProps> = ({
               disabled={isGeneratingPlan}
               className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-white dark:bg-stone-900 text-stone-900 dark:text-white hover:opacity-90 transition-opacity cursor-pointer whitespace-nowrap shadow-xs"
             >
-              {isPlanReady ? "🔄 Regenerate" : "✨ Generate Plan"}
+              {isPlanReady ? "Regenerate Plan" : "Generate Plan"}
             </button>
           </div>
         )}

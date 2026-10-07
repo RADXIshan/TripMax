@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import confetti from 'canvas-confetti';
 import { 
-  Sparkles, 
+  Compass, 
   ArrowRight, 
-  MessageSquare
+  MessageSquare,
+  FolderArchive
 } from 'lucide-react';
 import type { TripPlan, ChatMessage, TripPreferences, SuggestedReply } from './types/trip';
 import { Sidebar, type NavView } from './components/Sidebar';
@@ -15,6 +16,7 @@ import { StaysTab } from './components/StaysTab';
 import { BudgetTab } from './components/BudgetTab';
 import { BookingChecklistTab } from './components/BookingChecklistTab';
 import { ResearchSourcesTab } from './components/ResearchSourcesTab';
+import { SavedTripsTab, type SavedTripRecord } from './components/SavedTripsTab';
 import { SettingsModal } from './components/SettingsModal';
 import { LiveSearchModal } from './components/LiveSearchModal';
 
@@ -56,6 +58,15 @@ export const App = () => {
     return localStorage.getItem('tripmax_theme') === 'dark';
   });
 
+  const [savedTrips, setSavedTrips] = useState<SavedTripRecord[]>(() => {
+    try {
+      const stored = localStorage.getItem('tripmax_saved_trips');
+      return stored ? JSON.parse(stored) : [];
+    } catch {
+      return [];
+    }
+  });
+
   useEffect(() => {
     if (darkMode) {
       document.documentElement.classList.add('dark');
@@ -65,6 +76,63 @@ export const App = () => {
       localStorage.setItem('tripmax_theme', 'light');
     }
   }, [darkMode]);
+
+  const savePlanToHistory = (newPlan: TripPlan) => {
+    setSavedTrips((prev) => {
+      const filtered = prev.filter((t) => t.id !== newPlan.id && t.destination !== newPlan.destination);
+      const record: SavedTripRecord = {
+        id: newPlan.id,
+        destination: newPlan.destination,
+        origin: newPlan.origin,
+        duration_days: newPlan.duration_days,
+        dates: newPlan.dates,
+        total_budget: newPlan.budget.total_estimated,
+        currency: newPlan.budget.currency,
+        tagline: newPlan.tagline,
+        savedAt: new Date().toLocaleDateString(undefined, { 
+          month: 'short', 
+          day: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+        }),
+        plan: newPlan
+      };
+      const updated = [record, ...filtered];
+      try {
+        localStorage.setItem('tripmax_saved_trips', JSON.stringify(updated));
+      } catch (_) {}
+      return updated;
+    });
+  };
+
+  const handleDeleteTrip = (id: string) => {
+    setSavedTrips((prev) => {
+      const updated = prev.filter((t) => t.id !== id);
+      try {
+        localStorage.setItem('tripmax_saved_trips', JSON.stringify(updated));
+      } catch (_) {}
+      return updated;
+    });
+    if (plan?.id === id) {
+      setPlan(null);
+      setCurrentView('chat');
+    }
+  };
+
+  const handleSelectTrip = (selectedPlan: TripPlan) => {
+    setPlan(selectedPlan);
+    setPreferences({
+      destination: selectedPlan.destination,
+      origin: selectedPlan.origin,
+      duration_days: selectedPlan.duration_days,
+      budget_amount: selectedPlan.budget.target_budget || 2800,
+      budget_currency: selectedPlan.budget.currency,
+      interests: ['culture & history', 'food'],
+      travel_pace: 'balanced',
+      party_type: 'Travelers'
+    });
+    setCurrentView('itinerary');
+  };
 
   const handleSendMessage = async (text: string) => {
     const userMsg: ChatMessage = {
@@ -131,6 +199,7 @@ export const App = () => {
       if (res.ok) {
         const data: TripPlan = await res.json();
         setPlan(data);
+        savePlanToHistory(data);
         setCurrentView('itinerary');
 
         try {
@@ -146,7 +215,7 @@ export const App = () => {
           {
             id: `done-${Date.now()}`,
             role: 'assistant',
-            content: `Your complete, day-by-day travel architecture for ${data.destination} has been generated!\n\nUse the sidebar to explore your Itinerary, compare Flights vs Trains, view Stays, and inspect your Budget Blueprint. Ask me anytime if you wish to adjust any detail.`,
+            content: `Your complete, day-by-day travel architecture for ${data.destination} has been generated and saved to your trips archive!\n\nUse the sidebar to explore your Itinerary, compare Flights vs Trains, view Stays, and inspect your Budget Blueprint. Ask me anytime if you wish to adjust any detail.`,
             agent_name: "Orchestrator",
             stage: "plan_ready"
           }
@@ -166,6 +235,7 @@ export const App = () => {
       if (res.ok) {
         const data: TripPlan = await res.json();
         setPlan(data);
+        savePlanToHistory(data);
         setCurrentView('itinerary');
         setPreferences({
           destination: data.destination,
@@ -195,7 +265,7 @@ export const App = () => {
     }
   };
 
-  const handleResetTrip = () => {
+  const handleNewTrip = () => {
     setPlan(null);
     setCurrentView('chat');
     setMessages([initialGreeting]);
@@ -260,17 +330,18 @@ ${plan.itinerary.map((d) => `### Day ${d.day}: ${d.title}
 
   return (
     <div className="h-screen w-screen overflow-hidden bg-[#FAF9F5] dark:bg-[#121110] text-stone-900 dark:text-stone-100 flex font-sans transition-colors">
-      {/* Sleek Vertical Sidebar */}
+      {/* Sleek, User-Friendly Vertical Sidebar */}
       <Sidebar
         currentView={currentView}
         onViewChange={setCurrentView}
         plan={plan}
+        savedTripsCount={savedTrips.length}
         currency={currency}
         onCurrencyChange={handleCurrencyChange}
         darkMode={darkMode}
         onToggleDarkMode={() => setDarkMode(!darkMode)}
         onOpenSettings={() => setIsSettingsOpen(true)}
-        onResetTrip={handleResetTrip}
+        onNewTrip={handleNewTrip}
         collapsed={sidebarCollapsed}
         onToggleCollapsed={() => setSidebarCollapsed(!sidebarCollapsed)}
       />
@@ -288,7 +359,7 @@ ${plan.itinerary.map((d) => `### Day ${d.day}: ${d.title}
           isGeneratingPlan={isGeneratingPlan}
         />
 
-        {/* Viewport Canvas (fits naturally in 100vh) */}
+        {/* Viewport Canvas (fits naturally in screen) */}
         <main className="flex-1 min-h-0 overflow-y-auto">
           {currentView === 'chat' && (
             <div className="h-full flex flex-col lg:flex-row">
@@ -300,7 +371,7 @@ ${plan.itinerary.map((d) => `### Day ${d.day}: ${d.title}
                   onSendMessage={handleSendMessage}
                   onSelectReply={handleSelectReply}
                   onGeneratePlan={() => generatePlan()}
-                  onResetChat={handleResetTrip}
+                  onResetChat={handleNewTrip}
                   isLoading={isLoading}
                   isGeneratingPlan={isGeneratingPlan}
                   isPlanReady={!!plan}
@@ -349,7 +420,20 @@ ${plan.itinerary.map((d) => `### Day ${d.day}: ${d.title}
             </div>
           )}
 
-          {currentView !== 'chat' && (
+          {currentView === 'trips' && (
+            <div className="max-w-6xl mx-auto p-4 sm:p-6 lg:p-8">
+              <SavedTripsTab
+                savedTrips={savedTrips}
+                currentTripId={plan?.id || null}
+                onSelectTrip={handleSelectTrip}
+                onDeleteTrip={handleDeleteTrip}
+                onNewTrip={handleNewTrip}
+                onLoadPreset={() => loadSamplePlan()}
+              />
+            </div>
+          )}
+
+          {currentView !== 'chat' && currentView !== 'trips' && (
             <div className="max-w-6xl mx-auto p-4 sm:p-6 lg:p-8">
               {plan ? (
                 <>
@@ -369,7 +453,7 @@ ${plan.itinerary.map((d) => `### Day ${d.day}: ${d.title}
                 /* Empty state prompting chat or sample */
                 <div className="py-16 text-center max-w-md mx-auto space-y-4">
                   <div className="w-12 h-12 rounded-2xl bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 mx-auto flex items-center justify-center text-stone-700 dark:text-stone-300 shadow-2xs">
-                    <Sparkles className="w-6 h-6" />
+                    <Compass className="w-6 h-6" />
                   </div>
                   <h3 className="text-base font-bold text-stone-900 dark:text-stone-100">
                     No Trip Generated Yet

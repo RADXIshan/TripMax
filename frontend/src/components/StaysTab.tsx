@@ -1,5 +1,5 @@
 import { 
-  Star, 
+  Award, 
   MapPin, 
   ExternalLink 
 } from 'lucide-react';
@@ -40,10 +40,10 @@ export const StaysTab: React.FC<StaysTabProps> = ({ plan }) => {
                   </span>
                 )}
 
-                <div className="flex items-center gap-1 text-xs font-bold text-stone-800 dark:text-stone-200 bg-amber-50 dark:bg-amber-950/40 px-2 py-0.5 rounded-md">
-                  <Star className="w-3.5 h-3.5 fill-amber-500 text-amber-500" />
+                <div className="flex items-center gap-1.5 text-xs font-bold text-stone-800 dark:text-stone-200 bg-stone-100 dark:bg-stone-700/60 px-2 py-0.5 rounded-md">
+                  <Award className="w-3.5 h-3.5 text-stone-600 dark:text-stone-300" />
                   <span>{stay.rating}</span>
-                  <span className="text-stone-400 font-normal text-[10px]">({stay.review_count})</span>
+                  <span className="text-stone-400 font-normal text-[10px]">({stay.review_count} reviews)</span>
                 </div>
               </div>
 
