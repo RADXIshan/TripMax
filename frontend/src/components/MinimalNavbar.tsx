@@ -1,10 +1,10 @@
 import React from 'react';
 import { 
   Compass, 
-  Search, 
   Download, 
   ChevronRight,
-  Loader2
+  Loader2,
+  Bookmark
 } from 'lucide-react';
 import type { TripPlan } from '../types/trip';
 import type { NavView } from './Sidebar';
@@ -15,9 +15,9 @@ interface MinimalNavbarProps {
   plan: TripPlan | null;
   currency: string;
   onCurrencyChange: (c: string) => void;
-  onOpenLiveSearch: () => void;
   onExport: () => void;
   onLoadSample: () => void;
+  onSaveTrip?: () => void;
   isLoading: boolean;
   isGeneratingPlan: boolean;
 }
@@ -27,9 +27,9 @@ export const MinimalNavbar: React.FC<MinimalNavbarProps> = ({
   plan,
   currency,
   onCurrencyChange,
-  onOpenLiveSearch,
   onExport,
   onLoadSample,
+  onSaveTrip,
   isLoading,
   isGeneratingPlan
 }) => {
@@ -89,19 +89,22 @@ export const MinimalNavbar: React.FC<MinimalNavbarProps> = ({
           </button>
         )}
 
-        <button
-          onClick={onOpenLiveSearch}
-          title="Direct Web Search Console"
-          className="p-1.5 rounded-lg text-stone-600 dark:text-stone-400 hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors cursor-pointer"
-        >
-          <Search className="w-4 h-4" />
-        </button>
+        {plan && onSaveTrip && (
+          <button
+            onClick={onSaveTrip}
+            title="Save trip into All Trips archive"
+            className="text-xs px-2.5 py-1 rounded-lg border border-stone-700 bg-stone-800/80 hover:bg-stone-800 hover:border-stone-600 text-stone-200 hover:text-stone-100 transition-colors flex items-center gap-1.5 cursor-pointer shadow-2xs"
+          >
+            <Bookmark className="w-3.5 h-3.5 text-stone-400" />
+            <span>Save Trip</span>
+          </button>
+        )}
 
         {plan && (
           <button
             onClick={onExport}
             title="Export Trip Plan as Markdown"
-            className="p-1.5 rounded-lg text-stone-600 dark:text-stone-400 hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors cursor-pointer"
+            className="p-1.5 rounded-lg text-stone-400 hover:bg-stone-800 hover:text-stone-200 transition-colors cursor-pointer"
           >
             <Download className="w-4 h-4" />
           </button>

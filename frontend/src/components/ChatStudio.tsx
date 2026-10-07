@@ -8,7 +8,8 @@ import {
   ChevronRight,
   SlidersHorizontal,
   Flame,
-  Loader2
+  Loader2,
+  Bookmark
 } from 'lucide-react';
 import type { ChatMessage, SuggestedReply, TripPreferences } from '../types/trip';
 import { renderCleanMessage } from '../utils/formatText';
@@ -20,6 +21,7 @@ interface ChatStudioProps {
   onSelectReply: (reply: SuggestedReply) => void;
   onGeneratePlan: () => void;
   onResetChat: () => void;
+  onSaveTrip?: () => void;
   isLoading: boolean;
   isGeneratingPlan: boolean;
   isPlanReady: boolean;
@@ -32,6 +34,7 @@ export const ChatStudio: React.FC<ChatStudioProps> = ({
   onSelectReply,
   onGeneratePlan,
   onResetChat,
+  onSaveTrip,
   isLoading,
   isGeneratingPlan,
   isPlanReady
@@ -79,13 +82,29 @@ export const ChatStudio: React.FC<ChatStudioProps> = ({
           </div>
         </div>
 
-        <button
-          onClick={onResetChat}
-          title="Reset conversation"
-          className="p-1.5 rounded-lg text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors cursor-pointer"
-        >
-          <RotateCcw className="w-3.5 h-3.5" />
-        </button>
+        <div className="flex items-center gap-2">
+          {/* Save Trip Button */}
+          {onSaveTrip && (
+            <button
+              onClick={onSaveTrip}
+              title="Save all current trip data into All Trips archive"
+              className="px-2.5 py-1.5 rounded-lg border border-stone-700 bg-stone-800/80 hover:bg-stone-800 hover:border-stone-600 text-stone-200 hover:text-stone-100 text-xs font-medium flex items-center gap-1.5 transition-all duration-150 cursor-pointer shadow-2xs"
+            >
+              <Bookmark className="w-3.5 h-3.5 text-stone-400" />
+              <span>Save Trip</span>
+            </button>
+          )}
+
+          {/* Reset Trip Button */}
+          <button
+            onClick={onResetChat}
+            title="Reset trip"
+            className="px-2.5 py-1.5 rounded-lg border border-stone-700 bg-stone-800/80 hover:bg-stone-800 hover:border-stone-600 text-stone-300 hover:text-stone-100 text-xs font-medium flex items-center gap-1.5 transition-all duration-150 cursor-pointer shadow-2xs"
+          >
+            <RotateCcw className="w-3.5 h-3.5 text-stone-400" />
+            <span>Reset Trip</span>
+          </button>
+        </div>
       </div>
 
       {/* Extracted Trip Profile Summary Tag Cloud */}
@@ -124,9 +143,9 @@ export const ChatStudio: React.FC<ChatStudioProps> = ({
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {/* Preset quick starters if chat has only 1 greeting */}
         {messages.length <= 1 && (
-          <div className="mb-4 p-3 rounded-xl bg-stone-50 dark:bg-stone-800/50 border border-dashed border-stone-300 dark:border-stone-700">
-            <div className="flex items-center gap-1.5 text-xs font-semibold text-stone-700 dark:text-stone-300 mb-2">
-              <Flame className="w-3.5 h-3.5 text-amber-600" />
+          <div className="mb-4 p-3 rounded-xl bg-stone-850/50 dark:bg-stone-800/40 border border-stone-700">
+            <div className="flex items-center gap-1.5 text-xs font-semibold text-stone-300 mb-2">
+              <Flame className="w-3.5 h-3.5 text-amber-500" />
               <span>Popular Destination Inspiration:</span>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -134,10 +153,10 @@ export const ChatStudio: React.FC<ChatStudioProps> = ({
                 <button
                   key={idx}
                   onClick={() => onSendMessage(preset.prompt)}
-                  className="text-left text-xs p-2 rounded-lg bg-white dark:bg-stone-800 hover:bg-stone-100 dark:hover:bg-stone-750 border border-stone-200 dark:border-stone-700 text-stone-700 dark:text-stone-300 transition-colors cursor-pointer flex items-center justify-between"
+                  className="group text-left text-xs p-2.5 rounded-lg bg-stone-900/80 dark:bg-stone-800/70 hover:bg-stone-100 dark:hover:bg-stone-800 border border-stone-300 dark:border-stone-700 hover:border-stone-400 dark:hover:border-stone-600 text-stone-700 dark:text-stone-300 hover:text-stone-900 dark:hover:text-stone-100 transition-all duration-150 cursor-pointer flex items-center justify-between shadow-2xs"
                 >
                   <span className="truncate">{preset.label}</span>
-                  <ChevronRight className="w-3 h-3 text-stone-400 shrink-0 ml-1" />
+                  <ChevronRight className="w-3.5 h-3.5 text-stone-400 group-hover:text-stone-200 group-hover:translate-x-0.5 transition-all shrink-0 ml-1" />
                 </button>
               ))}
             </div>
@@ -180,7 +199,7 @@ export const ChatStudio: React.FC<ChatStudioProps> = ({
                       key={rIdx}
                       onClick={() => onSelectReply(reply)}
                       disabled={isLoading || isGeneratingPlan}
-                      className="text-xs px-3 py-1.5 rounded-full bg-white dark:bg-stone-800 hover:bg-stone-100 dark:hover:bg-stone-700 text-stone-700 dark:text-stone-300 border border-stone-300 dark:border-stone-600 transition-colors shadow-2xs hover:shadow-xs cursor-pointer disabled:opacity-50 flex items-center gap-1"
+                      className="text-xs px-3 py-1.5 rounded-full bg-stone-800/80 hover:bg-stone-800 text-stone-300 hover:text-stone-100 border border-stone-700 hover:border-stone-600 transition-all duration-150 shadow-2xs cursor-pointer disabled:opacity-50 flex items-center gap-1"
                     >
                       <span>{reply.label}</span>
                     </button>

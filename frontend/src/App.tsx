@@ -3,7 +3,8 @@ import confetti from 'canvas-confetti';
 import { 
   Compass, 
   ArrowRight, 
-  MessageSquare
+  MessageSquare,
+  BookmarkCheck
 } from 'lucide-react';
 import type { TripPlan, ChatMessage, TripPreferences, SuggestedReply } from './types/trip';
 import { Sidebar, type NavView } from './components/Sidebar';
@@ -17,6 +18,7 @@ import { BookingChecklistTab } from './components/BookingChecklistTab';
 import { ResearchSourcesTab } from './components/ResearchSourcesTab';
 import { SavedTripsTab, type SavedTripRecord } from './components/SavedTripsTab';
 import { LiveSearchModal } from './components/LiveSearchModal';
+import { ResetTripModal } from './components/ResetTripModal';
 import { SUPPORTED_CURRENCIES } from './components/CurrencyDropdown';
 
 const API_BASE = "";
@@ -56,6 +58,8 @@ export const App = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isGeneratingPlan, setIsGeneratingPlan] = useState(false);
   const [isLiveSearchOpen, setIsLiveSearchOpen] = useState(false);
+  const [isResetModalOpen, setIsResetModalOpen] = useState(false);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [currency, setCurrency] = useState('USD');
 
   useEffect(() => {
@@ -279,6 +283,72 @@ export const App = () => {
     });
   };
 
+  const buildDraftPlan = (): TripPlan => {
+    const destination = preferences.destination || (messages.length > 1 ? messages.find(m => m.role === 'user')?.content.slice(0, 30) : 'Custom Adventure') || 'Custom Adventure';
+    return {
+      id: `draft-trip-${Date.now()}`,
+      destination: destination,
+      origin: preferences.origin || 'Home',
+      dates: preferences.dates || 'Upcoming Travel',
+      duration_days: preferences.duration_days || 5,
+      tagline: `Custom trip exploration for ${destination}`,
+      overview: messages[messages.length - 1]?.content || `Trip discovery created for ${destination}`,
+      best_time_to_visit: 'Year-round',
+      local_transport_pass_tip: 'Check local travel cards upon arrival',
+      budget: {
+        total_estimated: preferences.budget_amount || 2500,
+        currency: currency,
+        target_budget: preferences.budget_amount || 2500,
+        budget_status: 'within_budget',
+        transit_cost: 0,
+        stay_cost: 0,
+        activities_cost: 0,
+        food_dining_cost: 0,
+        buffer_local_transit_cost: 0,
+        insights: ['Initial exploratory draft saved from Discovery Studio']
+      },
+      flights: [],
+      trains: [],
+      stays: [],
+      itinerary: [],
+      checklist: [
+        { id: 'chk-1', task: `Confirm travel dates for ${destination}`, category: 'prep', timeline: '2 weeks before', completed: false }
+      ],
+      packing_list: [],
+      research_sources: [],
+      agent_logs: ['Draft journey preserved in All Trips archive']
+    };
+  };
+
+  const handleSaveTrip = (customPlan?: TripPlan) => {
+    const targetPlan = customPlan || plan || buildDraftPlan();
+    savePlanToHistory(targetPlan);
+    confetti({ particleCount: 40, spread: 60, origin: { y: 0.7 } });
+    setToastMessage(`✓ Saved "${targetPlan.destination}" into All Trips!`);
+    setTimeout(() => setToastMessage(null), 3500);
+  };
+
+  const promptResetTrip = () => {
+    if (plan || messages.length > 1 || preferences.destination) {
+      setIsResetModalOpen(true);
+    } else {
+      handleNewTrip();
+    }
+  };
+
+  const handleDeleteAndReset = () => {
+    handleNewTrip();
+    setIsResetModalOpen(false);
+    setToastMessage('Trip cleared and reset.');
+    setTimeout(() => setToastMessage(null), 2500);
+  };
+
+  const handleSaveAndReset = () => {
+    handleSaveTrip();
+    handleNewTrip();
+    setIsResetModalOpen(false);
+  };
+
   const handleCurrencyChange = (newCurr: string) => {
     const oldCurr = currency;
     setCurrency(newCurr);
@@ -394,7 +464,7 @@ ${plan.itinerary.map((d) => `### Day ${d.day}: ${d.title}
         onViewChange={setCurrentView}
         plan={plan}
         savedTripsCount={savedTrips.length}
-        onNewTrip={handleNewTrip}
+        onNewTrip={promptResetTrip}
         collapsed={sidebarCollapsed}
         onToggleCollapsed={() => setSidebarCollapsed(!sidebarCollapsed)}
       />
@@ -407,9 +477,9 @@ ${plan.itinerary.map((d) => `### Day ${d.day}: ${d.title}
           plan={plan}
           currency={currency}
           onCurrencyChange={handleCurrencyChange}
-          onOpenLiveSearch={() => setIsLiveSearchOpen(true)}
           onExport={handleExportPlan}
           onLoadSample={loadSamplePlan}
+          onSaveTrip={handleSaveTrip}
           isLoading={isLoading}
           isGeneratingPlan={isGeneratingPlan}
         />
@@ -426,7 +496,8 @@ ${plan.itinerary.map((d) => `### Day ${d.day}: ${d.title}
                   onSendMessage={handleSendMessage}
                   onSelectReply={handleSelectReply}
                   onGeneratePlan={() => generatePlan()}
-                  onResetChat={handleNewTrip}
+                  onResetChat={promptResetTrip}
+                  onSaveTrip={handleSaveTrip}
                   isLoading={isLoading}
                   isGeneratingPlan={isGeneratingPlan}
                   isPlanReady={!!plan}
@@ -482,7 +553,7 @@ ${plan.itinerary.map((d) => `### Day ${d.day}: ${d.title}
                 currentTripId={plan?.id || null}
                 onSelectTrip={handleSelectTrip}
                 onDeleteTrip={handleDeleteTrip}
-                onNewTrip={handleNewTrip}
+                onNewTrip={promptResetTrip}
                 onLoadPreset={() => loadSamplePlan()}
               />
             </div>
@@ -506,26 +577,26 @@ ${plan.itinerary.map((d) => `### Day ${d.day}: ${d.title}
                 </>
               ) : (
                 <div className="py-16 text-center max-w-md mx-auto space-y-4">
-                  <div className="w-12 h-12 rounded-2xl bg-white border border-stone-200 mx-auto flex items-center justify-center text-stone-700 shadow-2xs">
+                  <div className="w-12 h-12 rounded-2xl bg-stone-850 border border-stone-700 mx-auto flex items-center justify-center text-stone-300 shadow-2xs">
                     <Compass className="w-6 h-6" />
                   </div>
-                  <h3 className="text-base font-bold text-stone-900">
+                  <h3 className="text-base font-bold text-stone-100">
                     No Trip Generated Yet
                   </h3>
-                  <p className="text-xs text-stone-500 leading-relaxed">
+                  <p className="text-xs text-stone-400 leading-relaxed">
                     Begin chatting in the Discovery Studio to define your trip, or load our instant sample preview.
                   </p>
                   <div className="flex items-center justify-center gap-2 pt-2">
                     <button
                       onClick={() => setCurrentView('chat')}
-                      className="px-4 py-2 rounded-xl bg-stone-900 text-white text-xs font-semibold flex items-center gap-1.5 cursor-pointer shadow-xs"
+                      className="px-4 py-2 rounded-xl bg-stone-100 text-stone-900 hover:bg-stone-200 text-xs font-semibold flex items-center gap-1.5 cursor-pointer shadow-xs"
                     >
                       <MessageSquare className="w-3.5 h-3.5" />
                       <span>Open Discovery Studio</span>
                     </button>
                     <button
                       onClick={loadSamplePlan}
-                      className="px-4 py-2 rounded-xl border border-stone-300 hover:bg-stone-100 text-stone-800 text-xs font-semibold cursor-pointer"
+                      className="px-4 py-2 rounded-xl border border-stone-700 hover:bg-stone-800 text-stone-300 text-xs font-semibold cursor-pointer"
                     >
                       Load Sample Preview
                     </button>
@@ -543,6 +614,23 @@ ${plan.itinerary.map((d) => `### Day ${d.day}: ${d.title}
         onClose={() => setIsLiveSearchOpen(false)}
         apiBase={API_BASE}
       />
+
+      {/* Reset Trip Modal */}
+      <ResetTripModal
+        isOpen={isResetModalOpen}
+        destinationName={plan?.destination || preferences.destination}
+        onClose={() => setIsResetModalOpen(false)}
+        onDeleteAndReset={handleDeleteAndReset}
+        onSaveAndReset={handleSaveAndReset}
+      />
+
+      {/* Toast Notification */}
+      {toastMessage && (
+        <div className="fixed bottom-6 right-6 z-50 px-4 py-2.5 rounded-xl bg-stone-900 border border-stone-700 shadow-2xl text-stone-100 text-xs font-medium flex items-center gap-2 animate-in slide-in-from-bottom-2 fade-in duration-200">
+          <BookmarkCheck className="w-4 h-4 text-emerald-400 shrink-0" />
+          <span>{toastMessage}</span>
+        </div>
+      )}
     </div>
   );
 };

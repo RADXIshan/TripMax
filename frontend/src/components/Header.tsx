@@ -1,7 +1,6 @@
 import { 
   Compass, 
-  Download, 
-  Search
+  Download
 } from 'lucide-react';
 import type { TripPlan } from '../types/trip';
 import { CurrencyDropdown } from './CurrencyDropdown';
@@ -10,7 +9,7 @@ interface HeaderProps {
   plan: TripPlan | null;
   currency: string;
   onCurrencyChange: (c: string) => void;
-  onOpenLiveSearch: () => void;
+  onOpenLiveSearch?: () => void;
   onExport: () => void;
   onLoadSample: () => void;
   isLoading: boolean;
@@ -20,7 +19,6 @@ export const Header: React.FC<HeaderProps> = ({
   plan,
   currency,
   onCurrencyChange,
-  onOpenLiveSearch,
   onExport,
   onLoadSample,
   isLoading
@@ -70,15 +68,6 @@ export const Header: React.FC<HeaderProps> = ({
               <span>Sample Trip</span>
             </button>
           )}
-
-          {/* Live Search Trigger */}
-          <button
-            onClick={onOpenLiveSearch}
-            title="Explore Live Web Search"
-            className="p-2 rounded-lg text-stone-600 hover:bg-stone-100 transition-colors cursor-pointer"
-          >
-            <Search className="w-4 h-4" />
-          </button>
 
           {/* Currency Dropdown */}
           <CurrencyDropdown
