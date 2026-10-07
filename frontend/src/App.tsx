@@ -1,18 +1,13 @@
 import { useState, useEffect } from 'react';
 import confetti from 'canvas-confetti';
 import { 
-  CalendarDays, 
-  Plane, 
-  Building, 
-  CreditCard, 
-  CheckSquare, 
-  Globe, 
-  Sparkles,
-  ArrowRight
+  Sparkles, 
+  ArrowRight, 
+  MessageSquare
 } from 'lucide-react';
 import type { TripPlan, ChatMessage, TripPreferences, SuggestedReply } from './types/trip';
-import { Header } from './components/Header';
-import { AgentReasoningBar } from './components/AgentReasoningBar';
+import { Sidebar, type NavView } from './components/Sidebar';
+import { MinimalNavbar } from './components/MinimalNavbar';
 import { ChatStudio } from './components/ChatStudio';
 import { ItineraryTab } from './components/ItineraryTab';
 import { TransitTab } from './components/TransitTab';
@@ -28,19 +23,19 @@ const API_BASE = "";
 const initialGreeting: ChatMessage = {
   id: 'init-msg-1',
   role: 'assistant',
-  content: "Hello! I am **TripMax**, your autonomous multi-agent travel planner.\n\nWhere in the world would you love to travel to?",
+  content: "Hello! I am TripMax, your autonomous multi-agent travel planner.\n\nWhere in the world would you love to travel to?",
   agent_name: "Discovery Agent",
   stage: "discovery",
   suggested_replies: [
-    { label: "🇯🇵 Kyoto & Tokyo, Japan", value: "I want to visit Kyoto & Tokyo, Japan" },
-    { label: "🇨🇭 Swiss Alps & Zurich", value: "Planning a trip to Swiss Alps & Zurich, Switzerland" },
-    { label: "🇮🇹 Amalfi Coast, Italy", value: "Looking for a trip to the Amalfi Coast, Italy" },
-    { label: "🇫🇷 Paris, France", value: "I'd love to explore Paris, France" },
-    { label: "🇮🇩 Bali, Indonesia", value: "Want to travel to Bali, Indonesia" },
+    { label: "Kyoto & Tokyo, Japan", value: "I want to visit Kyoto & Tokyo, Japan" },
+    { label: "Swiss Alps & Zurich", value: "Planning a trip to Swiss Alps & Zurich, Switzerland" },
+    { label: "Amalfi Coast, Italy", value: "Looking for a trip to the Amalfi Coast, Italy" },
+    { label: "Paris, France", value: "I would love to explore Paris, France" },
+    { label: "Bali, Indonesia", value: "Want to travel to Bali, Indonesia" },
   ]
 };
 
-export const App: React.FC = () => {
+export const App = () => {
   const [plan, setPlan] = useState<TripPlan | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([initialGreeting]);
   const [preferences, setPreferences] = useState<TripPreferences>({
@@ -50,7 +45,8 @@ export const App: React.FC = () => {
     travel_pace: 'balanced',
     transport_preference: 'both'
   });
-  const [activeTab, setActiveTab] = useState<'itinerary' | 'transit' | 'stays' | 'budget' | 'checklist' | 'sources'>('itinerary');
+  const [currentView, setCurrentView] = useState<NavView>('chat');
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isGeneratingPlan, setIsGeneratingPlan] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -96,7 +92,6 @@ export const App: React.FC = () => {
         setMessages((prev) => [...prev, data.message]);
         setPreferences(data.preferences);
 
-        // If user explicitly prompted plan creation or answered the final step
         if (data.ready_for_plan) {
           await generatePlan(data.preferences, text);
         }
@@ -108,7 +103,7 @@ export const App: React.FC = () => {
         {
           id: `err-${Date.now()}`,
           role: 'assistant',
-          content: "I encountered a network connection issue reaching the backend service. Please ensure the backend is running.",
+          content: "I encountered a network issue communicating with the backend server. Please verify the server is running.",
           agent_name: "Discovery Agent"
         }
       ]);
@@ -136,9 +131,8 @@ export const App: React.FC = () => {
       if (res.ok) {
         const data: TripPlan = await res.json();
         setPlan(data);
-        setActiveTab('itinerary');
+        setCurrentView('itinerary');
 
-        // Confetti celebration
         try {
           confetti({
             particleCount: 80,
@@ -147,13 +141,12 @@ export const App: React.FC = () => {
           });
         } catch (_) {}
 
-        // Add confirmation message to chat
         setMessages((prev) => [
           ...prev,
           {
             id: `done-${Date.now()}`,
             role: 'assistant',
-            content: `🎉 Your complete, day-by-day travel architecture for **${data.destination}** is generated!\n\nReview your **Itinerary**, compare **Flights vs Trains**, browse handpicked **Accommodations**, and inspect your **Budget Blueprint** on the right. You can refine anything anytime by chatting with me.`,
+            content: `Your complete, day-by-day travel architecture for ${data.destination} has been generated!\n\nUse the sidebar to explore your Itinerary, compare Flights vs Trains, view Stays, and inspect your Budget Blueprint. Ask me anytime if you wish to adjust any detail.`,
             agent_name: "Orchestrator",
             stage: "plan_ready"
           }
@@ -173,6 +166,7 @@ export const App: React.FC = () => {
       if (res.ok) {
         const data: TripPlan = await res.json();
         setPlan(data);
+        setCurrentView('itinerary');
         setPreferences({
           destination: data.destination,
           origin: data.origin,
@@ -188,7 +182,7 @@ export const App: React.FC = () => {
           {
             id: `sample-${Date.now()}`,
             role: 'assistant',
-            content: `Loaded sample 5-day curated journey for **${data.destination}**! Feel free to ask questions or customize any day.`,
+            content: `Loaded sample 5-day curated journey for ${data.destination}! You can inspect the itinerary on the dashboard or tell me any adjustments you would like to make.`,
             agent_name: "Discovery Agent",
             stage: "plan_ready"
           }
@@ -201,7 +195,9 @@ export const App: React.FC = () => {
     }
   };
 
-  const handleResetChat = () => {
+  const handleResetTrip = () => {
+    setPlan(null);
+    setCurrentView('chat');
     setMessages([initialGreeting]);
     setPreferences({
       interests: [],
@@ -223,32 +219,32 @@ export const App: React.FC = () => {
   const handleExportPlan = () => {
     if (!plan) return;
     const content = `# TripMax Travel Plan: ${plan.destination}
-**Origin**: ${plan.origin}
-**Duration**: ${plan.duration_days} Days
-**Dates**: ${plan.dates}
-**Projected Budget**: ${plan.budget.currency} ${plan.budget.total_estimated}
+Origin: ${plan.origin}
+Duration: ${plan.duration_days} Days
+Dates: ${plan.dates}
+Projected Budget: ${plan.budget.currency} ${plan.budget.total_estimated}
 
 ## Overview
 ${plan.overview}
 
 ## Transit Options
 ### Flights
-${plan.flights.map((f) => `- ${f.airline} (${f.departure} to ${f.arrival}): ${f.currency} ${f.estimated_price} [Book: ${f.booking_url}]`).join('\n')}
+${plan.flights.map((f) => `• ${f.airline} (${f.departure} to ${f.arrival}): ${f.currency} ${f.estimated_price} [Book: ${f.booking_url}]`).join('\n')}
 
 ### Trains
-${plan.trains.map((t) => `- ${t.train_name} (${t.operator}): ${t.currency} ${t.estimated_price} [Book: ${t.booking_url}]`).join('\n')}
+${plan.trains.map((t) => `• ${t.train_name} (${t.operator}): ${t.currency} ${t.estimated_price} [Book: ${t.booking_url}]`).join('\n')}
 
 ## Curated Stays
-${plan.stays.map((s) => `- ${s.name} (${s.neighborhood}): ${s.currency} ${s.price_per_night}/night [Book: ${s.booking_url}]`).join('\n')}
+${plan.stays.map((s) => `• ${s.name} (${s.neighborhood}): ${s.currency} ${s.price_per_night}/night [Book: ${s.booking_url}]`).join('\n')}
 
 ## Day-by-Day Schedule
 ${plan.itinerary.map((d) => `### Day ${d.day}: ${d.title}
-- **Morning**: ${d.morning.title} (${d.morning.location})
-- **Afternoon**: ${d.afternoon.title} (${d.afternoon.location})
-- **Evening**: ${d.evening.title} (${d.evening.location})
-- **Lunch**: ${d.lunch_recommendation.place} (Dish: ${d.lunch_recommendation.dish})
-- **Dinner**: ${d.dinner_recommendation.place} (Dish: ${d.dinner_recommendation.dish})
-- **Transit Tip**: ${d.transit_tips}
+• Morning: ${d.morning.title} (${d.morning.location})
+• Afternoon: ${d.afternoon.title} (${d.afternoon.location})
+• Evening: ${d.evening.title} (${d.evening.location})
+• Lunch: ${d.lunch_recommendation.place} (Dish: ${d.lunch_recommendation.dish})
+• Dinner: ${d.dinner_recommendation.place} (Dish: ${d.dinner_recommendation.dish})
+• Transit Tip: ${d.transit_tips}
 `).join('\n')}
 `;
 
@@ -263,190 +259,145 @@ ${plan.itinerary.map((d) => `### Day ${d.day}: ${d.title}
   };
 
   return (
-    <div className="min-h-screen bg-[#FDFDFC] dark:bg-[#0C0A09] text-stone-900 dark:text-stone-100 flex flex-col font-sans transition-colors">
-      {/* Header */}
-      <Header
+    <div className="h-screen w-screen overflow-hidden bg-[#FAF9F5] dark:bg-[#121110] text-stone-900 dark:text-stone-100 flex font-sans transition-colors">
+      {/* Sleek Vertical Sidebar */}
+      <Sidebar
+        currentView={currentView}
+        onViewChange={setCurrentView}
         plan={plan}
         currency={currency}
         onCurrencyChange={handleCurrencyChange}
         darkMode={darkMode}
         onToggleDarkMode={() => setDarkMode(!darkMode)}
         onOpenSettings={() => setIsSettingsOpen(true)}
-        onOpenLiveSearch={() => setIsLiveSearchOpen(true)}
-        onExport={handleExportPlan}
-        onLoadSample={loadSamplePlan}
-        isLoading={isLoading}
+        onResetTrip={handleResetTrip}
+        collapsed={sidebarCollapsed}
+        onToggleCollapsed={() => setSidebarCollapsed(!sidebarCollapsed)}
       />
 
-      {/* Multi-Agent Reasoning Bar */}
-      <AgentReasoningBar
-        logs={plan?.agent_logs || []}
-        isGenerating={isGeneratingPlan}
-      />
+      {/* Main Content Area */}
+      <div className="flex-1 flex flex-col h-screen min-w-0 overflow-hidden">
+        {/* Minimal Slender Navbar */}
+        <MinimalNavbar
+          currentView={currentView}
+          plan={plan}
+          onOpenLiveSearch={() => setIsLiveSearchOpen(true)}
+          onExport={handleExportPlan}
+          onLoadSample={loadSamplePlan}
+          isLoading={isLoading}
+          isGeneratingPlan={isGeneratingPlan}
+        />
 
-      {/* Main Split-Screen Workspace */}
-      <main className="flex-1 max-w-7xl w-full mx-auto grid grid-cols-1 lg:grid-cols-12 min-h-0">
-        {/* Left Side: Conversational Studio (5 cols on lg) */}
-        <section className="lg:col-span-5 h-[calc(100vh-6.5rem)] flex flex-col">
-          <ChatStudio
-            messages={messages}
-            preferences={preferences}
-            onSendMessage={handleSendMessage}
-            onSelectReply={handleSelectReply}
-            onGeneratePlan={() => generatePlan()}
-            onResetChat={handleResetChat}
-            isLoading={isLoading}
-            isGeneratingPlan={isGeneratingPlan}
-            isPlanReady={!!plan}
-          />
-        </section>
-
-        {/* Right Side: Live Trip Canvas & Tabs (7 cols on lg) */}
-        <section className="lg:col-span-7 h-[calc(100vh-6.5rem)] flex flex-col overflow-hidden bg-stone-50/50 dark:bg-stone-950/40">
-          {plan ? (
-            <div className="flex flex-col h-full">
-              {/* Navigation Tabs Bar */}
-              <div className="p-3 border-b border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900 flex items-center gap-1.5 overflow-x-auto scrollbar-none">
-                <button
-                  onClick={() => setActiveTab('itinerary')}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 whitespace-nowrap transition-colors cursor-pointer ${
-                    activeTab === 'itinerary'
-                      ? 'bg-stone-900 text-white dark:bg-stone-100 dark:text-stone-900 shadow-2xs'
-                      : 'text-stone-600 dark:text-stone-400 hover:bg-stone-100 dark:hover:bg-stone-800'
-                  }`}
-                >
-                  <CalendarDays className="w-3.5 h-3.5" />
-                  <span>Itinerary ({plan.itinerary.length} Days)</span>
-                </button>
-
-                <button
-                  onClick={() => setActiveTab('transit')}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 whitespace-nowrap transition-colors cursor-pointer ${
-                    activeTab === 'transit'
-                      ? 'bg-stone-900 text-white dark:bg-stone-100 dark:text-stone-900 shadow-2xs'
-                      : 'text-stone-600 dark:text-stone-400 hover:bg-stone-100 dark:hover:bg-stone-800'
-                  }`}
-                >
-                  <Plane className="w-3.5 h-3.5" />
-                  <span>Flights vs Trains</span>
-                </button>
-
-                <button
-                  onClick={() => setActiveTab('stays')}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 whitespace-nowrap transition-colors cursor-pointer ${
-                    activeTab === 'stays'
-                      ? 'bg-stone-900 text-white dark:bg-stone-100 dark:text-stone-900 shadow-2xs'
-                      : 'text-stone-600 dark:text-stone-400 hover:bg-stone-100 dark:hover:bg-stone-800'
-                  }`}
-                >
-                  <Building className="w-3.5 h-3.5" />
-                  <span>Stays & Lodging</span>
-                </button>
-
-                <button
-                  onClick={() => setActiveTab('budget')}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 whitespace-nowrap transition-colors cursor-pointer ${
-                    activeTab === 'budget'
-                      ? 'bg-stone-900 text-white dark:bg-stone-100 dark:text-stone-900 shadow-2xs'
-                      : 'text-stone-600 dark:text-stone-400 hover:bg-stone-100 dark:hover:bg-stone-800'
-                  }`}
-                >
-                  <CreditCard className="w-3.5 h-3.5" />
-                  <span>Budget Breakdown</span>
-                </button>
-
-                <button
-                  onClick={() => setActiveTab('checklist')}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 whitespace-nowrap transition-colors cursor-pointer ${
-                    activeTab === 'checklist'
-                      ? 'bg-stone-900 text-white dark:bg-stone-100 dark:text-stone-900 shadow-2xs'
-                      : 'text-stone-600 dark:text-stone-400 hover:bg-stone-100 dark:hover:bg-stone-800'
-                  }`}
-                >
-                  <CheckSquare className="w-3.5 h-3.5" />
-                  <span>Booking & Packing</span>
-                </button>
-
-                <button
-                  onClick={() => setActiveTab('sources')}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 whitespace-nowrap transition-colors cursor-pointer ${
-                    activeTab === 'sources'
-                      ? 'bg-stone-900 text-white dark:bg-stone-100 dark:text-stone-900 shadow-2xs'
-                      : 'text-stone-600 dark:text-stone-400 hover:bg-stone-100 dark:hover:bg-stone-800'
-                  }`}
-                >
-                  <Globe className="w-3.5 h-3.5" />
-                  <span>Web Sources ({plan.research_sources.length})</span>
-                </button>
+        {/* Viewport Canvas (fits naturally in 100vh) */}
+        <main className="flex-1 min-h-0 overflow-y-auto">
+          {currentView === 'chat' && (
+            <div className="h-full flex flex-col lg:flex-row">
+              {/* Chat Studio Pane */}
+              <div className="flex-1 h-full min-h-0">
+                <ChatStudio
+                  messages={messages}
+                  preferences={preferences}
+                  onSendMessage={handleSendMessage}
+                  onSelectReply={handleSelectReply}
+                  onGeneratePlan={() => generatePlan()}
+                  onResetChat={handleResetTrip}
+                  isLoading={isLoading}
+                  isGeneratingPlan={isGeneratingPlan}
+                  isPlanReady={!!plan}
+                />
               </div>
 
-              {/* Tab Content Canvas with Smooth Scroll */}
-              <div className="flex-1 overflow-y-auto p-4 sm:p-6">
-                {activeTab === 'itinerary' && <ItineraryTab plan={plan} />}
-                {activeTab === 'transit' && <TransitTab plan={plan} />}
-                {activeTab === 'stays' && <StaysTab plan={plan} />}
-                {activeTab === 'budget' && <BudgetTab plan={plan} />}
-                {activeTab === 'checklist' && <BookingChecklistTab plan={plan} />}
-                {activeTab === 'sources' && (
-                  <ResearchSourcesTab
-                    sources={plan.research_sources}
-                    destination={plan.destination}
-                  />
-                )}
-              </div>
-            </div>
-          ) : (
-            /* Empty State Placeholder with Rich Guidance */
-            <div className="h-full flex flex-col items-center justify-center p-6 text-center max-w-md mx-auto">
-              <div className="w-14 h-14 rounded-2xl bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 shadow-sm flex items-center justify-center text-stone-700 dark:text-stone-300 mb-4">
-                <Sparkles className="w-7 h-7" />
-              </div>
-              <h3 className="text-base font-bold text-stone-900 dark:text-stone-100">
-                Your Interactive Travel Dashboard
-              </h3>
-              <p className="text-xs text-stone-500 dark:text-stone-400 mt-2 leading-relaxed">
-                Answer the quick questions in the Discovery Studio on the left, or click <strong>Sample Trip</strong> in the header to load a live 5-day itinerary instantly.
-              </p>
+              {/* Side Glance Pane if plan is active */}
+              {plan && (
+                <div className="hidden xl:flex w-96 border-l border-stone-200 dark:border-stone-800 p-5 flex-col justify-between bg-white dark:bg-stone-900/60 overflow-y-auto">
+                  <div className="space-y-4">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-stone-400">
+                      Active Plan Glance
+                    </span>
+                    <h3 className="text-base font-bold text-stone-900 dark:text-stone-100">
+                      {plan.destination}
+                    </h3>
+                    <p className="text-xs text-stone-600 dark:text-stone-300 leading-relaxed">
+                      {plan.tagline}
+                    </p>
 
-              <div className="mt-6 flex flex-col w-full gap-2 text-left">
-                <div className="p-3 rounded-xl bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 text-xs">
-                  <span className="font-semibold text-stone-800 dark:text-stone-200 block">
-                    1. Discovery & Clarification
-                  </span>
-                  <span className="text-stone-500">
-                    Agent asks progressive questions on origin, budget, travel party, and pace.
-                  </span>
+                    <div className="space-y-2 pt-2 border-t border-stone-100 dark:border-stone-800 text-xs">
+                      <div className="flex justify-between py-1 border-b border-stone-100 dark:border-stone-800/60">
+                        <span className="text-stone-400">Duration:</span>
+                        <span className="font-semibold text-stone-800 dark:text-stone-200">{plan.duration_days} Days</span>
+                      </div>
+                      <div className="flex justify-between py-1 border-b border-stone-100 dark:border-stone-800/60">
+                        <span className="text-stone-400">Est. Total:</span>
+                        <span className="font-semibold text-stone-800 dark:text-stone-200">{plan.budget.currency} {plan.budget.total_estimated.toLocaleString()}</span>
+                      </div>
+                      <div className="flex justify-between py-1">
+                        <span className="text-stone-400">Flights / Trains:</span>
+                        <span className="font-semibold text-stone-800 dark:text-stone-200">{plan.flights.length} flights, {plan.trains.length} rail</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => setCurrentView('itinerary')}
+                    className="w-full mt-4 py-2.5 rounded-xl bg-stone-900 dark:bg-stone-100 text-white dark:text-stone-900 text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer shadow-xs"
+                  >
+                    <span>View Full Itinerary</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </button>
                 </div>
-                <div className="p-3 rounded-xl bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 text-xs">
-                  <span className="font-semibold text-stone-800 dark:text-stone-200 block">
-                    2. Web Search & Multi-Agent Synthesis
-                  </span>
-                  <span className="text-stone-500">
-                    Live research retrieves top attractions, high-speed rail routes, and authentic food.
-                  </span>
-                </div>
-                <div className="p-3 rounded-xl bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 text-xs">
-                  <span className="font-semibold text-stone-800 dark:text-stone-200 block">
-                    3. Deep Booking Links & Budgeting
-                  </span>
-                  <span className="text-stone-500">
-                    Direct 1-click links to Google Flights, Trainline, Booking.com, and attraction portals.
-                  </span>
-                </div>
-              </div>
-
-              <button
-                onClick={loadSamplePlan}
-                disabled={isLoading}
-                className="mt-6 px-4 py-2 rounded-xl bg-stone-900 dark:bg-stone-100 text-white dark:text-stone-900 hover:bg-stone-800 dark:hover:bg-stone-200 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs disabled:opacity-50"
-              >
-                <span>Load Live Sample Preview</span>
-                <ArrowRight className="w-3.5 h-3.5" />
-              </button>
+              )}
             </div>
           )}
-        </section>
-      </main>
+
+          {currentView !== 'chat' && (
+            <div className="max-w-6xl mx-auto p-4 sm:p-6 lg:p-8">
+              {plan ? (
+                <>
+                  {currentView === 'itinerary' && <ItineraryTab plan={plan} />}
+                  {currentView === 'transit' && <TransitTab plan={plan} />}
+                  {currentView === 'stays' && <StaysTab plan={plan} />}
+                  {currentView === 'budget' && <BudgetTab plan={plan} />}
+                  {currentView === 'checklist' && <BookingChecklistTab plan={plan} />}
+                  {currentView === 'sources' && (
+                    <ResearchSourcesTab
+                      sources={plan.research_sources}
+                      destination={plan.destination}
+                    />
+                  )}
+                </>
+              ) : (
+                /* Empty state prompting chat or sample */
+                <div className="py-16 text-center max-w-md mx-auto space-y-4">
+                  <div className="w-12 h-12 rounded-2xl bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 mx-auto flex items-center justify-center text-stone-700 dark:text-stone-300 shadow-2xs">
+                    <Sparkles className="w-6 h-6" />
+                  </div>
+                  <h3 className="text-base font-bold text-stone-900 dark:text-stone-100">
+                    No Trip Generated Yet
+                  </h3>
+                  <p className="text-xs text-stone-500 dark:text-stone-400 leading-relaxed">
+                    Begin chatting in the Discovery Studio to define your trip, or load our instant sample preview.
+                  </p>
+                  <div className="flex items-center justify-center gap-2 pt-2">
+                    <button
+                      onClick={() => setCurrentView('chat')}
+                      className="px-4 py-2 rounded-xl bg-stone-900 dark:bg-stone-100 text-white dark:text-stone-900 text-xs font-semibold flex items-center gap-1.5 cursor-pointer shadow-xs"
+                    >
+                      <MessageSquare className="w-3.5 h-3.5" />
+                      <span>Open Discovery Studio</span>
+                    </button>
+                    <button
+                      onClick={loadSamplePlan}
+                      className="px-4 py-2 rounded-xl border border-stone-300 dark:border-stone-700 hover:bg-stone-100 dark:hover:bg-stone-800 text-stone-800 dark:text-stone-200 text-xs font-semibold cursor-pointer"
+                    >
+                      Load Sample Preview
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </main>
+      </div>
 
       {/* Settings Modal */}
       <SettingsModal

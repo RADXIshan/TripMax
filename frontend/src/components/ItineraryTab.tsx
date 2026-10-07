@@ -11,6 +11,7 @@ import {
   Moon
 } from 'lucide-react';
 import type { TripPlan } from '../types/trip';
+import { cleanText } from '../utils/formatText';
 
 interface ItineraryTabProps {
   plan: TripPlan;
@@ -31,10 +32,10 @@ export const ItineraryTab: React.FC<ItineraryTabProps> = ({ plan }) => {
               Curated Destination Experience
             </span>
             <h3 className="text-lg font-bold text-stone-900 dark:text-stone-100 tracking-tight">
-              {plan.tagline}
+              {cleanText(plan.tagline)}
             </h3>
             <p className="text-xs sm:text-sm text-stone-600 dark:text-stone-300 mt-1 max-w-2xl leading-relaxed">
-              {plan.overview}
+              {cleanText(plan.overview)}
             </p>
           </div>
 

@@ -150,7 +150,7 @@ class AgentOrchestrator:
         prompt = (
             f"Write a 2-paragraph inspiring luxury editorial overview for a {plan.duration_days}-day trip to {plan.destination} "
             f"departing from {plan.origin}. Traveling as {prefs.party_type or 'adventurers'} with interests in {', '.join(prefs.interests)}. "
-            f"Highlight both scenic train and flight connectivity."
+            f"Highlight both scenic train and flight connectivity. Do not use markdown double asterisks (**) or raw bullet asterisks; keep sentences smooth, clean, and natural."
         )
         response = await client.aio.models.generate_content(
             model='gemini-2.5-flash',

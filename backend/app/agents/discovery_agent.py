@@ -117,7 +117,7 @@ class DiscoveryAgent:
         ready_triggers = ["plan now", "generate plan", "i am ready", "i'm ready", "create itinerary", "build trip", "let's go"]
         if any(tr in user_lower for tr in ready_triggers):
             return (
-                f"Understood! All agents are assembling now to research and engineer your complete trip plan for **{prefs.destination or 'your destination'}**.",
+                f"Understood! All agents are assembling now to research and engineer your complete trip plan for {prefs.destination or 'your destination'}.",
                 [],
                 "ready_to_plan"
             )
@@ -125,7 +125,7 @@ class DiscoveryAgent:
         # 1. Destination check
         if not prefs.destination:
             return (
-                "Welcome to **TripMax**! I'm your trip discovery specialist. Where in the world would you love to travel to?",
+                "Welcome to TripMax! I am your trip discovery specialist. Where in the world would you love to travel to?",
                 [
                     SuggestedReply(label="Kyoto & Tokyo, Japan", value="I want to visit Kyoto & Tokyo, Japan"),
                     SuggestedReply(label="Swiss Alps & Zurich", value="Planning a trip to Swiss Alps & Zurich, Switzerland"),
@@ -139,7 +139,7 @@ class DiscoveryAgent:
         # 2. Origin & Duration check
         if not prefs.origin:
             return (
-                f"**{prefs.destination}** is an incredible choice! Where will you be departing from, and how many days are you envisioning?",
+                f"{prefs.destination} is an incredible choice! Where will you be departing from, and how many days are you envisioning?",
                 [
                     SuggestedReply(label="New York (JFK) • 7 Days", value="Departing from New York for 7 days"),
                     SuggestedReply(label="London (LHR) • 5 Days", value="Departing from London for 5 days"),
@@ -153,7 +153,7 @@ class DiscoveryAgent:
         # 3. Party type & Travel pace
         if not prefs.party_type:
             return (
-                f"Got it, departing from **{prefs.origin}** for a **{prefs.duration_days}-day** adventure! Who are you traveling with, and what travel pace do you prefer?",
+                f"Got it, departing from {prefs.origin} for a {prefs.duration_days}-day adventure! Who are you traveling with, and what travel pace do you prefer?",
                 [
                     SuggestedReply(label="Couple • Balanced Pace", value="Traveling as a couple, looking for a balanced pace"),
                     SuggestedReply(label="Solo Traveler • Immersive & Relaxed", value="I'm a solo traveler, prefer a relaxed and immersive pace"),
@@ -168,7 +168,7 @@ class DiscoveryAgent:
             curr = prefs.budget_currency
             symbol = "€" if curr == "EUR" else ("£" if curr == "GBP" else ("₹" if curr == "INR" else "$"))
             return (
-                f"What is your total estimated budget per person for this trip? Also, do you prefer **Flights**, **Trains**, or **Both**?",
+                f"What is your total estimated budget per person for this trip? Also, do you prefer Flights, Trains, or Both?",
                 [
                     SuggestedReply(label=f"Smart Budget ({symbol}1,200 - {symbol}1,800)", value=f"My budget is around {symbol}1500, compare both flights and trains"),
                     SuggestedReply(label=f"Comfort & Moderate ({symbol}2,500 - {symbol}3,500)", value=f"My budget is around {symbol}3000, open to both flights and scenic trains"),
@@ -181,7 +181,7 @@ class DiscoveryAgent:
         # 5. Core Interests & Vibe
         if len(prefs.interests) < 2:
             return (
-                f"Almost there! What are your absolute favorite vibes and experiences for **{prefs.destination}**? (Select or tell me your favorites):",
+                f"Almost there! What are your absolute favorite vibes and experiences for {prefs.destination}? Select or tell me your favorites:",
                 [
                     SuggestedReply(label="Culinary & Street Food + Historic Temples", value="Focus heavily on local food, street eats, and historic cultural sites"),
                     SuggestedReply(label="Scenic Landscapes + Outdoor Nature", value="Love scenic viewpoints, nature, hikes, and photography"),
@@ -195,7 +195,7 @@ class DiscoveryAgent:
         if "stay_confirmed" not in prefs.completed_steps:
             prefs.completed_steps.append("stay_confirmed")
             return (
-                f"Fantastic! What kind of stay matches your vibe for **{prefs.destination}**?",
+                f"Fantastic! What kind of stay matches your vibe for {prefs.destination}?",
                 [
                     SuggestedReply(label="Boutique & Aesthetic Hotels", value="I prefer boutique aesthetic hotels with good design"),
                     SuggestedReply(label="Authentic & Unique (Ryokan/Villas)", value="I love authentic local stays, heritage ryokans, or unique architecture"),
@@ -208,16 +208,16 @@ class DiscoveryAgent:
         # If all core preferences are collected
         return (
             f"All your preferences are locked in! I have everything needed:\n"
-            f"- **Destination**: {prefs.destination}\n"
-            f"- **Origin**: {prefs.origin}\n"
-            f"- **Duration**: {prefs.duration_days} Days\n"
-            f"- **Party**: {prefs.party_type}\n"
-            f"- **Pace**: {prefs.travel_pace.title()}\n"
-            f"- **Budget**: {prefs.budget_currency} {prefs.budget_amount:,.0f}\n"
-            f"- **Interests**: {', '.join(prefs.interests)}\n\n"
+            f"• Destination: {prefs.destination}\n"
+            f"• Origin: {prefs.origin}\n"
+            f"• Duration: {prefs.duration_days} Days\n"
+            f"• Party: {prefs.party_type}\n"
+            f"• Pace: {prefs.travel_pace.title()}\n"
+            f"• Budget: {prefs.budget_currency} {prefs.budget_amount:,.0f}\n"
+            f"• Interests: {', '.join(prefs.interests)}\n\n"
             f"Click below to launch our multi-agent web research and build your complete trip plan!",
             [
-                SuggestedReply(label="✨ Generate Complete Trip Plan Now", value="Generate Plan Now"),
+                SuggestedReply(label="Generate Complete Trip Plan Now", value="Generate Plan Now"),
                 SuggestedReply(label="Adjust Budget", value="I want to adjust my budget"),
                 SuggestedReply(label="Add Special Requests", value="I have special dietary and accessibility requirements"),
             ],

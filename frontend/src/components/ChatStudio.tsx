@@ -10,6 +10,7 @@ import {
   Flame
 } from 'lucide-react';
 import type { ChatMessage, SuggestedReply, TripPreferences } from '../types/trip';
+import { renderCleanMessage } from '../utils/formatText';
 
 interface ChatStudioProps {
   messages: ChatMessage[];
@@ -161,13 +162,13 @@ export const ChatStudio: React.FC<ChatStudioProps> = ({
               )}
 
               <div
-                className={`p-3.5 rounded-2xl text-xs sm:text-sm leading-relaxed whitespace-pre-wrap ${
+                className={`p-3.5 rounded-2xl text-xs sm:text-sm leading-relaxed ${
                   msg.role === 'user'
                     ? 'bg-stone-900 text-white dark:bg-stone-100 dark:text-stone-900 rounded-br-xs'
                     : 'bg-stone-100 dark:bg-stone-800 text-stone-800 dark:text-stone-200 rounded-bl-xs border border-stone-200/80 dark:border-stone-700/80 shadow-2xs'
                 }`}
               >
-                {msg.content}
+                {renderCleanMessage(msg.content)}
               </div>
 
               {/* Suggested reply chips attached to message */}
