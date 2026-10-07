@@ -332,10 +332,17 @@ export const App = () => {
     setTimeout(() => setToastMessage(null), 3500);
   };
 
+  const isChatOngoing = () => {
+    const hasUserMessages = messages.some((m) => m.role === 'user');
+    const hasUnsavedPlan = plan !== null && !savedTrips.some((t) => t.id === plan.id);
+    return hasUserMessages || hasUnsavedPlan;
+  };
+
   const promptResetTrip = () => {
-    if (plan || messages.length > 1 || preferences.destination) {
+    if (isChatOngoing()) {
       setIsResetModalOpen(true);
     } else {
+      // If no chat is going on, cleanly reset and arrive at the discovery page
       handleNewTrip();
     }
   };
@@ -343,7 +350,7 @@ export const App = () => {
   const handleDeleteAndReset = () => {
     handleNewTrip();
     setIsResetModalOpen(false);
-    setToastMessage('Trip cleared and reset.');
+    setToastMessage('Current trip discarded. Ready to plan a new trip.');
     setTimeout(() => setToastMessage(null), 2500);
   };
 

@@ -10,11 +10,45 @@ class DiscoveryAgent:
     """
 
     @classmethod
+    def get_current_question_key(cls, prefs: TripPreferences) -> str:
+        if prefs.current_question_key:
+            return prefs.current_question_key
+        if not prefs.destination:
+            return "destination"
+        if not prefs.origin:
+            return "origin"
+        if not prefs.duration_days:
+            return "duration"
+        if not prefs.party_type:
+            return "party_type"
+        if not prefs.travel_pace:
+            return "travel_pace"
+        if not prefs.budget_amount:
+            return "budget"
+        if not prefs.transport_preference:
+            return "transport"
+        if len(prefs.interests) == 0:
+            return "interests"
+        if not prefs.stay_preference:
+            return "stay"
+        return "ready"
+
+    @classmethod
     def update_preferences_from_text(cls, text: str, prefs: TripPreferences) -> TripPreferences:
         text_clean = text.strip()
         text_lower = text_clean.lower()
         if not text_clean:
             return prefs
+
+        def smart_title(s: str) -> str:
+            words = s.split()
+            res = []
+            for w in words:
+                if (w.startswith("(") and w.endswith(")") and len(w) > 2) or (w.isupper() and len(w) <= 4):
+                    res.append(w)
+                else:
+                    res.append(w.capitalize())
+            return " ".join(res)
 
         # Clean common user prefixes like "Other:", "I want...", "My choice is..."
         def clean_val(val: str, prefix_patterns: List[str] = None) -> str:
@@ -26,7 +60,7 @@ class DiscoveryAgent:
             v = re.sub(r'[\.\,\!\?]+$', '', v).strip()
             return v
 
-        q_key = prefs.current_question_key
+        q_key = cls.get_current_question_key(prefs)
 
         # 1. Targeted Extraction based on the active question being asked
         if q_key == "destination":
@@ -39,7 +73,7 @@ class DiscoveryAgent:
                 r'^(?:visit\s*)'
             ])
             if cleaned and cleaned.lower() not in ["other", "skip"]:
-                prefs.destination = cleaned.title()
+                prefs.destination = smart_title(cleaned)
                 if "destination" not in prefs.completed_steps:
                     prefs.completed_steps.append("destination")
 
@@ -51,7 +85,7 @@ class DiscoveryAgent:
                 r'^(?:from\s*)'
             ])
             if cleaned and cleaned.lower() not in ["other", "skip"]:
-                prefs.origin = cleaned.title()
+                prefs.origin = smart_title(cleaned)
                 if "origin" not in prefs.completed_steps:
                     prefs.completed_steps.append("origin")
 

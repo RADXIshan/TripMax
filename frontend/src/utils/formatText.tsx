@@ -44,7 +44,7 @@ export function renderCleanMessage(text: string): React.ReactNode {
             parts.push(cleanLine.substring(lastIndex, match.index));
           }
           parts.push(
-            <span key={`${lineIdx}-${match.index}`} className="font-semibold text-stone-900 dark:text-stone-100">
+            <span key={`${lineIdx}-${match.index}`} className="font-semibold text-inherit">
               {match[1]}
             </span>
           );

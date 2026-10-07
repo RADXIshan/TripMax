@@ -51,10 +51,10 @@ export const ResetTripModal: React.FC<ResetTripModalProps> = ({
             </div>
             <div>
               <h3 className="text-base font-bold text-stone-100">
-                Reset Current Trip?
+                Plan a New Trip?
               </h3>
               <p className="text-xs text-stone-400 mt-0.5">
-                {destinationName ? `Ongoing journey for ${destinationName}` : 'Active trip discovery in progress'}
+                {destinationName ? `Ongoing journey for ${destinationName}` : 'Active trip chat in progress'}
               </p>
             </div>
           </div>
@@ -71,7 +71,7 @@ export const ResetTripModal: React.FC<ResetTripModalProps> = ({
         <div className="p-3 rounded-xl bg-stone-850/60 border border-stone-800 text-xs text-stone-300 leading-relaxed flex items-start gap-2.5">
           <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
           <span>
-            You have active trip parameters and discovery data. Would you like to save this trip to your <strong>All Trips</strong> archive before resetting, or delete it completely?
+            You have an active chat going on. Would you like to save this trip to your <strong>All Trips</strong> archive before starting a new one, or delete it?
           </span>
         </div>
 
@@ -83,7 +83,7 @@ export const ResetTripModal: React.FC<ResetTripModalProps> = ({
             className="w-full py-2.5 px-4 rounded-xl bg-stone-100 hover:bg-white text-stone-900 border border-stone-200 text-xs font-semibold flex items-center justify-center gap-2 transition-all cursor-pointer shadow-xs hover:shadow"
           >
             <BookmarkCheck className="w-4 h-4 text-stone-900" />
-            <span>Save to All Trips & Reset</span>
+            <span>Save Trip & Plan New Trip</span>
           </button>
 
           {/* Option 2: Delete & Reset */}
@@ -92,7 +92,7 @@ export const ResetTripModal: React.FC<ResetTripModalProps> = ({
             className="w-full py-2.5 px-4 rounded-xl bg-rose-950/40 border border-rose-800/80 text-rose-300 hover:bg-rose-900/50 hover:text-rose-200 text-xs font-semibold flex items-center justify-center gap-2 transition-all cursor-pointer shadow-xs"
           >
             <Trash2 className="w-4 h-4 text-rose-400" />
-            <span>Delete Current Trip & Reset</span>
+            <span>Delete Current Trip & Plan New Trip</span>
           </button>
 
           {/* Option 3: Cancel */}
@@ -100,7 +100,7 @@ export const ResetTripModal: React.FC<ResetTripModalProps> = ({
             onClick={onClose}
             className="w-full py-2 px-4 rounded-xl text-stone-400 hover:text-stone-200 hover:bg-stone-800/50 text-xs font-medium transition-colors cursor-pointer text-center"
           >
-            Keep Working (Cancel)
+            Keep Working on Current Trip (Cancel)
           </button>
         </div>
       </div>
