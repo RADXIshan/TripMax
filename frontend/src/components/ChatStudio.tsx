@@ -88,9 +88,9 @@ export const ChatStudio: React.FC<ChatStudioProps> = ({
             <button
               onClick={onSaveTrip}
               title="Save all current trip data into All Trips archive"
-              className="px-2.5 py-1.5 rounded-lg border border-stone-700 bg-stone-800/80 hover:bg-stone-800 hover:border-stone-600 text-stone-200 hover:text-stone-100 text-xs font-medium flex items-center gap-1.5 transition-all duration-150 cursor-pointer shadow-2xs"
+              className="px-2.5 py-1.5 rounded-lg bg-stone-100 hover:bg-white text-stone-900 border border-stone-200 text-xs font-semibold flex items-center gap-1.5 transition-all duration-150 cursor-pointer shadow-xs hover:shadow"
             >
-              <Bookmark className="w-3.5 h-3.5 text-stone-400" />
+              <Bookmark className="w-3.5 h-3.5 text-stone-700" />
               <span>Save Trip</span>
             </button>
           )}
@@ -99,9 +99,9 @@ export const ChatStudio: React.FC<ChatStudioProps> = ({
           <button
             onClick={onResetChat}
             title="Reset trip"
-            className="px-2.5 py-1.5 rounded-lg border border-stone-700 bg-stone-800/80 hover:bg-stone-800 hover:border-stone-600 text-stone-300 hover:text-stone-100 text-xs font-medium flex items-center gap-1.5 transition-all duration-150 cursor-pointer shadow-2xs"
+            className="px-2.5 py-1.5 rounded-lg bg-stone-100 hover:bg-white text-stone-900 border border-stone-200 text-xs font-semibold flex items-center gap-1.5 transition-all duration-150 cursor-pointer shadow-xs hover:shadow"
           >
-            <RotateCcw className="w-3.5 h-3.5 text-stone-400" />
+            <RotateCcw className="w-3.5 h-3.5 text-stone-700" />
             <span>Reset Trip</span>
           </button>
         </div>
@@ -254,7 +254,7 @@ export const ChatStudio: React.FC<ChatStudioProps> = ({
             <button
               onClick={onGeneratePlan}
               disabled={isGeneratingPlan}
-              className="text-xs font-semibold px-3.5 py-1.5 rounded-lg bg-stone-800 hover:bg-stone-700 border border-stone-600 text-stone-100 transition-colors cursor-pointer whitespace-nowrap shadow-xs"
+              className="text-xs font-semibold px-3.5 py-1.5 rounded-lg bg-stone-100 hover:bg-white text-stone-900 border border-stone-200 transition-all cursor-pointer whitespace-nowrap shadow-xs hover:shadow disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isPlanReady ? "Regenerate Plan" : "Generate Plan"}
             </button>

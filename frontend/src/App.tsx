@@ -26,15 +26,17 @@ const API_BASE = "";
 const initialGreeting: ChatMessage = {
   id: 'init-msg-1',
   role: 'assistant',
-  content: "Hello! I am TripMax, your intelligent travel architect.\n\nWhere in the world would you love to travel to?",
+  content: "Welcome to TripMax! I am your Trip Discovery Architect. Let's design your perfect journey step-by-step.\n\nFirst, where in the world would you love to travel?",
   agent_name: "Discovery Agent",
   stage: "discovery",
+  question_key: "destination",
   suggested_replies: [
-    { label: "Kyoto & Tokyo, Japan", value: "I want to visit Kyoto & Tokyo, Japan" },
-    { label: "Swiss Alps & Zurich", value: "Planning a trip to Swiss Alps & Zurich, Switzerland" },
-    { label: "Amalfi Coast, Italy", value: "Looking for a trip to the Amalfi Coast, Italy" },
-    { label: "Paris, France", value: "I would love to explore Paris, France" },
-    { label: "Bali, Indonesia", value: "Want to travel to Bali, Indonesia" },
+    { label: "🌸 Tokyo & Kyoto, Japan", value: "Tokyo & Kyoto, Japan" },
+    { label: "🏔️ Swiss Alps & Zurich, Switzerland", value: "Swiss Alps & Zurich, Switzerland" },
+    { label: "🏛️ Rome & Amalfi Coast, Italy", value: "Rome & Amalfi Coast, Italy" },
+    { label: "🥐 Paris & French Riviera, France", value: "Paris & French Riviera, France" },
+    { label: "🌴 Bali, Indonesia", value: "Bali, Indonesia" },
+    { label: "✏️ Other (Write your own)", value: "other", is_other: true, placeholder: "Enter destination (e.g. Barcelona, Iceland, Hawaii)..." }
   ]
 };
 
@@ -49,9 +51,10 @@ export const App = () => {
   const [preferences, setPreferences] = useState<TripPreferences>({
     interests: [],
     budget_currency: 'USD',
-    duration_days: 5,
-    travel_pace: 'balanced',
-    transport_preference: 'both'
+    duration_days: undefined,
+    travel_pace: undefined,
+    transport_preference: undefined,
+    current_question_key: 'destination'
   });
   const [currentView, setCurrentView] = useState<NavView>('chat');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -277,9 +280,10 @@ export const App = () => {
     setPreferences({
       interests: [],
       budget_currency: currency,
-      duration_days: 5,
-      travel_pace: 'balanced',
-      transport_preference: 'both'
+      duration_days: undefined,
+      travel_pace: undefined,
+      transport_preference: undefined,
+      current_question_key: 'destination'
     });
   };
 
@@ -536,10 +540,10 @@ ${plan.itinerary.map((d) => `### Day ${d.day}: ${d.title}
 
                   <button
                     onClick={() => setCurrentView('itinerary')}
-                    className="w-full mt-4 py-2.5 rounded-xl bg-stone-800 hover:bg-stone-750 border border-stone-700 hover:border-stone-600 text-stone-100 text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer shadow-xs"
+                    className="w-full mt-4 py-2.5 rounded-xl bg-stone-100 hover:bg-white text-stone-900 border border-stone-200 text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-xs hover:shadow"
                   >
                     <span>View Full Itinerary</span>
-                    <ArrowRight className="w-3.5 h-3.5" />
+                    <ArrowRight className="w-3.5 h-3.5 text-stone-900" />
                   </button>
                 </div>
               )}

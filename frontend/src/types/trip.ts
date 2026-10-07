@@ -12,12 +12,15 @@ export interface TripPreferences {
   interests: string[];
   special_requirements?: string;
   completed_steps?: string[];
+  current_question_key?: string;
 }
 
 export interface SuggestedReply {
   label: string;
   value: string;
   category?: string;
+  is_other?: boolean;
+  placeholder?: string;
 }
 
 export interface ChatMessage {
@@ -28,6 +31,7 @@ export interface ChatMessage {
   suggested_replies?: SuggestedReply[];
   stage?: 'discovery' | 'researching' | 'ready_to_plan' | 'plan_ready' | 'refining';
   timestamp?: string;
+  question_key?: string;
 }
 
 export interface FlightOption {

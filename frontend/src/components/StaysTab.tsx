@@ -92,10 +92,10 @@ export const StaysTab: React.FC<StaysTabProps> = ({ plan }) => {
                 href={stay.booking_url}
                 target="_blank"
                 rel="noreferrer"
-                className="px-3.5 py-2 rounded-xl bg-stone-800 hover:bg-stone-750 border border-stone-700 hover:border-stone-600 text-stone-100 text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-xs"
+                className="px-3.5 py-2 rounded-xl bg-stone-100 hover:bg-white text-stone-900 border border-stone-200 text-xs font-semibold flex items-center gap-1.5 transition-all shadow-xs hover:shadow"
               >
                 <span>Reserve on {stay.provider}</span>
-                <ExternalLink className="w-3 h-3" />
+                <ExternalLink className="w-3 h-3 text-stone-900" />
               </a>
             </div>
           </div>

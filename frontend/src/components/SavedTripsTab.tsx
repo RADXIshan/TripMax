@@ -60,9 +60,9 @@ export const SavedTripsTab: React.FC<SavedTripsTabProps> = ({
 
         <button
           onClick={onNewTrip}
-          className="px-4 py-2 rounded-xl bg-stone-800 hover:bg-stone-750 border border-stone-700 hover:border-stone-600 text-stone-100 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer self-start sm:self-auto shadow-xs"
+          className="px-4 py-2 rounded-xl bg-stone-100 hover:bg-white text-stone-900 border border-stone-200 text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer self-start sm:self-auto shadow-xs hover:shadow"
         >
-          <Plus className="w-3.5 h-3.5" />
+          <Plus className="w-3.5 h-3.5 text-stone-900" />
           <span>Plan New Journey</span>
         </button>
       </div>
@@ -136,10 +136,10 @@ export const SavedTripsTab: React.FC<SavedTripsTabProps> = ({
 
                   <button
                     onClick={() => onSelectTrip(record.plan)}
-                    className="px-3.5 py-1.5 rounded-xl bg-stone-800 hover:bg-stone-750 border border-stone-700 hover:border-stone-600 text-stone-100 text-xs font-semibold flex items-center gap-1 transition-colors cursor-pointer shadow-2xs"
+                    className="px-3.5 py-1.5 rounded-xl bg-stone-100 hover:bg-white text-stone-900 border border-stone-200 text-xs font-semibold flex items-center gap-1 transition-all cursor-pointer shadow-xs hover:shadow"
                   >
                     <span>{isCurrent ? 'Viewing Now' : 'Open Plan'}</span>
-                    <ArrowRight className="w-3.5 h-3.5" />
+                    <ArrowRight className="w-3.5 h-3.5 text-stone-900" />
                   </button>
                 </div>
               </div>
@@ -166,7 +166,7 @@ export const SavedTripsTab: React.FC<SavedTripsTabProps> = ({
             </button>
             <button
               onClick={onNewTrip}
-              className="text-xs px-3 py-1.5 rounded-xl bg-stone-800 hover:bg-stone-750 border border-stone-700 hover:border-stone-600 text-stone-100 font-semibold cursor-pointer"
+              className="text-xs px-3.5 py-1.5 rounded-xl bg-stone-100 hover:bg-white text-stone-900 border border-stone-200 font-semibold cursor-pointer transition-all shadow-xs hover:shadow"
             >
               Start New Discovery
             </button>

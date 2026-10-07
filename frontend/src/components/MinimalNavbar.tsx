@@ -93,9 +93,9 @@ export const MinimalNavbar: React.FC<MinimalNavbarProps> = ({
           <button
             onClick={onSaveTrip}
             title="Save trip into All Trips archive"
-            className="text-xs px-2.5 py-1 rounded-lg border border-stone-700 bg-stone-800/80 hover:bg-stone-800 hover:border-stone-600 text-stone-200 hover:text-stone-100 transition-colors flex items-center gap-1.5 cursor-pointer shadow-2xs"
+            className="text-xs px-2.5 py-1 rounded-lg bg-stone-100 hover:bg-white text-stone-900 border border-stone-200 font-semibold transition-all flex items-center gap-1.5 cursor-pointer shadow-xs hover:shadow"
           >
-            <Bookmark className="w-3.5 h-3.5 text-stone-400" />
+            <Bookmark className="w-3.5 h-3.5 text-stone-700" />
             <span>Save Trip</span>
           </button>
         )}

@@ -84,11 +84,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <button
             onClick={onNewTrip}
             title={collapsed ? 'Plan New Trip' : undefined}
-            className={`w-full flex items-center gap-2 py-2 px-3 rounded-xl bg-stone-800 hover:bg-stone-750 border-[1.5px] border-stone-700 hover:border-stone-600 text-stone-100 text-xs font-semibold shadow-xs transition-all cursor-pointer ${
+            className={`w-full flex items-center gap-2 py-2 px-3 rounded-xl bg-stone-100 hover:bg-white text-stone-900 border-[1.5px] border-stone-100 hover:border-white text-xs font-semibold shadow-xs hover:shadow transition-all cursor-pointer ${
               collapsed ? 'justify-center px-0' : ''
             }`}
           >
-            <Plus className="w-4 h-4 shrink-0" />
+            <Plus className="w-4 h-4 shrink-0 text-stone-900" />
             {!collapsed && <span>Plan New Trip</span>}
           </button>
         </div>

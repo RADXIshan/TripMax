@@ -5,21 +5,24 @@ class TripPreferences(BaseModel):
     destination: Optional[str] = None
     origin: Optional[str] = None
     dates: Optional[str] = None
-    duration_days: Optional[int] = 5
+    duration_days: Optional[int] = None
     budget_amount: Optional[float] = None
     budget_currency: str = "USD"
     party_type: Optional[str] = None  # solo, couple, friends, family
-    travel_pace: Optional[str] = "balanced"  # relaxed, balanced, fast-paced
-    transport_preference: Optional[str] = "both"  # flight, train, both
-    stay_preference: Optional[str] = "boutique"  # boutique, luxury, budget_hotel, hostel, apartment, authentic
+    travel_pace: Optional[str] = None  # relaxed, balanced, fast-paced
+    transport_preference: Optional[str] = None  # flight, train, both
+    stay_preference: Optional[str] = None  # boutique, luxury, budget_hotel, hostel, apartment, authentic
     interests: List[str] = Field(default_factory=list)  # food, culture, history, nightlife, nature, shopping, photography, relaxation
     special_requirements: Optional[str] = None
     completed_steps: List[str] = Field(default_factory=list)
+    current_question_key: Optional[str] = None
 
 class SuggestedReply(BaseModel):
     label: str
     value: str
     category: Optional[str] = None
+    is_other: Optional[bool] = False
+    placeholder: Optional[str] = None
 
 class ChatMessage(BaseModel):
     id: str
@@ -29,6 +32,7 @@ class ChatMessage(BaseModel):
     suggested_replies: Optional[List[SuggestedReply]] = None
     stage: Optional[str] = "discovery"  # discovery, researching, plan_ready, refining
     timestamp: Optional[str] = None
+    question_key: Optional[str] = None
     metadata: Optional[Dict[str, Any]] = None
 
 class FlightOption(BaseModel):

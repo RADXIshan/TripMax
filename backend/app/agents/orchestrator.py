@@ -41,7 +41,8 @@ class AgentOrchestrator:
         updated_prefs = DiscoveryAgent.update_preferences_from_text(message, preferences)
 
         # 2. Check if user wants to generate plan or if we need advancing questions
-        bot_response, suggested_replies, stage = DiscoveryAgent.get_next_step(updated_prefs, message)
+        bot_response, suggested_replies, stage, q_key = DiscoveryAgent.get_next_step(updated_prefs, message)
+        updated_prefs.current_question_key = q_key
 
         # Build response message
         msg_id = str(uuid.uuid4())
@@ -51,7 +52,8 @@ class AgentOrchestrator:
             content=bot_response,
             agent_name="Discovery Agent",
             suggested_replies=suggested_replies,
-            stage=stage
+            stage=stage,
+            question_key=q_key
         )
 
         return {
@@ -70,8 +72,21 @@ class AgentOrchestrator:
         """
         Dispatches all specialized agents to construct the complete TripPlan.
         """
+        # Ensure fallback defaults if plan generation is triggered before all questions
+        preferences.destination = preferences.destination or "World Explorer"
+        preferences.origin = preferences.origin or "Home City"
+        preferences.duration_days = preferences.duration_days or 5
+        preferences.budget_amount = preferences.budget_amount or 2500
+        preferences.budget_currency = preferences.budget_currency or "USD"
+        preferences.party_type = preferences.party_type or "Travelers"
+        preferences.travel_pace = preferences.travel_pace or "balanced"
+        preferences.transport_preference = preferences.transport_preference or "both"
+        preferences.stay_preference = preferences.stay_preference or "boutique"
+        if not preferences.interests:
+            preferences.interests = ["culinary & food", "culture & history"]
+
         logs = []
-        logs.append(f"🤖 [Orchestrator] Starting trip architecture for destination: {preferences.destination or 'World Explorer'}")
+        logs.append(f"🤖 [Orchestrator] Starting trip architecture for destination: {preferences.destination}")
         
         # 1. Live Web Research
         logs.append(f"🌐 [WebResearchAgent] Initiating live web queries across attractions, transit passes, and food...")
