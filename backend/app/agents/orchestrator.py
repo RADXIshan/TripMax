@@ -14,6 +14,7 @@ from app.agents.transit_agent import TransitAgent
 from app.agents.stay_agent import StayAgent
 from app.agents.itinerary_agent import ItineraryAgent
 from app.agents.budget_agent import BudgetAgent
+from app.agents.critic_agent import CriticAgent
 
 class AgentOrchestrator:
     """
@@ -99,19 +100,32 @@ class AgentOrchestrator:
         research_sources = await ResearchAgent.conduct_destination_research(preferences)
         logs.append(f"✅ [WebResearchAgent] Retrieved {len(research_sources)} live intelligence sources and verified local links.")
 
+        # Check if destination exists in curated database or synthesize dynamically
+        from app.services.destination_knowledge import get_destination_data
+        from app.services.web_search_synthesizer import WebSearchSynthesizer
+        dest_data = get_destination_data(preferences.destination)
+        gemini_data = None
+        if not dest_data:
+            logs.append(f"🧠 [WebSearchSynthesizer] Analyzing live intelligence for '{preferences.destination}' via generative synthesis...")
+            gemini_data = await WebSearchSynthesizer.try_gemini_generation(preferences, research_sources)
+            if gemini_data:
+                logs.append(f"✅ [WebSearchSynthesizer] Successfully synthesized authentic hotels, landmarks, and transit for {preferences.destination}.")
+            else:
+                logs.append(f"ℹ️ [WebSearchSynthesizer] Synthesized real destination architecture using live web citations & Wikipedia REST API.")
+
         # 2. Transit Agent (Flights vs Trains)
         logs.append(f"🚆✈️ [TransitAgent] Evaluating real flight carriers vs high-speed trains for {preferences.dates}...")
-        flights, trains = TransitAgent.evaluate_transit(preferences)
+        flights, trains = TransitAgent.evaluate_transit(preferences, gemini_data)
         logs.append(f"✅ [TransitAgent] Evaluated {len(flights)} flight options and {len(trains)} rail routes with deep booking URLs.")
 
         # 3. Stay Agent
         logs.append(f"🏨 [StayAgent] Curating verified hotels matching budget {preferences.budget_currency} {preferences.budget_amount or 'custom'} for {preferences.dates}...")
-        stays = StayAgent.recommend_stays(preferences)
-        logs.append(f"✅ [StayAgent] Selected 4 curated accommodations (Boutique, Authentic, Luxury, Value) with live check-in/out links.")
+        stays = await StayAgent.recommend_stays(preferences, gemini_data)
+        logs.append(f"✅ [StayAgent] Selected {len(stays)} curated accommodations with live check-in/out links.")
 
         # 4. Itinerary Agent
         logs.append(f"📅 [ItineraryAgent] Engineering {preferences.duration_days or 5}-day pacing, seasonal weather, and photo-backed schedule...")
-        itinerary = ItineraryAgent.generate_day_by_day(preferences, [s.model_dump() for s in research_sources])
+        itinerary = await ItineraryAgent.generate_day_by_day(preferences, [s.model_dump() for s in research_sources], gemini_data)
         logs.append(f"✅ [ItineraryAgent] Completed detailed morning/afternoon/evening schedule for {len(itinerary)} days with verified sources.")
 
         # 5. Budget & Checklist Agent
@@ -143,8 +157,8 @@ class AgentOrchestrator:
             season=preferences.season,
             tagline=tagline,
             overview=overview,
-            best_time_to_visit=f"{preferences.season or 'Spring/Autumn'} ({preferences.travel_month or 'Peak Season'}) for optimal seasonal weather and cultural highlights.",
-            local_transport_pass_tip=f"Pick up the regional unlimited transit smartcard upon arrival at the main station/airport.",
+            best_time_to_visit=f"{preferences.season or 'Spring/Autumn'} ({preferences.travel_month or 'Peak Season'}) for optimal seasonal weather and cultural highlights in {dest}.",
+            local_transport_pass_tip=f"Pick up the regional unlimited public transit smartcard upon arrival at {dest} airport or central station.",
             flights=flights,
             trains=trains,
             stays=stays,
@@ -167,6 +181,11 @@ class AgentOrchestrator:
             except Exception as e:
                 logs.append(f"ℹ️ [Gemini Engine] Using high-fidelity base synthesis: {e}")
 
+        # 6. Critic & Quality Evaluation Agent (Self-Evaluation Audit)
+        logs.append("🧐 [CriticAgent] Executing 5-point self-evaluation audit on budget, reviews, dates, and multi-site links...")
+        plan, evaluation = CriticAgent.evaluate_and_optimize(plan, preferences)
+        logs.append(f"🏆 [CriticAgent] Plan certified with Quality Score: {plan.quality_score}/100 across {evaluation['multi_platform_count']} booking platforms.")
+
         return plan
 
     @classmethod
@@ -180,7 +199,7 @@ class AgentOrchestrator:
             f"Highlight both scenic train and flight connectivity. Do not use markdown double asterisks (**) or raw bullet asterisks; keep sentences smooth, clean, and natural."
         )
         
-        models_to_try = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash']
+        models_to_try = ['gemini-flash-latest', 'gemini-flash-lite-latest', 'gemini-2.5-flash', 'gemini-2.0-flash']
         for model_name in models_to_try:
             try:
                 response = await client.aio.models.generate_content(

@@ -63,27 +63,27 @@ export const BudgetTab: React.FC<BudgetTabProps> = ({ plan }) => {
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="text-base font-bold text-stone-900 dark:text-stone-100">
+        <h3 className="text-base font-bold text-stone-100">
           Financial Blueprint & Budget Analysis
         </h3>
-        <p className="text-xs text-stone-500 dark:text-stone-400 mt-0.5">
+        <p className="text-xs text-stone-400 mt-0.5">
           Audited breakdown per traveler for {plan.duration_days} days in {plan.destination}
         </p>
       </div>
 
       {/* Primary KPI Card */}
-      <div className="p-5 rounded-2xl bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 shadow-2xs">
+      <div className="p-5 rounded-2xl bg-stone-900 border border-stone-800 shadow-2xs">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <span className="text-[10px] uppercase tracking-wider font-semibold text-stone-400">
               Total Projected Spend
             </span>
-            <div className="text-2xl sm:text-3xl font-extrabold text-stone-900 dark:text-stone-100 mt-0.5 tracking-tight">
+            <div className="text-2xl sm:text-3xl font-extrabold text-stone-100 mt-0.5 tracking-tight">
               {curr} {budget.total_estimated.toLocaleString()}
             </div>
             {budget.target_budget && (
-              <p className="text-xs text-stone-500 dark:text-stone-400 mt-1">
-                Target Cap: <strong className="text-stone-700 dark:text-stone-300">{curr} {budget.target_budget.toLocaleString()}</strong>
+              <p className="text-xs text-stone-400 mt-1">
+                Target Cap: <strong className="text-stone-200">{curr} {budget.target_budget.toLocaleString()}</strong>
               </p>
             )}
           </div>
@@ -96,7 +96,7 @@ export const BudgetTab: React.FC<BudgetTabProps> = ({ plan }) => {
 
         {/* Proportional Progress Distribution Bar */}
         <div className="mt-6">
-          <div className="h-3 w-full rounded-full bg-stone-100 dark:bg-stone-700 overflow-hidden flex">
+          <div className="h-3 w-full rounded-full bg-stone-800 overflow-hidden flex">
             {categories.map((cat, idx) => {
               const pct = (cat.amount / total) * 100;
               return (
@@ -118,13 +118,13 @@ export const BudgetTab: React.FC<BudgetTabProps> = ({ plan }) => {
               return (
                 <div
                   key={idx}
-                  className="p-3 rounded-xl bg-stone-50 dark:bg-stone-900/60 border border-stone-200/80 dark:border-stone-700/80 text-xs"
+                  className="p-3 rounded-xl bg-stone-850 border border-stone-750 text-xs"
                 >
-                  <div className="flex items-center gap-1.5 text-stone-500 dark:text-stone-400 mb-1">
+                  <div className="flex items-center gap-1.5 text-stone-400 mb-1">
                     <Icon className="w-3.5 h-3.5" />
                     <span className="truncate text-[11px]">{cat.name}</span>
                   </div>
-                  <div className="font-bold text-stone-900 dark:text-stone-100">
+                  <div className="font-bold text-stone-100">
                     {curr} {cat.amount.toLocaleString()}
                   </div>
                   <div className="text-[10px] text-stone-400">
@@ -139,14 +139,14 @@ export const BudgetTab: React.FC<BudgetTabProps> = ({ plan }) => {
 
       {/* Agent Financial Insights */}
       {budget.insights && budget.insights.length > 0 && (
-        <div className="p-4 rounded-xl bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 space-y-2">
-          <h4 className="text-xs font-bold uppercase tracking-wider text-stone-500 dark:text-stone-400 flex items-center gap-1.5">
+        <div className="p-4 rounded-xl bg-stone-900 border border-stone-800 space-y-2">
+          <h4 className="text-xs font-bold uppercase tracking-wider text-stone-400 flex items-center gap-1.5">
             <TrendingUp className="w-3.5 h-3.5" />
             <span>Agent Budget Advisory & Optimization Notes</span>
           </h4>
           <div className="space-y-1.5">
             {budget.insights.map((note, idx) => (
-              <p key={idx} className="text-xs text-stone-700 dark:text-stone-300 leading-relaxed">
+              <p key={idx} className="text-xs text-stone-300 leading-relaxed">
                 {note}
               </p>
             ))}

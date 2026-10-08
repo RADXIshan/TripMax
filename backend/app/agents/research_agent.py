@@ -18,11 +18,11 @@ class ResearchAgent:
         interests_str = " ".join(prefs.interests) if prefs.interests else "culture food scenic"
 
         queries = [
-            f"{dest} top attractions hidden gems travel guide {interests_str}",
-            f"travel from {origin} to {dest} flights and high speed trains",
-            f"best neighborhoods to stay in {dest} safety vibe",
-            f"must eat local dishes restaurants food guide {dest}",
-            f"{dest} public transport tourist pass tickets tips"
+            f"{dest} top sights attractions travel guide",
+            f"{dest} travel guide lonely planet",
+            f"best places to stay neighborhoods {dest}",
+            f"must eat local dishes food guide {dest}",
+            f"{dest} public transit getting around tips"
         ]
 
         raw_results = await search_service.multi_search(queries, max_per_query=3)

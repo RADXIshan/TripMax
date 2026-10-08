@@ -2,7 +2,9 @@ import urllib.parse
 from datetime import datetime, timedelta
 from typing import List, Dict, Any, Optional
 from app.models.trip import TripPreferences, ItineraryDay, ActivityItem, DiningRecommendation, ResearchSource
-from app.services.deep_links import get_attraction_booking_url, get_viator_url
+from app.services.deep_links import get_attraction_booking_url, get_viator_url, get_multi_activity_links
+from app.services.destination_knowledge import get_destination_data
+from app.services.image_service import image_service
 
 class ItineraryAgent:
     """
@@ -12,10 +14,115 @@ class ItineraryAgent:
     """
 
     @classmethod
-    def generate_day_by_day(
+    def _build_destination_knowledge_day(cls, day: int, dest_data: Dict[str, Any], dest: str, rate: float, curr: str) -> ItineraryDay:
+        days_templates = dest_data.get("days", [])
+        t = days_templates[(day - 1) % len(days_templates)]
+        m = t["morning"]
+        a = t["afternoon"]
+        e = t["evening"]
+        l = t["lunch"]
+        din = t["dinner"]
+
+        m_title = m["title"]
+        a_title = a["title"]
+        e_title = e["title"]
+        m_img = image_service.get_image_for_query(m.get("wiki_query") or m_title, category="temple", destination=dest)
+        a_img = image_service.get_image_for_query(a.get("wiki_query") or a_title, category="museum", destination=dest)
+        e_img = image_service.get_image_for_query(e.get("wiki_query") or e_title, category="sunset", destination=dest)
+        food_img_1 = image_service.get_image_for_query(l["dish"], category="food", destination=dest)
+        food_img_2 = image_service.get_image_for_query(din["dish"], category="food", destination=dest)
+
+        m_cost = round(m["cost"] * rate, 1)
+        a_cost = round(a["cost"] * rate, 1)
+        e_cost = round(e["cost"] * rate, 1)
+
+        m_links = get_multi_activity_links(m_title, dest, m_cost, curr)
+        a_links = get_multi_activity_links(a_title, dest, a_cost, curr)
+        e_links = get_multi_activity_links(e_title, dest, e_cost, curr)
+
+        return ItineraryDay(
+            day=day,
+            title=f"Day {day}: {t['title']}",
+            theme=t["theme"],
+            image_url=m_img,
+            morning=ActivityItem(
+                time=m["time"],
+                title=m_title,
+                location=m["location"],
+                duration=m["duration"],
+                description=m["description"],
+                estimated_cost=m_cost,
+                booking_url=m_links[0].url if m_links else get_attraction_booking_url(m_title, dest),
+                tags=m["tags"],
+                image_url=m_img,
+                source_name=m["source_name"],
+                source_url=m["source_url"],
+                source_snippet=m["source_snippet"],
+                booking_links=m_links
+            ),
+            afternoon=ActivityItem(
+                time=a["time"],
+                title=a_title,
+                location=a["location"],
+                duration=a["duration"],
+                description=a["description"],
+                estimated_cost=a_cost,
+                booking_url=a_links[0].url if a_links else get_attraction_booking_url(a_title, dest),
+                tags=a["tags"],
+                image_url=a_img,
+                source_name=a["source_name"],
+                source_url=a["source_url"],
+                source_snippet=a["source_snippet"],
+                booking_links=a_links
+            ),
+            evening=ActivityItem(
+                time=e["time"],
+                title=e_title,
+                location=e["location"],
+                duration=e["duration"],
+                description=e["description"],
+                estimated_cost=e_cost,
+                booking_url=e_links[0].url if e_links else get_viator_url(e_title, dest),
+                tags=e["tags"],
+                image_url=e_img,
+                source_name=e["source_name"],
+                source_url=e["source_url"],
+                source_snippet=e["source_snippet"],
+                booking_links=e_links
+            ),
+            lunch_recommendation=DiningRecommendation(
+                place=l["place"],
+                dish=l["dish"],
+                vibe=l["vibe"],
+                image_url=food_img_1,
+                source_name=l["source_name"],
+                source_url=l["source_url"],
+                source_snippet=l["source_snippet"]
+            ),
+            dinner_recommendation=DiningRecommendation(
+                place=din["place"],
+                dish=din["dish"],
+                vibe=din["vibe"],
+                image_url=food_img_2,
+                source_name=din["source_name"],
+                source_url=din["source_url"],
+                source_snippet=din["source_snippet"]
+            ),
+            transit_tips=t["transit_tips"],
+            daily_budget_estimate=round(85 * rate, 0),
+            sources=[
+                ResearchSource(title=m["source_name"], url=m["source_url"], snippet=m["source_snippet"]),
+                ResearchSource(title=l["source_name"], url=l["source_url"], snippet=l["source_snippet"])
+            ]
+        )
+
+    @classmethod
+    @classmethod
+    async def generate_day_by_day(
         cls, 
         prefs: TripPreferences, 
-        web_context: List[Dict[str, str]] = None
+        web_context: List[Dict[str, str]] = None,
+        gemini_data: Optional[Dict[str, Any]] = None
     ) -> List[ItineraryDay]:
         dest = prefs.destination or "Destination"
         days_count = min(max(prefs.duration_days or 5, 1), 14)
@@ -44,16 +151,34 @@ class ItineraryAgent:
         if not start_dt:
             start_dt = datetime.now() + timedelta(days=30)
 
+        dest_data = get_destination_data(dest)
         is_japan = any(k in dest_lower for k in ["japan", "kyoto", "tokyo", "osaka"])
         is_italy = any(k in dest_lower for k in ["italy", "amalfi", "rome", "florence", "venice"])
         is_swiss = any(k in dest_lower for k in ["swiss", "switzerland", "zurich", "zermatt", "interlaken"])
         is_france = any(k in dest_lower for k in ["paris", "france", "nice", "provence"])
 
+        # If Gemini dynamic data is available, or if this is a custom global destination, use WebSearchSynthesizer
+        if (gemini_data and gemini_data.get("days")) or (not dest_data and not (is_japan or is_italy or is_swiss or is_france)):
+            from app.services.web_search_synthesizer import WebSearchSynthesizer
+            web_sources_objs = [
+                ResearchSource(
+                    title=s.get("title", f"Travel Guide: {dest}"),
+                    url=s.get("url", f"https://en.wikipedia.org/wiki/{urllib.parse.quote(dest)}"),
+                    snippet=s.get("snippet", "")
+                )
+                for s in (web_context or [])
+            ]
+            dynamic_days = await WebSearchSynthesizer.build_dynamic_itinerary(prefs, web_sources_objs, gemini_data)
+            if dynamic_days:
+                return dynamic_days
+
         season_name = prefs.season or "Autumn"
         month_name = prefs.travel_month or "November"
 
         for d in range(1, days_count + 1):
-            if is_japan:
+            if dest_data and dest_data.get("days"):
+                day_plan = cls._build_destination_knowledge_day(d, dest_data, dest, rate, curr)
+            elif is_japan:
                 day_plan = cls._build_japan_day(d, dest, rate, curr)
             elif is_italy:
                 day_plan = cls._build_italy_day(d, dest, rate, curr)
@@ -98,6 +223,10 @@ class ItineraryAgent:
                     if ls.url not in existing_urls:
                         day_plan.sources.append(ls)
                         existing_urls.add(ls.url)
+
+            # Attach multi-site booking options to all activities
+            for period in [day_plan.morning, day_plan.afternoon, day_plan.evening]:
+                period.booking_links = get_multi_activity_links(period.title, dest)
 
             day_plans.append(day_plan)
 
@@ -945,76 +1074,93 @@ class ItineraryAgent:
     @classmethod
     def _build_generic_day(cls, day: int, dest: str, rate: float, curr: str, interests: List[str]) -> ItineraryDay:
         title_themes = [
-            ("Historic Core & Landmark Marvels", "Cultural Immersion", "https://images.unsplash.com/photo-1488646953014-85cb44e25828?auto=format&fit=crop&w=1200&q=80"),
-            ("Hidden Neighborhoods & Artisan Markets", "Local Secrets & Food", "https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?auto=format&fit=crop&w=1200&q=80"),
-            ("Panoramic Viewpoints & Scenic Outdoors", "Scenic Exploration", "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?auto=format&fit=crop&w=1200&q=80"),
-            ("Arts, Architecture & Waterfront Sunset", "Design & Atmosphere", "https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?auto=format&fit=crop&w=1200&q=80"),
-            ("Leisure Discovery & Farewell Feast", "Celebration & Souvenirs", "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=80")
+            ("Historic Core & Landmark Marvels", "Cultural Immersion"),
+            ("Hidden Neighborhoods & Artisan Markets", "Local Secrets & Food"),
+            ("Panoramic Viewpoints & Scenic Outdoors", "Scenic Exploration"),
+            ("Arts, Architecture & Waterfront Sunset", "Design & Atmosphere"),
+            ("Leisure Discovery & Farewell Feast", "Celebration & Souvenirs")
         ]
         t = title_themes[(day - 1) % len(title_themes)]
         dest_enc = urllib.parse.quote_plus(dest)
+
+        m_title = f"{dest} Historic Highlights & Heritage Center"
+        a_title = f"{dest} Old Town Artisan Quarter & Cultural Promenade"
+        e_title = f"{dest} Sunset Panorama & Scenic Lookout"
+
+        m_img = image_service.get_image_for_query(m_title, category="temple", destination=dest)
+        a_img = image_service.get_image_for_query(a_title, category="museum", destination=dest)
+        e_img = image_service.get_image_for_query(e_title, category="sunset", destination=dest)
+        food_img_1 = image_service.get_image_for_query(f"{dest} food lunch", category="food", destination=dest)
+        food_img_2 = image_service.get_image_for_query(f"{dest} food dinner", category="food", destination=dest)
+
+        m_links = get_multi_activity_links(m_title, dest, round(18 * rate, 1), curr)
+        a_links = get_multi_activity_links(a_title, dest, round(10 * rate, 1), curr)
+        e_links = get_multi_activity_links(e_title, dest, 0, curr)
 
         return ItineraryDay(
             day=day,
             title=f"Day {day}: {t[0]} in {dest}",
             theme=t[1],
-            image_url=t[2],
+            image_url=m_img,
             morning=ActivityItem(
                 time="09:00 AM",
-                title=f"{dest} Iconic Historic Landmark & Heritage Walk",
+                title=m_title,
                 location=f"Central {dest}",
                 duration="3 hours",
-                description=f"Explore the premier architectural wonder and historical highlights of {dest} with early entry to beat queues.",
+                description=f"Explore the premier architectural highlights and historical center of {dest} with early entry to beat queues.",
                 estimated_cost=round(18 * rate, 1),
-                booking_url=get_attraction_booking_url(f"{dest} main landmark", dest),
+                booking_url=m_links[0].url if m_links else get_attraction_booking_url(m_title, dest),
                 tags=["Top Highlight", "Culture", "Heritage"],
-                image_url="https://images.unsplash.com/photo-1488646953014-85cb44e25828?auto=format&fit=crop&w=1000&q=80",
+                image_url=m_img,
                 source_name=f"Wikitravel Guide: {dest}",
                 source_url=f"https://wikitravel.org/en/{urllib.parse.quote_plus(dest.replace(' ', '_'))}",
-                source_snippet=f"Verified landmark highlights, operating schedules, and district maps for {dest}."
+                source_snippet=f"Verified landmark highlights, operating schedules, and district maps for {dest}.",
+                booking_links=m_links
             ),
             afternoon=ActivityItem(
                 time="02:00 PM",
-                title=f"Artisan Quarter & Local Crafts Bazaar",
+                title=a_title,
                 location=f"Old Town Quarter, {dest}",
                 duration="3 hours",
                 description=f"Browse winding historic pedestrian streets, boutique workshops, and sample regional delicacies in {dest}.",
                 estimated_cost=round(10 * rate, 1),
-                booking_url=get_viator_url(f"{dest} walking tour", dest),
+                booking_url=a_links[0].url if a_links else get_attraction_booking_url(a_title, dest),
                 tags=["Hidden Gems", "Shopping", "Artisan"],
-                image_url="https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?auto=format&fit=crop&w=1000&q=80",
+                image_url=a_img,
                 source_name=f"Lonely Planet Travel Guide: {dest}",
                 source_url=f"https://www.google.com/search?q={dest_enc}+lonely+planet+guide",
-                source_snippet=f"Curated artisan quarters, local crafts, and pedestrian walking recommendations in {dest}."
+                source_snippet=f"Curated artisan quarters, local crafts, and pedestrian walking recommendations in {dest}.",
+                booking_links=a_links
             ),
             evening=ActivityItem(
                 time="06:30 PM",
-                title=f"Golden Hour Sunset Viewpoint & Scenic Promenade",
+                title=e_title,
                 location=f"Skyline Terrace / Waterfront, {dest}",
                 duration="2.5 hours",
                 description=f"Watch the sunset illuminate {dest}'s skyline, followed by relaxed drinks and evening ambiance.",
                 estimated_cost=0,
-                booking_url=get_viator_url(f"{dest} evening", dest),
+                booking_url=e_links[0].url if e_links else get_viator_url(e_title, dest),
                 tags=["Sunset", "Relaxation", "Skyline"],
-                image_url="https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?auto=format&fit=crop&w=1000&q=80",
+                image_url=e_img,
                 source_name=f"Google Travel & Tourism Archive: {dest}",
                 source_url=f"https://www.google.com/travel/things-to-do?dest_src=ut&dest_mid={dest_enc}",
-                source_snippet=f"Top panoramic viewpoints and golden hour vantage points reviewed by travelers in {dest}."
+                source_snippet=f"Top panoramic viewpoints and golden hour vantage points reviewed by travelers in {dest}.",
+                booking_links=e_links
             ),
             lunch_recommendation=DiningRecommendation(
-                place=f"Bistro Saint-{dest}",
-                dish="Chef's Signature Regional Platter",
-                vibe="Charming courtyard setting",
-                image_url="https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=900&q=80",
+                place=f"Trattoria & Bistro {dest}",
+                dish=f"Authentic {dest} Signature Tasting Platter",
+                vibe="Charming local courtyard eatery",
+                image_url=food_img_1,
                 source_name="Michelin & Local Culinary Guide",
                 source_url=f"https://www.google.com/search?q={dest_enc}+best+restaurants+food+guide",
                 source_snippet=f"Acclaimed midday dining featuring regional specialties and local ingredients in {dest}."
             ),
             dinner_recommendation=DiningRecommendation(
-                place=f"The Lantern House {dest}",
-                dish="Fresh Local Catch & Artisan House Wine",
-                vibe="Intimate candlelit dining",
-                image_url="https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=900&q=80",
+                place=f"The Heritage Table {dest}",
+                dish=f"Fresh Regional Specialty & Artisan Wine",
+                vibe="Intimate candlelit dining showcasing authentic regional heritage",
+                image_url=food_img_2,
                 source_name="Eater & Food Travel Archive",
                 source_url=f"https://www.google.com/search?q={dest_enc}+eater+38+dining+guide",
                 source_snippet=f"Celebrated evening dining spotlight with authentic regional flavors and fine wine pairings."

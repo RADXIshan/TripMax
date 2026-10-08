@@ -6,9 +6,10 @@ import {
   MessageSquare,
   BookmarkCheck
 } from 'lucide-react';
-import type { TripPlan, ChatMessage, TripPreferences, SuggestedReply } from './types/trip';
+import type { TripPlan, ChatMessage, TripPreferences, SuggestedReply, AuthUser } from './types/trip';
 import { Sidebar, type NavView } from './components/Sidebar';
 import { MinimalNavbar } from './components/MinimalNavbar';
+import { AuthPage } from './components/AuthPage';
 import { ChatStudio } from './components/ChatStudio';
 import { ItineraryTab } from './components/ItineraryTab';
 import { TransitTab } from './components/TransitTab';
@@ -45,6 +46,20 @@ const RATES_MAP: Record<string, number> = SUPPORTED_CURRENCIES.reduce((acc, c) =
 }, {} as Record<string, number>);
 
 export const App = () => {
+  const [token, setToken] = useState<string | null>(() => localStorage.getItem('tripmax_token'));
+  const [user, setUser] = useState<AuthUser | null>(() => {
+    try {
+      const stored = localStorage.getItem('tripmax_user');
+      return stored ? JSON.parse(stored) : null;
+    } catch {
+      return null;
+    }
+  });
+  const [isAuthChecking, setIsAuthChecking] = useState(true);
+  const [isAuthOpen, setIsAuthOpen] = useState(false);
+  const [authSubtitleHint, setAuthSubtitleHint] = useState<string | undefined>(undefined);
+  const [pendingPlanToSave, setPendingPlanToSave] = useState<TripPlan | null>(null);
+
   const [plan, setPlan] = useState<TripPlan | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([initialGreeting]);
   const [preferences, setPreferences] = useState<TripPreferences>({
@@ -64,10 +79,6 @@ export const App = () => {
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [currency, setCurrency] = useState('USD');
 
-  useEffect(() => {
-    document.documentElement.classList.add('dark');
-  }, []);
-
   const [savedTrips, setSavedTrips] = useState<SavedTripRecord[]>(() => {
     try {
       const stored = localStorage.getItem('tripmax_saved_trips');
@@ -77,35 +88,152 @@ export const App = () => {
     }
   });
 
-  const savePlanToHistory = (newPlan: TripPlan) => {
+  const fetchUserTrips = async (authToken: string) => {
+    try {
+      const res = await fetch(`${API_BASE}/api/trips`, {
+        headers: {
+          'Authorization': `Bearer ${authToken}`
+        }
+      });
+      if (res.ok) {
+        const dbTrips: SavedTripRecord[] = await res.json();
+        setSavedTrips(dbTrips);
+        try {
+          localStorage.setItem('tripmax_saved_trips', JSON.stringify(dbTrips));
+        } catch (_) {}
+      }
+    } catch (err) {
+      console.error('Failed to load trips from Neon database:', err);
+    }
+  };
+
+  useEffect(() => {
+    document.documentElement.classList.add('dark');
+
+    const verifySession = async () => {
+      const savedToken = localStorage.getItem('tripmax_token');
+      if (!savedToken) {
+        setToken(null);
+        setUser(null);
+        setIsAuthChecking(false);
+        return;
+      }
+
+      try {
+        const res = await fetch(`${API_BASE}/api/auth/me`, {
+          headers: {
+            'Authorization': `Bearer ${savedToken}`
+          }
+        });
+        if (res.ok) {
+          const userData: AuthUser = await res.json();
+          setUser(userData);
+          setToken(savedToken);
+          localStorage.setItem('tripmax_user', JSON.stringify(userData));
+          await fetchUserTrips(savedToken);
+        } else {
+          // Token expired or invalid
+          localStorage.removeItem('tripmax_token');
+          localStorage.removeItem('tripmax_user');
+          setToken(null);
+          setUser(null);
+        }
+      } catch (err) {
+        console.warn('Network issue during session check:', err);
+      } finally {
+        setIsAuthChecking(false);
+      }
+    };
+
+    verifySession();
+  }, []);
+
+  const handleAuthSuccess = async (newToken: string, newUser: AuthUser) => {
+    localStorage.setItem('tripmax_token', newToken);
+    localStorage.setItem('tripmax_user', JSON.stringify(newUser));
+    setToken(newToken);
+    setUser(newUser);
+    await fetchUserTrips(newToken);
+
+    if (pendingPlanToSave) {
+      await savePlanToHistory(pendingPlanToSave);
+      confetti({ particleCount: 50, spread: 70, origin: { y: 0.6 } });
+      setToastMessage(`✓ "${pendingPlanToSave.destination}" saved to your account!`);
+      setPendingPlanToSave(null);
+    } else {
+      setToastMessage(`Welcome back, ${newUser.username}!`);
+    }
+
+    setIsAuthOpen(false);
+    setAuthSubtitleHint(undefined);
+    setTimeout(() => setToastMessage(null), 3000);
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('tripmax_token');
+    localStorage.removeItem('tripmax_user');
+    setToken(null);
+    setUser(null);
+    setPlan(null);
+    setSavedTrips([]);
+    setMessages([initialGreeting]);
+    setCurrentView('chat');
+    setToastMessage('Signed out. Continuing as Guest.');
+    setTimeout(() => setToastMessage(null), 2500);
+  };
+
+  const savePlanToHistory = async (newPlan: TripPlan) => {
+    const record: SavedTripRecord = {
+      id: newPlan.id,
+      destination: newPlan.destination,
+      origin: newPlan.origin,
+      duration_days: newPlan.duration_days,
+      dates: newPlan.dates,
+      total_budget: newPlan.budget.total_estimated,
+      currency: newPlan.budget.currency,
+      tagline: newPlan.tagline,
+      savedAt: new Date().toLocaleDateString(undefined, { 
+        month: 'short', 
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      }),
+      plan: newPlan
+    };
+
     setSavedTrips((prev) => {
       const filtered = prev.filter((t) => t.id !== newPlan.id && t.destination !== newPlan.destination);
-      const record: SavedTripRecord = {
-        id: newPlan.id,
-        destination: newPlan.destination,
-        origin: newPlan.origin,
-        duration_days: newPlan.duration_days,
-        dates: newPlan.dates,
-        total_budget: newPlan.budget.total_estimated,
-        currency: newPlan.budget.currency,
-        tagline: newPlan.tagline,
-        savedAt: new Date().toLocaleDateString(undefined, { 
-          month: 'short', 
-          day: 'numeric',
-          hour: '2-digit',
-          minute: '2-digit'
-        }),
-        plan: newPlan
-      };
       const updated = [record, ...filtered];
       try {
         localStorage.setItem('tripmax_saved_trips', JSON.stringify(updated));
       } catch (_) {}
       return updated;
     });
+
+    if (token) {
+      try {
+        const res = await fetch(`${API_BASE}/api/trips`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ plan: newPlan })
+        });
+        if (res.ok) {
+          const savedDbRecord = await res.json();
+          setSavedTrips((prev) => [
+            savedDbRecord,
+            ...prev.filter((t) => t.id !== savedDbRecord.id)
+          ]);
+        }
+      } catch (err) {
+        console.error('Failed to persist trip to Neon PostgreSQL:', err);
+      }
+    }
   };
 
-  const handleDeleteTrip = (id: string) => {
+  const handleDeleteTrip = async (id: string) => {
     setSavedTrips((prev) => {
       const updated = prev.filter((t) => t.id !== id);
       try {
@@ -116,6 +244,19 @@ export const App = () => {
     if (plan?.id === id) {
       setPlan(null);
       setCurrentView('chat');
+    }
+
+    if (token) {
+      try {
+        await fetch(`${API_BASE}/api/trips/${id}`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+      } catch (err) {
+        console.error('Failed to delete trip from Neon PostgreSQL:', err);
+      }
     }
   };
 
@@ -146,9 +287,14 @@ export const App = () => {
     setIsLoading(true);
 
     try {
+      const authHeaders: Record<string, string> = {
+        'Content-Type': 'application/json',
+        ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+      };
+
       const res = await fetch(`${API_BASE}/api/chat`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: authHeaders,
         body: JSON.stringify({
           message: text,
           history: updatedMessages,
@@ -191,9 +337,14 @@ export const App = () => {
   const generatePlan = async (currentPrefs = preferences, prompt?: string) => {
     setIsGeneratingPlan(true);
     try {
+      const authHeaders: Record<string, string> = {
+        'Content-Type': 'application/json',
+        ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+      };
+
       const res = await fetch(`${API_BASE}/api/plan/generate`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: authHeaders,
         body: JSON.stringify({
           preferences: {
             ...currentPrefs,
@@ -238,7 +389,12 @@ export const App = () => {
   const loadSamplePlan = async () => {
     setIsLoading(true);
     try {
-      const res = await fetch(`${API_BASE}/api/plan/sample`);
+      const authHeaders: Record<string, string> = {
+        ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+      };
+      const res = await fetch(`${API_BASE}/api/plan/sample`, {
+        headers: authHeaders
+      });
       if (res.ok) {
         const data: TripPlan = await res.json();
         setPlan(data);
@@ -325,9 +481,15 @@ export const App = () => {
 
   const handleSaveTrip = (customPlan?: TripPlan) => {
     const targetPlan = customPlan || plan || buildDraftPlan();
+    if (!token || !user) {
+      setPendingPlanToSave(targetPlan);
+      setAuthSubtitleHint(`Sign in or create an account to save "${targetPlan.destination}" to your cloud account.`);
+      setIsAuthOpen(true);
+      return;
+    }
     savePlanToHistory(targetPlan);
     confetti({ particleCount: 40, spread: 60, origin: { y: 0.7 } });
-    setToastMessage(`✓ Saved "${targetPlan.destination}" into All Trips!`);
+    setToastMessage(`✓ Saved "${targetPlan.destination}" into your account!`);
     setTimeout(() => setToastMessage(null), 3500);
   };
 
@@ -466,8 +628,24 @@ ${plan.itinerary.map((d) => `### Day ${d.day}: ${d.title}
     document.body.removeChild(a);
   };
 
+  if (isAuthChecking) {
+    return (
+      <div className="h-screen w-screen bg-stone-950 flex flex-col items-center justify-center text-stone-100 select-none">
+        <div className="w-14 h-14 rounded-2xl bg-stone-900 border border-stone-800 flex items-center justify-center mb-4 shadow-xl shadow-black/60">
+          <Compass className="w-7 h-7 text-amber-400 animate-spin" />
+        </div>
+        <div className="text-sm font-semibold tracking-wide text-stone-200">
+          Connecting to TripMax...
+        </div>
+        <div className="text-xs text-stone-500 mt-1">
+          Verifying session...
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="h-screen w-screen overflow-hidden bg-[#121110] text-stone-100 flex font-sans transition-colors">
+    <div className="h-screen w-screen overflow-hidden bg-[#121110] text-stone-100 flex font-sans transition-colors relative">
       {/* Sleek, User-Friendly Vertical Sidebar */}
       <Sidebar
         currentView={currentView}
@@ -477,6 +655,12 @@ ${plan.itinerary.map((d) => `### Day ${d.day}: ${d.title}
         onNewTrip={promptResetTrip}
         collapsed={sidebarCollapsed}
         onToggleCollapsed={() => setSidebarCollapsed(!sidebarCollapsed)}
+        user={user}
+        onLogout={handleLogout}
+        onOpenAuth={() => {
+          setAuthSubtitleHint(undefined);
+          setIsAuthOpen(true);
+        }}
       />
 
       {/* Main Content Area */}
@@ -627,6 +811,18 @@ ${plan.itinerary.map((d) => `### Day ${d.day}: ${d.title}
         onDeleteAndReset={handleDeleteAndReset}
         onSaveAndReset={handleSaveAndReset}
       />
+
+      {/* Auth Modal Overlay */}
+      {isAuthOpen && (
+        <AuthPage 
+          onAuthSuccess={handleAuthSuccess} 
+          onClose={() => {
+            setIsAuthOpen(false);
+            setAuthSubtitleHint(undefined);
+          }}
+          subtitleHint={authSubtitleHint}
+        />
+      )}
 
       {/* Toast Notification */}
       {toastMessage && (

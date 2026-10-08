@@ -10,10 +10,10 @@ export const ResearchSourcesTab: React.FC<ResearchSourcesTabProps> = ({ sources,
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="text-base font-bold text-stone-900 dark:text-stone-100">
+        <h3 className="text-base font-bold text-stone-100">
           Live Web Intelligence & Citations
         </h3>
-        <p className="text-xs text-stone-500 dark:text-stone-400 mt-0.5">
+        <p className="text-xs text-stone-400 mt-0.5">
           Real-time web queries researched by WebResearchAgent for {destination}
         </p>
       </div>
@@ -22,13 +22,13 @@ export const ResearchSourcesTab: React.FC<ResearchSourcesTabProps> = ({ sources,
         {sources.map((src, idx) => (
           <div
             key={idx}
-            className="p-4 rounded-xl bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 shadow-2xs hover:shadow-xs transition-shadow"
+            className="p-4 rounded-xl bg-stone-900 border border-stone-800 shadow-2xs hover:border-stone-700 transition-colors"
           >
             <div className="flex items-start justify-between gap-3">
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
                   <Globe className="w-3.5 h-3.5 text-stone-400 shrink-0" />
-                  <h4 className="text-xs sm:text-sm font-bold text-stone-900 dark:text-stone-100 hover:underline">
+                  <h4 className="text-xs sm:text-sm font-bold text-stone-100 hover:text-amber-400">
                     <a href={src.url} target="_blank" rel="noreferrer">
                       {src.title}
                     </a>
@@ -37,7 +37,7 @@ export const ResearchSourcesTab: React.FC<ResearchSourcesTabProps> = ({ sources,
                 <p className="text-[11px] text-stone-400 truncate max-w-xl">
                   {src.url}
                 </p>
-                <p className="text-xs text-stone-600 dark:text-stone-300 mt-2 leading-relaxed">
+                <p className="text-xs text-stone-300 mt-2 leading-relaxed">
                   {src.snippet}
                 </p>
               </div>
@@ -46,7 +46,7 @@ export const ResearchSourcesTab: React.FC<ResearchSourcesTabProps> = ({ sources,
                 href={src.url}
                 target="_blank"
                 rel="noreferrer"
-                className="p-2 rounded-lg bg-stone-100 dark:bg-stone-700 text-stone-700 dark:text-stone-300 hover:bg-stone-200 dark:hover:bg-stone-600 transition-colors shrink-0"
+                className="p-2 rounded-lg bg-stone-800 text-stone-300 hover:bg-stone-750 hover:text-white transition-colors shrink-0"
                 title="Open Source Link"
               >
                 <ExternalLink className="w-3.5 h-3.5" />

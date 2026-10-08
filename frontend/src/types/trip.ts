@@ -38,6 +38,13 @@ export interface ChatMessage {
   question_key?: string;
 }
 
+export interface BookingLink {
+  provider: string;
+  label: string;
+  url: string;
+  price_hint?: string;
+}
+
 export interface FlightOption {
   airline: string;
   flight_number?: string;
@@ -55,6 +62,7 @@ export interface FlightOption {
   source_url?: string;
   dates?: string;
   image_url?: string;
+  booking_links?: BookingLink[];
 }
 
 export interface TrainOption {
@@ -73,6 +81,7 @@ export interface TrainOption {
   source_url?: string;
   dates?: string;
   image_url?: string;
+  booking_links?: BookingLink[];
 }
 
 export interface StayOption {
@@ -95,6 +104,7 @@ export interface StayOption {
   source_url?: string;
   dates?: string;
   verified_review_snippet?: string;
+  booking_links?: BookingLink[];
 }
 
 export interface DiningRecommendation {
@@ -120,6 +130,7 @@ export interface ActivityItem {
   source_name?: string;
   source_url?: string;
   source_snippet?: string;
+  booking_links?: BookingLink[];
 }
 
 export interface ItineraryDay {
@@ -193,4 +204,30 @@ export interface TripPlan {
   packing_list: PackingItem[];
   research_sources: ResearchSource[];
   agent_logs: string[];
+  quality_score?: number;
+  quality_badge?: string;
+  critic_evaluation?: {
+    overall_score: number;
+    verdict: string;
+    badge: string;
+    audit_checks: Array<{
+      dimension: string;
+      score: number;
+      max_score: number;
+      status: string;
+      details: string;
+    }>;
+    multi_platform_count: number;
+    verified_providers: string[];
+    review_standards_met: boolean;
+    date_synchronized: boolean;
+    evaluator_stamp: string;
+  };
+}
+
+export interface AuthUser {
+  id: string;
+  username: string;
+  email: string;
+  created_at?: string;
 }

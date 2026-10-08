@@ -37,25 +37,25 @@ export const BookingChecklistTab: React.FC<BookingChecklistTabProps> = ({ plan }
   return (
     <div className="space-y-6">
       {/* Header & Concierge Progress */}
-      <div className="p-5 rounded-2xl bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 shadow-2xs">
+      <div className="p-5 rounded-2xl bg-stone-900 border border-stone-800 shadow-2xs">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h3 className="text-base font-bold text-stone-900 dark:text-stone-100">
+            <h3 className="text-base font-bold text-stone-100">
               Trip Preparation & Booking Concierge
             </h3>
-            <p className="text-xs text-stone-500 dark:text-stone-400 mt-0.5">
+            <p className="text-xs text-stone-400 mt-0.5">
               Time-sequenced action milestones to execute your journey stress-free
             </p>
           </div>
 
           <div className="text-right self-start sm:self-auto">
-            <span className="text-xs font-semibold text-stone-800 dark:text-stone-200">
+            <span className="text-xs font-semibold text-stone-200">
               {completedCount} of {totalChecklist} Tasks Done ({progressPercent}%)
             </span>
-            <div className="w-36 h-2 rounded-full bg-stone-100 dark:bg-stone-700 mt-1.5 overflow-hidden">
+            <div className="w-36 h-2 rounded-full bg-stone-800 mt-1.5 overflow-hidden">
               <div
                 style={{ width: `${progressPercent}%` }}
-                className="h-full bg-stone-900 dark:bg-stone-100 transition-all duration-300"
+                className="h-full bg-amber-400 transition-all duration-300"
               />
             </div>
           </div>
@@ -64,7 +64,7 @@ export const BookingChecklistTab: React.FC<BookingChecklistTabProps> = ({ plan }
 
       {/* Booking Timeline Checklist */}
       <div className="space-y-3">
-        <h4 className="text-xs font-bold uppercase tracking-wider text-stone-500 dark:text-stone-400 flex items-center gap-1.5">
+        <h4 className="text-xs font-bold uppercase tracking-wider text-stone-400 flex items-center gap-1.5">
           <CalendarClock className="w-3.5 h-3.5" />
           <span>Sequenced Booking Milestones</span>
         </h4>
@@ -77,17 +77,17 @@ export const BookingChecklistTab: React.FC<BookingChecklistTabProps> = ({ plan }
                 key={item.id}
                 className={`p-3.5 rounded-xl border transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
                   isDone
-                    ? 'bg-stone-50/60 dark:bg-stone-900/40 border-stone-200 dark:border-stone-800 opacity-60'
-                    : 'bg-white dark:bg-stone-800 border-stone-200 dark:border-stone-700 shadow-2xs'
+                    ? 'bg-stone-950/50 border-stone-850 opacity-60'
+                    : 'bg-stone-900 border-stone-800 shadow-2xs hover:border-stone-750'
                 }`}
               >
                 <div className="flex items-start gap-3">
                   <button
                     onClick={() => toggleChecklist(item.id)}
-                    className="mt-0.5 text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 transition-colors cursor-pointer"
+                    className="mt-0.5 text-stone-400 hover:text-stone-100 transition-colors cursor-pointer"
                   >
                     {isDone ? (
-                      <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                      <CheckCircle2 className="w-4 h-4 text-emerald-400" />
                     ) : (
                       <Circle className="w-4 h-4" />
                     )}
@@ -97,14 +97,14 @@ export const BookingChecklistTab: React.FC<BookingChecklistTabProps> = ({ plan }
                     <span
                       className={`text-xs sm:text-sm font-medium ${
                         isDone
-                          ? 'line-through text-stone-400 dark:text-stone-500'
-                          : 'text-stone-900 dark:text-stone-100'
+                          ? 'line-through text-stone-500'
+                          : 'text-stone-100'
                       }`}
                     >
                       {item.task}
                     </span>
                     <div className="flex items-center gap-2 mt-1">
-                      <span className="text-[10px] px-2 py-0.5 rounded-md bg-stone-100 dark:bg-stone-700 text-stone-600 dark:text-stone-300 font-medium">
+                      <span className="text-[10px] px-2 py-0.5 rounded-md bg-stone-800 text-stone-300 font-medium border border-stone-750">
                         {item.category}
                       </span>
                       <span className="text-[11px] text-stone-400">
@@ -119,10 +119,10 @@ export const BookingChecklistTab: React.FC<BookingChecklistTabProps> = ({ plan }
                     href={item.booking_url}
                     target="_blank"
                     rel="noreferrer"
-                    className="px-3 py-1.5 rounded-lg bg-stone-100 dark:bg-stone-700 hover:bg-stone-200 dark:hover:bg-stone-600 text-stone-800 dark:text-stone-200 text-xs font-semibold flex items-center gap-1.5 transition-colors self-end sm:self-auto cursor-pointer"
+                    className="px-3 py-1.5 rounded-lg bg-stone-800 hover:bg-stone-750 border border-stone-700 text-stone-200 text-xs font-semibold flex items-center gap-1.5 transition-colors self-end sm:self-auto cursor-pointer"
                   >
                     <span>Launch Booking</span>
-                    <ExternalLink className="w-3 h-3" />
+                    <ExternalLink className="w-3 h-3 text-stone-400" />
                   </a>
                 )}
               </div>
@@ -132,13 +132,13 @@ export const BookingChecklistTab: React.FC<BookingChecklistTabProps> = ({ plan }
       </div>
 
       {/* Weather & Destination Tailored Packing List */}
-      <div className="space-y-4 pt-4 border-t border-stone-200 dark:border-stone-800">
+      <div className="space-y-4 pt-4 border-t border-stone-800">
         <div>
-          <h4 className="text-xs font-bold uppercase tracking-wider text-stone-500 dark:text-stone-400 flex items-center gap-1.5">
+          <h4 className="text-xs font-bold uppercase tracking-wider text-stone-400 flex items-center gap-1.5">
             <Luggage className="w-3.5 h-3.5" />
             <span>Curated Packing List for {plan.destination}</span>
           </h4>
-          <p className="text-xs text-stone-500 dark:text-stone-400 mt-0.5">
+          <p className="text-xs text-stone-400 mt-0.5">
             Optimized for local climate, temple etiquette, and 15,000+ daily steps
           </p>
         </div>
@@ -147,9 +147,9 @@ export const BookingChecklistTab: React.FC<BookingChecklistTabProps> = ({ plan }
           {plan.packing_list.map((group, gIdx) => (
             <div
               key={gIdx}
-              className="p-4 rounded-xl bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 shadow-2xs"
+              className="p-4 rounded-xl bg-stone-900 border border-stone-800 shadow-2xs"
             >
-              <h5 className="text-xs font-bold text-stone-800 dark:text-stone-200 pb-2 border-b border-stone-100 dark:border-stone-700">
+              <h5 className="text-xs font-bold text-stone-200 pb-2 border-b border-stone-800">
                 {group.category}
               </h5>
               <div className="mt-3 space-y-2">
@@ -160,16 +160,16 @@ export const BookingChecklistTab: React.FC<BookingChecklistTabProps> = ({ plan }
                     <div
                       key={iIdx}
                       onClick={() => togglePacked(itemKey)}
-                      className="flex items-center gap-2.5 text-xs text-stone-700 dark:text-stone-300 cursor-pointer select-none group"
+                      className="flex items-center gap-2.5 text-xs text-stone-300 cursor-pointer select-none group"
                     >
-                      <button className="text-stone-400 group-hover:text-stone-700 dark:group-hover:text-stone-200 transition-colors">
+                      <button className="text-stone-500 group-hover:text-stone-200 transition-colors">
                         {isChecked ? (
-                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
                         ) : (
                           <Circle className="w-3.5 h-3.5" />
                         )}
                       </button>
-                      <span className={isChecked ? 'line-through text-stone-400' : ''}>
+                      <span className={isChecked ? 'line-through text-stone-500' : ''}>
                         {it}
                       </span>
                     </div>

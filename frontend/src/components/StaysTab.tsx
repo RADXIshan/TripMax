@@ -154,6 +154,31 @@ export const StaysTab: React.FC<StaysTabProps> = ({ plan }) => {
                       </a>
                     )}
                   </div>
+
+                  {/* Multi-Site Booking Comparison Links */}
+                  {stay.booking_links && stay.booking_links.length > 0 && (
+                    <div className="pt-2 border-t border-stone-800 space-y-1.5">
+                      <div className="flex items-center justify-between text-[10px] text-stone-400 font-semibold uppercase tracking-wider">
+                        <span>Compare Rates Across Platforms:</span>
+                        <span className="text-emerald-400">Best Rate Guarantee</span>
+                      </div>
+                      <div className="flex flex-wrap gap-1.5">
+                        {stay.booking_links.map((link, lIdx) => (
+                          <a
+                            key={lIdx}
+                            href={link.url}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-[11px] px-2.5 py-1 rounded-lg bg-stone-850 hover:bg-stone-800 text-stone-200 hover:text-white border border-stone-750 flex items-center gap-1 transition-all cursor-pointer"
+                            title={link.price_hint || link.label}
+                          >
+                            <span>{link.label}</span>
+                            <ExternalLink className="w-2.5 h-2.5 text-stone-400" />
+                          </a>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Bottom pricing & direct booking link */}
