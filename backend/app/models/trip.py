@@ -5,6 +5,10 @@ class TripPreferences(BaseModel):
     destination: Optional[str] = None
     origin: Optional[str] = None
     dates: Optional[str] = None
+    start_date: Optional[str] = None
+    end_date: Optional[str] = None
+    travel_month: Optional[str] = None
+    season: Optional[str] = None
     duration_days: Optional[int] = None
     budget_amount: Optional[float] = None
     budget_currency: str = "USD"
@@ -48,6 +52,10 @@ class FlightOption(BaseModel):
     cons: List[str] = Field(default_factory=list)
     booking_url: str
     provider: str = "Google Flights"
+    source_name: Optional[str] = "Google Flights Real-Time Search"
+    source_url: Optional[str] = None
+    dates: Optional[str] = None
+    image_url: Optional[str] = None
 
 class TrainOption(BaseModel):
     operator: str
@@ -61,6 +69,10 @@ class TrainOption(BaseModel):
     pros: List[str] = Field(default_factory=list)
     booking_url: str
     provider: str = "Trainline / Official Rail"
+    source_name: Optional[str] = "Trainline & Official Rail Network"
+    source_url: Optional[str] = None
+    dates: Optional[str] = None
+    image_url: Optional[str] = None
 
 class StayOption(BaseModel):
     id: str
@@ -77,6 +89,16 @@ class StayOption(BaseModel):
     booking_url: str
     provider: str = "Booking.com"
     badge: Optional[str] = None
+    image_url: Optional[str] = None
+    source_name: Optional[str] = "Booking.com Official Verified Listing"
+    source_url: Optional[str] = None
+    dates: Optional[str] = None
+    verified_review_snippet: Optional[str] = None
+
+class ResearchSource(BaseModel):
+    title: str
+    url: str
+    snippet: str
 
 class ActivityItem(BaseModel):
     time: str
@@ -87,22 +109,37 @@ class ActivityItem(BaseModel):
     estimated_cost: float = 0.0
     booking_url: Optional[str] = None
     tags: List[str] = Field(default_factory=list)
+    image_url: Optional[str] = None
+    source_name: Optional[str] = None
+    source_url: Optional[str] = None
+    source_snippet: Optional[str] = None
+
+class DiningRecommendation(BaseModel):
+    place: str
+    dish: str
+    vibe: str
+    image_url: Optional[str] = None
+    source_name: Optional[str] = None
+    source_url: Optional[str] = None
+    source_snippet: Optional[str] = None
 
 class ItineraryDay(BaseModel):
     day: int
     title: str
     theme: str
+    image_url: Optional[str] = None
     morning: ActivityItem
     afternoon: ActivityItem
     evening: ActivityItem
-    lunch_recommendation: Dict[str, str] = Field(
-        default_factory=lambda: {"place": "Local Bistro", "dish": "Chef Special", "vibe": "Authentic"}
+    lunch_recommendation: DiningRecommendation = Field(
+        default_factory=lambda: DiningRecommendation(place="Local Bistro", dish="Chef Special", vibe="Authentic")
     )
-    dinner_recommendation: Dict[str, str] = Field(
-        default_factory=lambda: {"place": "Evening Dining", "dish": "Regional Specialty", "vibe": "Cozy"}
+    dinner_recommendation: DiningRecommendation = Field(
+        default_factory=lambda: DiningRecommendation(place="Evening Dining", dish="Regional Specialty", vibe="Cozy")
     )
     transit_tips: str
     daily_budget_estimate: float
+    sources: List[ResearchSource] = Field(default_factory=list)
 
 class BudgetBreakdown(BaseModel):
     currency: str = "USD"
@@ -128,17 +165,16 @@ class PackingItem(BaseModel):
     category: str
     items: List[str]
 
-class ResearchSource(BaseModel):
-    title: str
-    url: str
-    snippet: str
-
 class TripPlan(BaseModel):
     id: str
     destination: str
     origin: str
     duration_days: int
     dates: str
+    start_date: Optional[str] = None
+    end_date: Optional[str] = None
+    travel_month: Optional[str] = None
+    season: Optional[str] = None
     tagline: str
     overview: str
     best_time_to_visit: str

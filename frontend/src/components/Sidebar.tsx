@@ -7,7 +7,6 @@ import {
   Building, 
   CreditCard, 
   CheckSquare, 
-  Globe, 
   Plus, 
   ChevronLeft, 
   ChevronRight, 
@@ -212,16 +211,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
           >
             <CheckSquare className="w-4 h-4 shrink-0" />
             {!collapsed && <span className="truncate">Booking & Packing</span>}
-          </button>
-
-          {/* Web Intelligence Sources */}
-          <button
-            onClick={() => onViewChange('sources')}
-            title={collapsed ? 'Web Intelligence Citations' : undefined}
-            className={getNavItemClass(currentView === 'sources')}
-          >
-            <Globe className="w-4 h-4 shrink-0" />
-            {!collapsed && <span className="truncate">Web Citations</span>}
           </button>
         </div>
       </div>

@@ -15,7 +15,6 @@ import { TransitTab } from './components/TransitTab';
 import { StaysTab } from './components/StaysTab';
 import { BudgetTab } from './components/BudgetTab';
 import { BookingChecklistTab } from './components/BookingChecklistTab';
-import { ResearchSourcesTab } from './components/ResearchSourcesTab';
 import { SavedTripsTab, type SavedTripRecord } from './components/SavedTripsTab';
 import { LiveSearchModal } from './components/LiveSearchModal';
 import { ResetTripModal } from './components/ResetTripModal';
@@ -574,17 +573,11 @@ ${plan.itinerary.map((d) => `### Day ${d.day}: ${d.title}
             <div className="max-w-6xl mx-auto p-4 sm:p-6 lg:p-8">
               {plan ? (
                 <>
-                  {currentView === 'itinerary' && <ItineraryTab plan={plan} />}
+                  {(currentView === 'itinerary' || currentView === 'sources') && <ItineraryTab plan={plan} />}
                   {currentView === 'transit' && <TransitTab plan={plan} />}
                   {currentView === 'stays' && <StaysTab plan={plan} />}
                   {currentView === 'budget' && <BudgetTab plan={plan} />}
                   {currentView === 'checklist' && <BookingChecklistTab plan={plan} />}
-                  {currentView === 'sources' && (
-                    <ResearchSourcesTab
-                      sources={plan.research_sources}
-                      destination={plan.destination}
-                    />
-                  )}
                 </>
               ) : (
                 <div className="py-16 text-center max-w-md mx-auto space-y-4">

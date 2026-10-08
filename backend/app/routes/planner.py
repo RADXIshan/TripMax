@@ -35,7 +35,12 @@ async def get_sample_plan():
     sample_prefs = TripPreferences(
         destination="Kyoto, Japan",
         origin="San Francisco (SFO)",
-        duration_days=5,
+        dates="Nov 10 – Nov 17, 2026",
+        start_date="2026-11-10",
+        end_date="2026-11-17",
+        travel_month="November 2026",
+        season="Autumn",
+        duration_days=7,
         budget_amount=2800.0,
         budget_currency="USD",
         party_type="Couple",

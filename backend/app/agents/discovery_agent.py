@@ -1,4 +1,5 @@
 import re
+from datetime import datetime
 from typing import Tuple, List, Optional
 from app.models.trip import TripPreferences, SuggestedReply
 
@@ -17,8 +18,8 @@ class DiscoveryAgent:
             return "destination"
         if not prefs.origin:
             return "origin"
-        if not prefs.duration_days:
-            return "duration"
+        if not prefs.dates or not prefs.duration_days:
+            return "dates"
         if not prefs.party_type:
             return "party_type"
         if not prefs.travel_pace:
@@ -32,6 +33,118 @@ class DiscoveryAgent:
         if not prefs.stay_preference:
             return "stay"
         return "ready"
+
+    @classmethod
+    def _parse_dates_and_duration(cls, text: str) -> Tuple[str, str, str, str, str, int]:
+        """
+        Parses text for exact travel dates, start/end date, travel month, season, and duration.
+        Returns: (dates_str, start_date, end_date, travel_month, season, duration_days)
+        """
+        text_lower = text.lower()
+        now = datetime.now()
+        current_year = now.year
+
+        # Check for duration like '7 days', '4 days', '10 days'
+        duration = None
+        dur_match = re.search(r'(\d+)\s*(?:days?|nights?|day)', text_lower)
+        if dur_match:
+            try:
+                duration = int(dur_match.group(1))
+            except ValueError:
+                pass
+        elif "one week" in text_lower or "a week" in text_lower or "1 week" in text_lower:
+            duration = 7
+        elif "two weeks" in text_lower or "2 weeks" in text_lower:
+            duration = 14
+        elif "three weeks" in text_lower or "3 weeks" in text_lower:
+            duration = 21
+        elif "weekend" in text_lower:
+            duration = 4
+
+        # Month names mapping
+        months = {
+            "january": 1, "jan": 1,
+            "february": 2, "feb": 2,
+            "march": 3, "mar": 3,
+            "april": 4, "apr": 4,
+            "may": 5,
+            "june": 6, "jun": 6,
+            "july": 7, "jul": 7,
+            "august": 8, "aug": 8,
+            "september": 9, "sep": 9, "sept": 9,
+            "october": 10, "oct": 10,
+            "november": 11, "nov": 11,
+            "december": 12, "dec": 12
+        }
+
+        found_month_name = None
+        found_month_num = None
+        for m_name, m_num in months.items():
+            if re.search(r'\b' + m_name + r'\b', text_lower):
+                found_month_name = m_name.capitalize()
+                found_month_num = m_num
+                break
+
+        # Year mentioned
+        year_match = re.search(r'\b(202[5-9])\b', text)
+        year = int(year_match.group(1)) if year_match else (current_year if found_month_num and found_month_num >= now.month else current_year + 1)
+
+        # Season determination
+        season = "Autumn"
+        if found_month_num in [3, 4, 5] or "spring" in text_lower or "cherry" in text_lower or "sakura" in text_lower:
+            season = "Spring"
+            if not found_month_num:
+                found_month_num = 4
+                found_month_name = "April"
+        elif found_month_num in [6, 7, 8] or "summer" in text_lower:
+            season = "Summer"
+            if not found_month_num:
+                found_month_num = 7
+                found_month_name = "July"
+        elif found_month_num in [9, 10, 11] or "autumn" in text_lower or "fall" in text_lower or "koyo" in text_lower:
+            season = "Autumn"
+            if not found_month_num:
+                found_month_num = 11
+                found_month_name = "November"
+        elif found_month_num in [12, 1, 2] or "winter" in text_lower:
+            season = "Winter"
+            if not found_month_num:
+                found_month_num = 12
+                found_month_name = "December"
+
+        # Check for day numbers: e.g. "10 to 17", "10 - 17", "Nov 10 – Nov 17"
+        day_range_match = re.search(r'(\d{1,2})\s*(?:to|-|–|through)\s*(\d{1,2})', text)
+        start_day = 10
+        end_day = 17
+        if day_range_match:
+            d1 = int(day_range_match.group(1))
+            d2 = int(day_range_match.group(2))
+            if 1 <= d1 <= 31 and 1 <= d2 <= 31 and d2 > d1:
+                start_day = d1
+                end_day = d2
+                duration = d2 - d1
+            elif 1 <= d1 <= 31:
+                start_day = d1
+                duration = duration or 7
+                end_day = min(28, start_day + duration)
+        elif not duration:
+            duration = 7
+
+        if not found_month_num:
+            found_month_num = 11
+            found_month_name = "November"
+            season = "Autumn"
+
+        dur_final = duration or 7
+        end_day = min(28, start_day + dur_final)
+        travel_month = f"{found_month_name} {year}"
+        start_date = f"{year}-{found_month_num:02d}-{start_day:02d}"
+        end_date = f"{year}-{found_month_num:02d}-{end_day:02d}"
+        
+        month_abbr = datetime(year, found_month_num, 1).strftime("%b")
+        dates_str = f"{month_abbr} {start_day:02d} – {month_abbr} {end_day:02d}, {year}"
+
+        return dates_str, start_date, end_date, travel_month, season, dur_final
 
     @classmethod
     def update_preferences_from_text(cls, text: str, prefs: TripPreferences) -> TripPreferences:
@@ -50,19 +163,17 @@ class DiscoveryAgent:
                     res.append(w.capitalize())
             return " ".join(res)
 
-        # Clean common user prefixes like "Other:", "I want...", "My choice is..."
         def clean_val(val: str, prefix_patterns: List[str] = None) -> str:
             v = val.strip()
             patterns = [r'^(?:other\s*[:\-]?\s*)'] + (prefix_patterns or [])
             for p in patterns:
                 v = re.sub(p, '', v, flags=re.IGNORECASE).strip()
-            # Remove trailing periods or punctuation
             v = re.sub(r'[\.\,\!\?]+$', '', v).strip()
             return v
 
         q_key = cls.get_current_question_key(prefs)
 
-        # 1. Targeted Extraction based on the active question being asked
+        # 1. Targeted Extraction based on active question
         if q_key == "destination":
             cleaned = clean_val(text_clean, [
                 r'^(?:i want to (?:visit|go to|explore)\s*)',
@@ -89,24 +200,17 @@ class DiscoveryAgent:
                 if "origin" not in prefs.completed_steps:
                     prefs.completed_steps.append("origin")
 
-        elif q_key == "duration":
-            num_match = re.search(r'(\d+)', text_clean)
-            if num_match:
-                try:
-                    d = int(num_match.group(1))
-                    if 1 <= d <= 60:
-                        prefs.duration_days = d
-                except ValueError:
-                    pass
-            elif "one week" in text_lower or "a week" in text_lower or "1 week" in text_lower:
-                prefs.duration_days = 7
-            elif "two weeks" in text_lower or "2 weeks" in text_lower:
-                prefs.duration_days = 14
-            elif "three weeks" in text_lower or "3 weeks" in text_lower:
-                prefs.duration_days = 21
-            elif "weekend" in text_lower:
-                prefs.duration_days = 4
-            if prefs.duration_days and "duration" not in prefs.completed_steps:
+        elif q_key in ["dates", "duration"]:
+            dates_str, start_date, end_date, travel_month, season, dur = cls._parse_dates_and_duration(text_clean)
+            prefs.dates = dates_str
+            prefs.start_date = start_date
+            prefs.end_date = end_date
+            prefs.travel_month = travel_month
+            prefs.season = season
+            prefs.duration_days = dur
+            if "dates" not in prefs.completed_steps:
+                prefs.completed_steps.append("dates")
+            if "duration" not in prefs.completed_steps:
                 prefs.completed_steps.append("duration")
 
         elif q_key == "party_type":
@@ -341,19 +445,21 @@ class DiscoveryAgent:
                 "origin"
             )
 
-        # 3. Duration
-        if not prefs.duration_days:
+        # 3. Dates and Duration of Stay
+        if not prefs.dates or not prefs.duration_days:
             return (
-                f"How many days are you planning for your trip to {prefs.destination}?",
+                f"When are you planning to travel to **{prefs.destination}**? Please share your exact travel dates or preferred month & year, along with the duration of your stay.\n\n"
+                f"This allows our agents to check seasonal weather, verify open attractions, fetch live flight & hotel pricing for those specific dates, and calculate your budget accurately.",
                 [
-                    SuggestedReply(label="⚡ 4 Days (Quick Getaway)", value="4 days"),
-                    SuggestedReply(label="🗓️ 7 Days (Classic 1-Week Adventure)", value="7 days"),
-                    SuggestedReply(label="🗺️ 10 Days (In-Depth Exploration)", value="10 days"),
-                    SuggestedReply(label="🌍 14 Days (Two-Week Grand Tour)", value="14 days"),
-                    SuggestedReply(label="✏️ Other (Write your own)", value="other", is_other=True, placeholder="Enter number of days (e.g. 5 days, 8 days, 12 days)..."),
+                    SuggestedReply(label="🍁 Autumn Foliage (Nov 10 – Nov 17, 2026 • 7 Days)", value="Nov 10 to Nov 17, 2026 (7 days)"),
+                    SuggestedReply(label="🌸 Spring Blooms (Apr 04 – Apr 11, 2027 • 7 Days)", value="Apr 04 to Apr 11, 2027 (7 days)"),
+                    SuggestedReply(label="☀️ Summer Season (Jul 10 – Jul 17, 2027 • 7 Days)", value="Jul 10 to Jul 17, 2027 (7 days)"),
+                    SuggestedReply(label="❄️ Winter Getaway (Dec 12 – Dec 19, 2026 • 7 Days)", value="Dec 12 to Dec 19, 2026 (7 days)"),
+                    SuggestedReply(label="⚡ Quick 4-Day Trip (Nov 12 – Nov 16, 2026 • 4 Days)", value="Nov 12 to Nov 16, 2026 (4 days)"),
+                    SuggestedReply(label="✏️ Other (Write exact dates & days)", value="other", is_other=True, placeholder="Enter exact dates (e.g. Oct 15 - Oct 22, 2026 or 5 days in May)..."),
                 ],
                 "discovery",
-                "duration"
+                "dates"
             )
 
         # 4. Party type
@@ -448,10 +554,13 @@ class DiscoveryAgent:
 
         # 10. Completed!
         curr = prefs.budget_currency or "USD"
+        dates_display = prefs.dates or f"{prefs.duration_days} Days"
+        season_display = f" ({prefs.season} Season • {prefs.travel_month})" if prefs.season and prefs.travel_month else ""
         return (
             f"All your journey details are confirmed! Here is your custom travel blueprint:\n\n"
             f"• Destination: **{prefs.destination}**\n"
             f"• Departure: **{prefs.origin}**\n"
+            f"• Travel Dates: **{dates_display}**{season_display}\n"
             f"• Duration: **{prefs.duration_days} Days**\n"
             f"• Travelers: **{prefs.party_type}**\n"
             f"• Pacing: **{prefs.travel_pace.title()}**\n"
@@ -459,7 +568,7 @@ class DiscoveryAgent:
             f"• Transit: **{prefs.transport_preference.title()}**\n"
             f"• Focus: **{', '.join(prefs.interests) if prefs.interests else 'Curated Highlights'}**\n"
             f"• Stays: **{prefs.stay_preference.title() if prefs.stay_preference else 'Boutique'}**\n\n"
-            f"Our specialized AI agents (Web Intelligence, Transit, Lodging, Itinerary, and Budget) are ready to engineer your complete itinerary. Click below to launch!",
+            f"Our specialized AI agents (Web Intelligence, Transit, Lodging, Itinerary, and Budget) are ready to engineer your complete itinerary with live web pricing and verified citations. Click below to launch!",
             [
                 SuggestedReply(label="🚀 Generate Complete Trip Plan Now", value="Generate Plan Now"),
                 SuggestedReply(label="✏️ Adjust Any Preference", value="I want to adjust my preferences"),

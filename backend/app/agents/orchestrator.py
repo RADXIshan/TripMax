@@ -82,11 +82,17 @@ class AgentOrchestrator:
         preferences.travel_pace = preferences.travel_pace or "balanced"
         preferences.transport_preference = preferences.transport_preference or "both"
         preferences.stay_preference = preferences.stay_preference or "boutique"
+        if not preferences.dates:
+            preferences.dates = "Nov 10 – Nov 17, 2026"
+            preferences.start_date = "2026-11-10"
+            preferences.end_date = "2026-11-17"
+            preferences.travel_month = "November 2026"
+            preferences.season = "Autumn"
         if not preferences.interests:
             preferences.interests = ["culinary & food", "culture & history"]
 
         logs = []
-        logs.append(f"🤖 [Orchestrator] Starting trip architecture for destination: {preferences.destination}")
+        logs.append(f"🤖 [Orchestrator] Starting trip architecture for destination: {preferences.destination} ({preferences.dates})")
         
         # 1. Live Web Research
         logs.append(f"🌐 [WebResearchAgent] Initiating live web queries across attractions, transit passes, and food...")
@@ -94,22 +100,22 @@ class AgentOrchestrator:
         logs.append(f"✅ [WebResearchAgent] Retrieved {len(research_sources)} live intelligence sources and verified local links.")
 
         # 2. Transit Agent (Flights vs Trains)
-        logs.append(f"🚆✈️ [TransitAgent] Evaluating direct flight options vs scenic high-speed trains...")
+        logs.append(f"🚆✈️ [TransitAgent] Evaluating real flight carriers vs high-speed trains for {preferences.dates}...")
         flights, trains = TransitAgent.evaluate_transit(preferences)
-        logs.append(f"✅ [TransitAgent] Evaluated {len(flights)} flight routes and {len(trains)} rail routes with deep booking URLs.")
+        logs.append(f"✅ [TransitAgent] Evaluated {len(flights)} flight options and {len(trains)} rail routes with deep booking URLs.")
 
         # 3. Stay Agent
-        logs.append(f"🏨 [StayAgent] Curating accommodations matching budget {preferences.budget_currency} {preferences.budget_amount or 'custom'}...")
+        logs.append(f"🏨 [StayAgent] Curating verified hotels matching budget {preferences.budget_currency} {preferences.budget_amount or 'custom'} for {preferences.dates}...")
         stays = StayAgent.recommend_stays(preferences)
-        logs.append(f"✅ [StayAgent] Selected 4 curated accommodations (Boutique, Authentic, Luxury, Value).")
+        logs.append(f"✅ [StayAgent] Selected 4 curated accommodations (Boutique, Authentic, Luxury, Value) with live check-in/out links.")
 
         # 4. Itinerary Agent
-        logs.append(f"📅 [ItineraryAgent] Engineering {preferences.duration_days or 5}-day pacing, meals, and timed activities...")
+        logs.append(f"📅 [ItineraryAgent] Engineering {preferences.duration_days or 5}-day pacing, seasonal weather, and photo-backed schedule...")
         itinerary = ItineraryAgent.generate_day_by_day(preferences, [s.model_dump() for s in research_sources])
-        logs.append(f"✅ [ItineraryAgent] Completed detailed morning/afternoon/evening schedule for {len(itinerary)} days.")
+        logs.append(f"✅ [ItineraryAgent] Completed detailed morning/afternoon/evening schedule for {len(itinerary)} days with verified sources.")
 
         # 5. Budget & Checklist Agent
-        logs.append(f"💳 [BudgetAgent] Calculating cost breakdown, contingency buffer, and booking timeline...")
+        logs.append(f"💳 [BudgetAgent] Calculating exact cost breakdown for {preferences.duration_days or 5} nights...")
         budget, checklist, packing_list = BudgetAgent.analyze_budget_and_prep(
             preferences, flights, trains, stays, itinerary
         )
@@ -117,10 +123,12 @@ class AgentOrchestrator:
 
         dest = preferences.destination or "Destination"
         origin = preferences.origin or "Origin"
-        tagline = f"A Curated {preferences.duration_days}-Day Journey to {dest}"
+        season_txt = f"{preferences.season} Season ({preferences.travel_month})" if preferences.season else "Curated Season"
+        tagline = f"A Curated {preferences.duration_days}-Day Journey to {dest} • {season_txt}"
         overview = (
-            f"An immersive, multi-agent crafted travel experience designed for a {preferences.travel_pace} pace. "
-            f"Featuring seamless transitions, authentic culinary hotspots, and handpicked stays."
+            f"An immersive, multi-agent travel experience calibrated for {preferences.dates} ({season_txt}) "
+            f"designed at a {preferences.travel_pace} pace. Featuring real flight & scenic rail routes, "
+            f"handpicked top-rated stays, authentic regional dining, and verified web citations."
         )
 
         plan = TripPlan(
@@ -128,10 +136,14 @@ class AgentOrchestrator:
             destination=dest,
             origin=origin,
             duration_days=preferences.duration_days or 5,
-            dates=preferences.dates or "Flexible / Upcoming Season",
+            dates=preferences.dates,
+            start_date=preferences.start_date,
+            end_date=preferences.end_date,
+            travel_month=preferences.travel_month,
+            season=preferences.season,
             tagline=tagline,
             overview=overview,
-            best_time_to_visit=f"Spring (March-May) for mild blooms or Autumn (Sept-Nov) for vibrant foliage and comfortable walking temperatures.",
+            best_time_to_visit=f"{preferences.season or 'Spring/Autumn'} ({preferences.travel_month or 'Peak Season'}) for optimal seasonal weather and cultural highlights.",
             local_transport_pass_tip=f"Pick up the regional unlimited transit smartcard upon arrival at the main station/airport.",
             flights=flights,
             trains=trains,
@@ -168,7 +180,7 @@ class AgentOrchestrator:
             f"Highlight both scenic train and flight connectivity. Do not use markdown double asterisks (**) or raw bullet asterisks; keep sentences smooth, clean, and natural."
         )
         
-        models_to_try = ['gemini-flash-latest', 'gemini-3.8-flash', 'gemini-3.5-flash-lite', 'gemini-3.5-flash']
+        models_to_try = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash']
         for model_name in models_to_try:
             try:
                 response = await client.aio.models.generate_content(

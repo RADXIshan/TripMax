@@ -2,6 +2,10 @@ export interface TripPreferences {
   destination?: string;
   origin?: string;
   dates?: string;
+  start_date?: string;
+  end_date?: string;
+  travel_month?: string;
+  season?: string;
   duration_days?: number;
   budget_amount?: number;
   budget_currency: string;
@@ -47,6 +51,10 @@ export interface FlightOption {
   cons: string[];
   booking_url: string;
   provider: string;
+  source_name?: string;
+  source_url?: string;
+  dates?: string;
+  image_url?: string;
 }
 
 export interface TrainOption {
@@ -61,6 +69,10 @@ export interface TrainOption {
   pros: string[];
   booking_url: string;
   provider: string;
+  source_name?: string;
+  source_url?: string;
+  dates?: string;
+  image_url?: string;
 }
 
 export interface StayOption {
@@ -78,6 +90,21 @@ export interface StayOption {
   booking_url: string;
   provider: string;
   badge?: string;
+  image_url?: string;
+  source_name?: string;
+  source_url?: string;
+  dates?: string;
+  verified_review_snippet?: string;
+}
+
+export interface DiningRecommendation {
+  place: string;
+  dish: string;
+  vibe: string;
+  image_url?: string;
+  source_name?: string;
+  source_url?: string;
+  source_snippet?: string;
 }
 
 export interface ActivityItem {
@@ -89,27 +116,25 @@ export interface ActivityItem {
   estimated_cost: number;
   booking_url?: string;
   tags?: string[];
+  image_url?: string;
+  source_name?: string;
+  source_url?: string;
+  source_snippet?: string;
 }
 
 export interface ItineraryDay {
   day: number;
   title: string;
   theme: string;
+  image_url?: string;
   morning: ActivityItem;
   afternoon: ActivityItem;
   evening: ActivityItem;
-  lunch_recommendation: {
-    place: string;
-    dish: string;
-    vibe: string;
-  };
-  dinner_recommendation: {
-    place: string;
-    dish: string;
-    vibe: string;
-  };
+  lunch_recommendation: DiningRecommendation;
+  dinner_recommendation: DiningRecommendation;
   transit_tips: string;
   daily_budget_estimate: number;
+  sources?: ResearchSource[];
 }
 
 export interface BudgetBreakdown {
@@ -151,6 +176,10 @@ export interface TripPlan {
   origin: string;
   duration_days: number;
   dates: string;
+  start_date?: string;
+  end_date?: string;
+  travel_month?: string;
+  season?: string;
   tagline: string;
   overview: string;
   best_time_to_visit: string;
