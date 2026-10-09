@@ -682,11 +682,11 @@ ${plan.itinerary.map((d) => `### Day ${d.day}: ${d.title}
         />
 
         {/* Viewport Canvas */}
-        <main className="flex-1 min-h-0 overflow-y-auto">
+        <main className="flex-1 min-h-0 min-w-0 max-w-full overflow-y-auto overflow-x-hidden">
           {currentView === 'chat' && (
-            <div className="h-full flex flex-col lg:flex-row">
+            <div className="h-full w-full min-w-0 max-w-full flex flex-col lg:flex-row overflow-hidden">
               {/* Chat Studio Pane */}
-              <div className="flex-1 h-full min-h-0">
+              <div className="flex-1 h-full min-h-0 min-w-0 max-w-full overflow-hidden flex flex-col">
                 <ChatStudio
                   messages={messages}
                   preferences={preferences}

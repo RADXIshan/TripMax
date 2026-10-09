@@ -34,12 +34,14 @@
   }
 }
 
-body {
+html, body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   background-color: #121110;
   color: #FAFAF9;
+  overflow-x: hidden;
+  max-width: 100vw;
 }
 
 /* Custom smooth scrollbar */

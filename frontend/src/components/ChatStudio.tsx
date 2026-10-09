@@ -106,24 +106,24 @@ export const ChatStudio: React.FC<ChatStudioProps> = ({
     messages.some(m => m.stage === 'options_completed' || m.stage === 'ready_to_plan' || m.stage === 'plan_ready');
 
   return (
-    <div className="flex flex-col h-full bg-stone-900 border-r border-stone-800 transition-colors">
+    <div className="flex flex-col h-full w-full min-w-0 max-w-full overflow-hidden bg-stone-900 border-r border-stone-800 transition-colors">
       {/* Studio Header & Preferences Pill Bar */}
-      <div className="p-4 border-b border-stone-800 flex items-center justify-between bg-stone-900">
-        <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-lg bg-stone-800 flex items-center justify-center text-stone-300">
+      <div className="p-4 border-b border-stone-800 flex items-center justify-between bg-stone-900 w-full min-w-0 max-w-full overflow-hidden">
+        <div className="flex items-center gap-2 min-w-0">
+          <div className="w-7 h-7 rounded-lg bg-stone-800 flex items-center justify-center text-stone-300 shrink-0">
             <SlidersHorizontal className="w-4 h-4" />
           </div>
-          <div>
-            <h2 className="text-sm font-semibold text-stone-100">
+          <div className="min-w-0">
+            <h2 className="text-sm font-semibold text-stone-100 truncate">
               Trip Discovery Studio
             </h2>
-            <p className="text-[11px] text-stone-400">
+            <p className="text-[11px] text-stone-400 truncate">
               Conversational reasoning & requirement gathering
             </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 shrink-0">
           {/* Save Trip Button */}
           {onSaveTrip && (
             <button
@@ -148,13 +148,13 @@ export const ChatStudio: React.FC<ChatStudioProps> = ({
         </div>
       </div>
 
-      {/* Extracted Trip Profile Summary Tag Cloud & Progress Indicator */}
+      {/* Extracted Trip Profile Summary Tag Cloud & Progress Indicator - ONLY the chips row is sideways scrollable */}
       {(preferences.destination || preferences.origin || preferences.budget_amount) && (
-        <div className="px-4 py-2 bg-stone-900/60 border-b border-stone-800 space-y-1.5 text-[11px]">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <span className="text-stone-400 font-medium">Parameters:</span>
-              <span className={`px-2 py-0.5 rounded-full font-semibold text-[10px] ${
+        <div className="w-full min-w-0 max-w-full px-4 py-2 bg-stone-900/60 border-b border-stone-800 space-y-1.5 text-[11px] overflow-hidden">
+          <div className="flex items-center justify-between min-w-0">
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="text-stone-400 font-medium shrink-0">Parameters:</span>
+              <span className={`px-2 py-0.5 rounded-full font-semibold text-[10px] shrink-0 ${
                 isAllOptionsCompleted 
                   ? 'bg-emerald-950/80 text-emerald-300 border border-emerald-800/60' 
                   : 'bg-stone-800 text-stone-300 border border-stone-700'
@@ -163,13 +163,13 @@ export const ChatStudio: React.FC<ChatStudioProps> = ({
               </span>
             </div>
             {!isAllOptionsCompleted && (
-              <span className="text-[10px] text-stone-500 italic">
+              <span className="text-[10px] text-stone-500 italic truncate ml-2">
                 Answer remaining options to unlock plan generation
               </span>
             )}
           </div>
 
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5">
+          <div className="w-full min-w-0 max-w-full overflow-x-auto pb-1 flex items-center gap-1.5">
             {preferences.destination && (
               <span className="px-2 py-0.5 rounded-md bg-stone-800 text-stone-200 font-medium whitespace-nowrap">
                 📍 {preferences.destination}
@@ -229,8 +229,8 @@ export const ChatStudio: React.FC<ChatStudioProps> = ({
         </div>
       )}
 
-      {/* Chat Messages Log */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-stone-900">
+      {/* Chat Messages Log - Strictly vertical scroll only */}
+      <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 space-y-4 bg-stone-900 w-full min-w-0 max-w-full">
         {/* Preset quick starters if chat has only 1 greeting */}
         {messages.length <= 1 && (
           <div className="mb-4 p-3 rounded-xl bg-stone-850/50 border border-stone-700">
@@ -444,7 +444,7 @@ export const ChatStudio: React.FC<ChatStudioProps> = ({
       </div>
 
       {/* Input bar */}
-      <form onSubmit={handleSubmit} className="p-3 border-t border-stone-800 bg-stone-900">
+      <form onSubmit={handleSubmit} className="p-3 border-t border-stone-800 bg-stone-900 w-full min-w-0 max-w-full overflow-hidden">
         <div className="flex items-center gap-2">
           <input
             type="text"
