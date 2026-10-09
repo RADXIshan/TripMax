@@ -30,7 +30,7 @@ class TripRecord(Base):
     dates = Column(String(100), nullable=True)
     tagline = Column(Text, nullable=True)
     total_budget = Column(Float, nullable=True)
-    currency = Column(String(10), default="USD")
+    currency = Column(String(10), default="INR")
     plan_json = Column(Text, nullable=False)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))

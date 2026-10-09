@@ -33,10 +33,13 @@ const initialGreeting: ChatMessage = {
   suggested_replies: [
     { label: "🌸 Tokyo & Kyoto, Japan", value: "Tokyo & Kyoto, Japan" },
     { label: "🏔️ Swiss Alps & Zurich, Switzerland", value: "Swiss Alps & Zurich, Switzerland" },
-    { label: "🏛️ Rome & Amalfi Coast, Italy", value: "Rome & Amalfi Coast, Italy" },
+    { label: "🏛️ Rome, Florence & Amalfi Coast, Italy", value: "Rome & Amalfi Coast, Italy" },
     { label: "🥐 Paris & French Riviera, France", value: "Paris & French Riviera, France" },
-    { label: "🌴 Bali, Indonesia", value: "Bali, Indonesia" },
-    { label: "✏️ Other (Write your own)", value: "other", is_other: true, placeholder: "Enter destination (e.g. Barcelona, Iceland, Hawaii)..." }
+    { label: "🌴 Bali & Ubud, Indonesia", value: "Bali & Ubud, Indonesia" },
+    { label: "🏰 Jaipur & Udaipur, Rajasthan, India", value: "Jaipur & Udaipur, Rajasthan, India" },
+    { label: "🌿 Kerala Backwaters & Munnar, India", value: "Kerala & Munnar, India" },
+    { label: "🏖️ Goa & Konkan Coast, India", value: "Goa, India" },
+    { label: "✏️ Other (Write your own)", value: "other", is_other: true, placeholder: "Enter destination (e.g. Barcelona, Iceland, Hawaii, Kashmir)..." }
   ]
 };
 
@@ -64,7 +67,7 @@ export const App = () => {
   const [messages, setMessages] = useState<ChatMessage[]>([initialGreeting]);
   const [preferences, setPreferences] = useState<TripPreferences>({
     interests: [],
-    budget_currency: 'USD',
+    budget_currency: 'INR',
     duration_days: undefined,
     travel_pace: undefined,
     transport_preference: undefined,
@@ -77,7 +80,7 @@ export const App = () => {
   const [isLiveSearchOpen, setIsLiveSearchOpen] = useState(false);
   const [isResetModalOpen, setIsResetModalOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
-  const [currency, setCurrency] = useState('USD');
+  const [currency, setCurrency] = useState('INR');
 
   const [savedTrips, setSavedTrips] = useState<SavedTripRecord[]>(() => {
     try {
@@ -262,16 +265,16 @@ export const App = () => {
 
   const handleSelectTrip = (selectedPlan: TripPlan) => {
     setPlan(selectedPlan);
-    setCurrency(selectedPlan.budget.currency || 'USD');
+    setCurrency(selectedPlan.budget.currency || 'INR');
     setPreferences({
       destination: selectedPlan.destination,
       origin: selectedPlan.origin,
       duration_days: selectedPlan.duration_days,
-      budget_amount: selectedPlan.budget.target_budget || 2800,
-      budget_currency: selectedPlan.budget.currency,
+      budget_amount: selectedPlan.budget.target_budget || 220000,
+      budget_currency: selectedPlan.budget.currency || 'INR',
       interests: ['culture & history', 'food'],
       travel_pace: 'balanced',
-      party_type: 'Travelers'
+      party_type: 'Couple / Romantic'
     });
     setCurrentView('itinerary');
   };
@@ -404,11 +407,11 @@ export const App = () => {
           destination: data.destination,
           origin: data.origin,
           duration_days: data.duration_days,
-          budget_amount: data.budget.target_budget || 2800,
-          budget_currency: data.budget.currency,
+          budget_amount: data.budget.target_budget || 220000,
+          budget_currency: data.budget.currency || 'INR',
           interests: ['culture & history', 'food', 'photography & viewpoints'],
           travel_pace: 'balanced',
-          party_type: 'Couple'
+          party_type: 'Couple / Romantic'
         });
         setMessages((prev) => [
           ...prev,

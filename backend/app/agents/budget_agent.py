@@ -29,9 +29,19 @@ class BudgetAgent:
         days = prefs.duration_days or 5
         curr = prefs.budget_currency
 
+        rate = 1.0
+        if curr == "EUR":
+            rate = 0.92
+        elif curr == "GBP":
+            rate = 0.78
+        elif curr == "INR":
+            rate = 84.0
+        elif curr == "JPY":
+            rate = 152.0
+
         # Estimate transit cost: average of selected flight/train
-        chosen_flight_cost = flights[0].estimated_price if flights else 350.0
-        chosen_train_cost = trains[0].estimated_price if trains else 100.0
+        chosen_flight_cost = flights[0].estimated_price if flights else (350.0 * rate)
+        chosen_train_cost = trains[0].estimated_price if trains else (100.0 * rate)
         
         # If user wants both or flights
         if prefs.transport_preference == "train":
@@ -43,7 +53,7 @@ class BudgetAgent:
 
         # Stay cost: average boutique or chosen stay
         top_stay = stays[0] if stays else None
-        stay_cost = top_stay.total_price if top_stay else (150.0 * days)
+        stay_cost = top_stay.total_price if top_stay else (150.0 * rate * days)
 
         # Activities cost sum across days
         activities_cost = sum(

@@ -13,6 +13,7 @@ export interface TripPreferences {
   travel_pace?: string;
   transport_preference?: string;
   stay_preference?: string;
+  dining_preference?: string;
   interests: string[];
   special_requirements?: string;
   completed_steps?: string[];
@@ -33,7 +34,7 @@ export interface ChatMessage {
   content: string;
   agent_name?: string;
   suggested_replies?: SuggestedReply[];
-  stage?: 'discovery' | 'researching' | 'ready_to_plan' | 'plan_ready' | 'refining';
+  stage?: 'discovery' | 'researching' | 'ready_to_plan' | 'options_completed' | 'plan_ready' | 'refining';
   timestamp?: string;
   question_key?: string;
 }

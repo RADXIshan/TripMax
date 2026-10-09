@@ -6,14 +6,12 @@ from app.models.trip import TripPreferences, SuggestedReply
 class DiscoveryAgent:
     """
     Intelligently analyzes user messages, updates extracted preferences,
-    and asks sequential, one-by-one structured questions with MCQs
+    and asks sequential, one-by-one structured questions with rich, personalized MCQs
     plus an 'Other' option where the user can enter custom responses.
     """
 
     @classmethod
-    def get_current_question_key(cls, prefs: TripPreferences) -> str:
-        if prefs.current_question_key:
-            return prefs.current_question_key
+    def get_pending_question_key(cls, prefs: TripPreferences) -> str:
         if not prefs.destination:
             return "destination"
         if not prefs.origin:
@@ -28,11 +26,38 @@ class DiscoveryAgent:
             return "budget"
         if not prefs.transport_preference:
             return "transport"
-        if len(prefs.interests) == 0:
+        if not prefs.interests or len(prefs.interests) == 0:
             return "interests"
         if not prefs.stay_preference:
             return "stay"
+        if not prefs.dining_preference:
+            return "dining"
         return "ready"
+
+    @classmethod
+    def get_current_question_key(cls, prefs: TripPreferences) -> str:
+        k = prefs.current_question_key
+        if k == "destination" and not prefs.destination:
+            return "destination"
+        if k == "origin" and not prefs.origin:
+            return "origin"
+        if k in ["dates", "duration"] and (not prefs.dates or not prefs.duration_days):
+            return "dates"
+        if k == "party_type" and not prefs.party_type:
+            return "party_type"
+        if k == "travel_pace" and not prefs.travel_pace:
+            return "travel_pace"
+        if k == "budget" and not prefs.budget_amount:
+            return "budget"
+        if k == "transport" and not prefs.transport_preference:
+            return "transport"
+        if k == "interests" and (not prefs.interests or len(prefs.interests) == 0):
+            return "interests"
+        if k == "stay" and not prefs.stay_preference:
+            return "stay"
+        if k == "dining" and not prefs.dining_preference:
+            return "dining"
+        return cls.get_pending_question_key(prefs)
 
     @classmethod
     def _parse_dates_and_duration(cls, text: str) -> Tuple[str, str, str, str, str, int]:
@@ -216,13 +241,15 @@ class DiscoveryAgent:
         elif q_key == "party_type":
             cleaned = clean_val(text_clean)
             if any(w in text_lower for w in ["solo", "myself", "alone"]):
-                prefs.party_type = "Solo Traveler"
+                prefs.party_type = "Solo Explorer"
             elif any(w in text_lower for w in ["couple", "romantic", "partner", "wife", "husband", "girlfriend", "boyfriend", "honeymoon"]):
                 prefs.party_type = "Couple / Romantic"
-            elif any(w in text_lower for w in ["family", "kid", "child", "children", "parent"]):
+            elif any(w in text_lower for w in ["family", "kid", "child", "children", "parents"]):
                 prefs.party_type = "Family with Children"
             elif any(w in text_lower for w in ["friends", "buddies", "group", "mates", "colleagues"]):
                 prefs.party_type = "Group of Friends"
+            elif any(w in text_lower for w in ["senior", "elder", "multi-gen"]):
+                prefs.party_type = "Multi-Generational Family"
             elif cleaned and cleaned.lower() not in ["other", "skip"]:
                 prefs.party_type = cleaned
             if "party_type" not in prefs.completed_steps:
@@ -242,26 +269,46 @@ class DiscoveryAgent:
                 prefs.completed_steps.append("travel_pace")
 
         elif q_key == "budget":
-            # Detect currency
+            # Detect currency explicitly
             if "€" in text_clean or "eur" in text_lower or "euro" in text_lower:
                 prefs.budget_currency = "EUR"
             elif "£" in text_clean or "gbp" in text_lower or "pound" in text_lower:
                 prefs.budget_currency = "GBP"
-            elif "₹" in text_clean or "inr" in text_lower or "rupee" in text_lower:
-                prefs.budget_currency = "INR"
             elif "¥" in text_clean or "jpy" in text_lower or "yen" in text_lower:
                 prefs.budget_currency = "JPY"
             elif "$" in text_clean or "usd" in text_lower or "dollar" in text_lower:
                 prefs.budget_currency = "USD"
+            elif "₹" in text_clean or "inr" in text_lower or "rupee" in text_lower or "rs" in text_lower:
+                prefs.budget_currency = "INR"
+            else:
+                prefs.budget_currency = prefs.budget_currency or "INR"
 
-            budget_match = re.search(r'(\d[\d,]+(?:\.\d+)?)', text_clean)
-            if budget_match:
+            # Parse budget with Indian Lakh / k support
+            lakh_match = re.search(r'(\d+(?:\.\d+)?)\s*(?:lakhs?|lacs?|l\b)', text_lower)
+            k_match = re.search(r'(\d+(?:\.\d+)?)\s*k\b', text_lower)
+            if lakh_match:
                 try:
-                    num_val = float(budget_match.group(1).replace(",", ""))
+                    num_val = float(lakh_match.group(1)) * 100000.0
                     if num_val > 0:
                         prefs.budget_amount = num_val
                 except ValueError:
                     pass
+            elif k_match:
+                try:
+                    num_val = float(k_match.group(1)) * 1000.0
+                    if num_val > 0:
+                        prefs.budget_amount = num_val
+                except ValueError:
+                    pass
+            else:
+                budget_match = re.search(r'(\d[\d,]+(?:\.\d+)?)', text_clean)
+                if budget_match:
+                    try:
+                        num_val = float(budget_match.group(1).replace(",", ""))
+                        if num_val > 0:
+                            prefs.budget_amount = num_val
+                    except ValueError:
+                        pass
             if prefs.budget_amount and "budget" not in prefs.completed_steps:
                 prefs.completed_steps.append("budget")
 
@@ -271,7 +318,9 @@ class DiscoveryAgent:
                 prefs.transport_preference = "train"
             elif ("flight" in text_lower or "fly" in text_lower) and "train" not in text_lower and "rail" not in text_lower:
                 prefs.transport_preference = "flight"
-            elif "both" in text_lower:
+            elif "car" in text_lower or "drive" in text_lower or "road trip" in text_lower or "chauffeur" in text_lower:
+                prefs.transport_preference = "private car & road trip"
+            elif "both" in text_lower or "mix" in text_lower:
                 prefs.transport_preference = "both"
             elif cleaned and cleaned.lower() not in ["other", "skip"]:
                 prefs.transport_preference = cleaned
@@ -281,13 +330,13 @@ class DiscoveryAgent:
         elif q_key == "interests":
             cleaned = clean_val(text_clean)
             known_cats = {
-                "culinary & food": ["food", "foodie", "culinary", "restaurant", "dining", "street food", "ramen", "tasting", "wine", "cafe", "eats"],
-                "culture & history": ["culture", "history", "temple", "museum", "monument", "heritage", "historic", "shrine", "castle"],
-                "nature & outdoors": ["nature", "hiking", "mountain", "scenery", "scenic", "beach", "lake", "landscape", "outdoors", "park"],
-                "nightlife & bars": ["nightlife", "club", "bar", "party", "cocktail", "pub", "speakeasy"],
+                "culinary & food": ["food", "foodie", "culinary", "restaurant", "dining", "street food", "ramen", "tasting", "wine", "cafe", "eats", "gastronomy"],
+                "culture & history": ["culture", "history", "temple", "museum", "monument", "heritage", "historic", "shrine", "castle", "palace", "unesco"],
+                "nature & outdoors": ["nature", "hiking", "mountain", "scenery", "scenic", "beach", "lake", "landscape", "outdoors", "park", "alps"],
+                "nightlife & bars": ["nightlife", "club", "bar", "party", "cocktail", "pub", "speakeasy", "rooftop"],
                 "shopping & markets": ["shopping", "boutique", "market", "bazaar", "vintage", "souvenir", "artisan"],
-                "photography & viewpoints": ["photography", "photo", "viewpoint", "panoramic"],
-                "wellness & relaxation": ["wellness", "spa", "onsen", "hot spring", "yoga", "retreat"]
+                "photography & viewpoints": ["photography", "photo", "viewpoint", "panoramic", "golden hour"],
+                "wellness & relaxation": ["wellness", "spa", "onsen", "hot spring", "yoga", "retreat", "ayurvedic"]
             }
             matched_any = False
             for cat, keywords in known_cats.items():
@@ -298,26 +347,46 @@ class DiscoveryAgent:
             if not matched_any and cleaned and cleaned.lower() not in ["other", "skip"]:
                 if cleaned not in prefs.interests:
                     prefs.interests.append(cleaned)
-            if "interests" not in prefs.completed_steps:
+            if prefs.interests and "interests" not in prefs.completed_steps:
                 prefs.completed_steps.append("interests")
 
         elif q_key == "stay":
             cleaned = clean_val(text_clean)
             if any(w in text_lower for w in ["boutique", "design", "aesthetic"]):
-                prefs.stay_preference = "Boutique Hotel"
-            elif any(w in text_lower for w in ["ryokan", "authentic", "heritage", "traditional", "villa", "riad"]):
-                prefs.stay_preference = "Authentic Heritage"
-            elif any(w in text_lower for w in ["luxury", "5-star", "five star", "resort"]):
-                prefs.stay_preference = "5-Star Luxury"
+                prefs.stay_preference = "Boutique & Design Hotel"
+            elif any(w in text_lower for w in ["ryokan", "authentic", "heritage", "traditional", "villa", "riad", "haveli"]):
+                prefs.stay_preference = "Authentic Cultural Stays"
+            elif any(w in text_lower for w in ["luxury", "5-star", "five star", "resort", "palace"]):
+                prefs.stay_preference = "5-Star Luxury Resorts & Palaces"
             elif any(w in text_lower for w in ["central", "city", "modern", "smart"]):
-                prefs.stay_preference = "Central Modern Hotel"
+                prefs.stay_preference = "Centrally Located Modern City Hotels"
+            elif any(w in text_lower for w in ["apartment", "serviced", "airbnb"]):
+                prefs.stay_preference = "Scenic Villa / Serviced Apartment"
             elif cleaned and cleaned.lower() not in ["other", "skip"]:
                 prefs.stay_preference = cleaned
             if "stay" not in prefs.completed_steps:
                 prefs.completed_steps.append("stay")
 
-        # 2. General Multi-Entity Extraction across full message
-        # Destination fallback
+        elif q_key == "dining":
+            cleaned = clean_val(text_clean)
+            if any(w in text_lower for w in ["pure veg", "vegetarian", "jain", "vegan", "plant-based"]):
+                prefs.dining_preference = "Pure Vegetarian & Vegan Friendly"
+            elif any(w in text_lower for w in ["street food", "street eat", "night market", "hole in the wall"]):
+                prefs.dining_preference = "Authentic Local Street Food & Night Markets"
+            elif any(w in text_lower for w in ["fine dining", "michelin", "gourmet", "tasting menu"]):
+                prefs.dining_preference = "Fine Dining & Michelin-Starred Experiences"
+            elif any(w in text_lower for w in ["halal"]):
+                prefs.dining_preference = "Halal-Certified Dining"
+            elif any(w in text_lower for w in ["seafood", "coastal", "fish"]):
+                prefs.dining_preference = "Coastal Seafood & Regional Specialties"
+            elif any(w in text_lower for w in ["all", "everything", "no restriction", "authentic local", "meat"]):
+                prefs.dining_preference = "Authentic Regional Cuisine (No Dietary Restrictions)"
+            elif cleaned and cleaned.lower() not in ["other", "skip"]:
+                prefs.dining_preference = cleaned
+            if "dining" not in prefs.completed_steps:
+                prefs.completed_steps.append("dining")
+
+        # 2. General Fallbacks across full message if not already set
         if not prefs.destination:
             dest_patterns = [
                 r'\b(?:to|in|visit|explore|trip to)\s+([a-zA-Z\s]{3,30})(?:for|\?|\.|\,|$|\bfrom\b)',
@@ -331,12 +400,11 @@ class DiscoveryAgent:
                         prefs.destination = cand.title()
                         break
             if not prefs.destination:
-                for place in ["Tokyo", "Kyoto", "Japan", "Paris", "Rome", "Italy", "Switzerland", "London", "Barcelona", "Bali", "Vietnam", "Goa", "Kerala", "New York", "Hawaii", "Iceland"]:
+                for place in ["Tokyo", "Kyoto", "Japan", "Paris", "Rome", "Italy", "Switzerland", "London", "Barcelona", "Bali", "Vietnam", "Goa", "Kerala", "Rajasthan", "Jaipur", "Udaipur", "New York", "Hawaii", "Iceland"]:
                     if place.lower() in text_lower:
                         prefs.destination = place
                         break
 
-        # Origin fallback
         if not prefs.origin:
             origin_match = re.search(r'\b(?:from|leaving from|departing from)\s+([a-zA-Z\s]{3,25})(?:to|\?|\.|\,|$)', text_clean, re.IGNORECASE)
             if origin_match:
@@ -344,7 +412,6 @@ class DiscoveryAgent:
                 if cand.lower() not in ["a trip", "here", "home"]:
                     prefs.origin = cand.title()
 
-        # Duration fallback
         if not prefs.duration_days:
             dur_match = re.search(r'(\d+)\s*(?:days?|nights?|day)', text_lower)
             if dur_match:
@@ -355,45 +422,17 @@ class DiscoveryAgent:
                 except ValueError:
                     pass
 
-        # Budget fallback
-        if not prefs.budget_amount:
-            b_match = re.search(r'(?:budget\s*(?:is|of|around)?\s*[\$€£₹¥]?\s*|[\$€£₹¥]\s*)(\d[\d,]+)', text_lower)
-            if b_match:
-                try:
-                    clean_n = b_match.group(1).replace(",", "")
-                    prefs.budget_amount = float(clean_n)
-                except ValueError:
-                    pass
-
         # Currency fallback
         if "€" in text_clean or "eur" in text_lower:
             prefs.budget_currency = "EUR"
         elif "£" in text_clean or "gbp" in text_lower:
             prefs.budget_currency = "GBP"
-        elif "₹" in text_clean or "inr" in text_lower:
-            prefs.budget_currency = "INR"
         elif "¥" in text_clean or "jpy" in text_lower:
             prefs.budget_currency = "JPY"
-
-        # Party type fallback
-        if not prefs.party_type:
-            if any(w in text_lower for w in ["solo", "by myself", "alone"]):
-                prefs.party_type = "Solo Traveler"
-            elif any(w in text_lower for w in ["couple", "partner", "wife", "husband", "girlfriend", "boyfriend", "honeymoon"]):
-                prefs.party_type = "Couple / Romantic"
-            elif any(w in text_lower for w in ["friends", "buddies", "group", "mates"]):
-                prefs.party_type = "Group of Friends"
-            elif any(w in text_lower for w in ["family", "kids", "children", "parents"]):
-                prefs.party_type = "Family with Children"
-
-        # Pace fallback
-        if not prefs.travel_pace:
-            if any(w in text_lower for w in ["relax", "chill", "slow", "unhurried"]):
-                prefs.travel_pace = "relaxed"
-            elif any(w in text_lower for w in ["fast", "packed", "action"]):
-                prefs.travel_pace = "fast-paced"
-            elif any(w in text_lower for w in ["balanced", "moderate"]):
-                prefs.travel_pace = "balanced"
+        elif "$" in text_clean or "usd" in text_lower:
+            prefs.budget_currency = "USD"
+        elif "₹" in text_clean or "inr" in text_lower:
+            prefs.budget_currency = "INR"
 
         return prefs
 
@@ -401,29 +440,60 @@ class DiscoveryAgent:
     def get_next_step(cls, prefs: TripPreferences, user_text: str = "") -> Tuple[str, List[SuggestedReply], str, str]:
         """
         Determines the next sequential question, MCQ options (including 'Other'),
-        the stage ('discovery' or 'ready_to_plan'), and question_key.
+        the stage ('discovery', 'options_completed', or 'ready_to_plan'), and question_key.
+        Strict rule: Do NOT trigger plan generation before all 10 options are complete!
         """
         user_lower = user_text.lower()
-        ready_triggers = ["plan now", "generate plan", "i am ready", "i'm ready", "create itinerary", "build trip", "let's go"]
+        ready_triggers = [
+            "plan now", "generate plan", "i am ready", "i'm ready", 
+            "create itinerary", "build trip", "let's go", 
+            "generate complete trip plan now", "generate plan now", "start planning"
+        ]
+
+        # Check which question is pending
+        next_key = cls.get_pending_question_key(prefs)
+        is_all_done = (next_key == "ready")
+
+        # If user explicitly requested generation
         if any(tr in user_lower for tr in ready_triggers):
-            return (
-                f"Understood! All agents are assembling now to research and engineer your complete trip plan for {prefs.destination or 'your destination'}.",
-                [],
-                "ready_to_plan",
-                "ready"
-            )
+            if is_all_done:
+                return (
+                    f"Understood! All 10 specialized travel parameters are confirmed. All agents are assembling now to research and engineer your complete trip plan for {prefs.destination or 'your destination'}.",
+                    [],
+                    "ready_to_plan",
+                    "ready"
+                )
+            else:
+                # User asked to generate before options are done - prevent early generation!
+                pending_hints = {
+                    "destination": "destination",
+                    "origin": "departure city",
+                    "dates": "travel dates & duration",
+                    "party_type": "travel party",
+                    "travel_pace": "travel pacing",
+                    "budget": "target budget",
+                    "transport": "transit preference",
+                    "interests": "activity interests",
+                    "stay": "accommodation style",
+                    "dining": "dining & dietary preferences"
+                }
+                hint = pending_hints.get(next_key, "next requirement")
+                # Fall through to ask the missing question with polite context
 
         # 1. Destination
         if not prefs.destination:
             return (
                 "Welcome to TripMax! I am your Trip Discovery Architect. Let's design your perfect journey step-by-step.\n\nFirst, where in the world would you love to travel?",
                 [
-                    SuggestedReply(label="🌸 Tokyo & Kyoto, Japan", value="Tokyo & Kyoto, Japan"),
-                    SuggestedReply(label="🏔️ Swiss Alps & Zurich, Switzerland", value="Swiss Alps & Zurich, Switzerland"),
-                    SuggestedReply(label="🏛️ Rome & Amalfi Coast, Italy", value="Rome & Amalfi Coast, Italy"),
-                    SuggestedReply(label="🥐 Paris & French Riviera, France", value="Paris & French Riviera, France"),
-                    SuggestedReply(label="🌴 Bali, Indonesia", value="Bali, Indonesia"),
-                    SuggestedReply(label="✏️ Other (Write your own)", value="other", is_other=True, placeholder="Enter destination (e.g. Barcelona, Iceland, Hawaii)..."),
+                    SuggestedReply(label="🌸 Tokyo & Kyoto, Japan (Modern Metropolis & Ancient Shrines)", value="Tokyo & Kyoto, Japan"),
+                    SuggestedReply(label="🏔️ Swiss Alps & Zurich, Switzerland (Scenic Glaciers & Rail)", value="Swiss Alps & Zurich, Switzerland"),
+                    SuggestedReply(label="🏛️ Rome, Florence & Amalfi Coast, Italy (Renaissance & Coast)", value="Rome & Amalfi Coast, Italy"),
+                    SuggestedReply(label="🥐 Paris & French Riviera, France (Haute Cuisine & Art)", value="Paris & French Riviera, France"),
+                    SuggestedReply(label="🌴 Bali & Ubud, Indonesia (Tropical Temples & Rice Terraces)", value="Bali & Ubud, Indonesia"),
+                    SuggestedReply(label="🏰 Jaipur & Udaipur, Rajasthan, India (Royal Palaces & Forts)", value="Jaipur & Udaipur, Rajasthan, India"),
+                    SuggestedReply(label="🌿 Kerala Backwaters & Munnar, India (Serene Houseboats & Hills)", value="Kerala & Munnar, India"),
+                    SuggestedReply(label="🏖️ Goa & Konkan Coast, India (Beaches, Heritage & Seafood)", value="Goa, India"),
+                    SuggestedReply(label="✏️ Other (Write your own destination)", value="other", is_other=True, placeholder="Enter destination (e.g. Barcelona, Iceland, Hawaii, Kashmir)..."),
                 ],
                 "discovery",
                 "destination"
@@ -432,32 +502,66 @@ class DiscoveryAgent:
         # 2. Origin
         if not prefs.origin:
             return (
-                f"**{prefs.destination}** is an exceptional choice! Where will you be departing from?",
+                f"**{prefs.destination}** is an exceptional destination! Where will you be departing from?",
                 [
+                    SuggestedReply(label="🇮🇳 New Delhi (DEL - Indira Gandhi Intl)", value="New Delhi (DEL)"),
+                    SuggestedReply(label="🇮🇳 Mumbai (BOM - Chhatrapati Shivaji Intl)", value="Mumbai (BOM)"),
+                    SuggestedReply(label="🇮🇳 Bengaluru (BLR - Kempegowda Intl)", value="Bengaluru (BLR)"),
                     SuggestedReply(label="🗽 New York City (JFK/EWR)", value="New York City (JFK)"),
                     SuggestedReply(label="🇬🇧 London (LHR/LGW)", value="London (LHR)"),
-                    SuggestedReply(label="🌉 San Francisco (SFO)", value="San Francisco (SFO)"),
-                    SuggestedReply(label="🇮🇳 Mumbai / New Delhi (BOM/DEL)", value="Mumbai (BOM)"),
+                    SuggestedReply(label="🇸🇬 Singapore (SIN - Changi Intl)", value="Singapore (SIN)"),
+                    SuggestedReply(label="🇦🇪 Dubai (DXB)", value="Dubai (DXB)"),
                     SuggestedReply(label="🍁 Toronto (YYZ)", value="Toronto (YYZ)"),
-                    SuggestedReply(label="✏️ Other (Write your own)", value="other", is_other=True, placeholder="Enter departure city (e.g. Chicago, Boston, Berlin)..."),
+                    SuggestedReply(label="✏️ Other (Write your departure city)", value="other", is_other=True, placeholder="Enter departure city (e.g. Hyderabad, Chennai, Chicago, Berlin)..."),
                 ],
                 "discovery",
                 "origin"
             )
 
         # 3. Dates and Duration of Stay
+        dest_str = prefs.destination.lower()
         if not prefs.dates or not prefs.duration_days:
-            return (
-                f"When are you planning to travel to **{prefs.destination}**? Please share your exact travel dates or preferred month & year, along with the duration of your stay.\n\n"
-                f"This allows our agents to check seasonal weather, verify open attractions, fetch live flight & hotel pricing for those specific dates, and calculate your budget accurately.",
-                [
+            # Customize season options based on destination
+            if any(k in dest_str for k in ["japan", "tokyo", "kyoto"]):
+                date_replies = [
                     SuggestedReply(label="🍁 Autumn Foliage (Nov 10 – Nov 17, 2026 • 7 Days)", value="Nov 10 to Nov 17, 2026 (7 days)"),
-                    SuggestedReply(label="🌸 Spring Blooms (Apr 04 – Apr 11, 2027 • 7 Days)", value="Apr 04 to Apr 11, 2027 (7 days)"),
-                    SuggestedReply(label="☀️ Summer Season (Jul 10 – Jul 17, 2027 • 7 Days)", value="Jul 10 to Jul 17, 2027 (7 days)"),
+                    SuggestedReply(label="🌸 Sakura Cherry Blossoms (Apr 04 – Apr 11, 2027 • 7 Days)", value="Apr 04 to Apr 11, 2027 (7 days)"),
+                    SuggestedReply(label="☀️ Summer Festivals & Fuji (Jul 10 – Jul 17, 2027 • 7 Days)", value="Jul 10 to Jul 17, 2027 (7 days)"),
+                    SuggestedReply(label="❄️ Winter Illuminations (Dec 12 – Dec 19, 2026 • 7 Days)", value="Dec 12 to Dec 19, 2026 (7 days)"),
+                    SuggestedReply(label="⚡ 10-Day Grand Tour (Nov 05 – Nov 15, 2026 • 10 Days)", value="Nov 05 to Nov 15, 2026 (10 days)"),
+                ]
+            elif any(k in dest_str for k in ["swiss", "switzerland", "alps"]):
+                date_replies = [
+                    SuggestedReply(label="☀️ Summer Alpine Trails & Lakes (Jul 10 – Jul 17, 2027 • 7 Days)", value="Jul 10 to Jul 17, 2027 (7 days)"),
+                    SuggestedReply(label="❄️ Winter Snow & Glacier Rail (Dec 12 – Dec 19, 2026 • 7 Days)", value="Dec 12 to Dec 19, 2026 (7 days)"),
+                    SuggestedReply(label="🍁 Golden Autumn Vistas (Oct 10 – Oct 17, 2026 • 7 Days)", value="Oct 10 to Oct 17, 2026 (7 days)"),
+                    SuggestedReply(label="🌸 Spring Alpine Blooms (May 08 – May 15, 2027 • 7 Days)", value="May 08 to May 15, 2027 (7 days)"),
+                    SuggestedReply(label="⚡ Quick 5-Day Rail Highlights (Nov 12 – Nov 17, 2026 • 5 Days)", value="Nov 12 to Nov 17, 2026 (5 days)"),
+                ]
+            elif any(k in dest_str for k in ["rajasthan", "kerala", "goa", "india", "jaipur"]):
+                date_replies = [
+                    SuggestedReply(label="☀️ Pleasant Winter Peak (Dec 05 – Dec 12, 2026 • 7 Days)", value="Dec 05 to Dec 12, 2026 (7 days)"),
+                    SuggestedReply(label="🪔 Festive Autumn (Nov 07 – Nov 14, 2026 • 7 Days)", value="Nov 07 to Nov 14, 2026 (7 days)"),
+                    SuggestedReply(label="🌸 Spring Cultural Getaway (Feb 14 – Feb 21, 2027 • 7 Days)", value="Feb 14 to Feb 21, 2027 (7 days)"),
+                    SuggestedReply(label="🌧️ Lush Monsoon Magic (Aug 08 – Aug 15, 2026 • 7 Days)", value="Aug 08 to Aug 15, 2026 (7 days)"),
+                    SuggestedReply(label="⚡ Quick 5-Day Highlights (Nov 12 – Nov 17, 2026 • 5 Days)", value="Nov 12 to Nov 17, 2026 (5 days)"),
+                ]
+            else:
+                date_replies = [
+                    SuggestedReply(label="🍁 Autumn Foliage (Nov 10 – Nov 17, 2026 • 7 Days)", value="Nov 10 to Nov 17, 2026 (7 days)"),
+                    SuggestedReply(label="🌸 Spring Season (Apr 10 – Apr 17, 2027 • 7 Days)", value="Apr 10 to Apr 17, 2027 (7 days)"),
+                    SuggestedReply(label="☀️ Summer Holiday (Jul 10 – Jul 17, 2027 • 7 Days)", value="Jul 10 to Jul 17, 2027 (7 days)"),
                     SuggestedReply(label="❄️ Winter Getaway (Dec 12 – Dec 19, 2026 • 7 Days)", value="Dec 12 to Dec 19, 2026 (7 days)"),
-                    SuggestedReply(label="⚡ Quick 4-Day Trip (Nov 12 – Nov 16, 2026 • 4 Days)", value="Nov 12 to Nov 16, 2026 (4 days)"),
-                    SuggestedReply(label="✏️ Other (Write exact dates & days)", value="other", is_other=True, placeholder="Enter exact dates (e.g. Oct 15 - Oct 22, 2026 or 5 days in May)..."),
-                ],
+                    SuggestedReply(label="⚡ 10-Day Deep Dive (Nov 05 – Nov 15, 2026 • 10 Days)", value="Nov 05 to Nov 15, 2026 (10 days)"),
+                ]
+            date_replies.append(
+                SuggestedReply(label="✏️ Other (Write exact dates & duration)", value="other", is_other=True, placeholder="Enter exact dates (e.g. Oct 15 - Oct 22, 2026 or 6 days in December)...")
+            )
+
+            return (
+                f"When are you planning to travel to **{prefs.destination}**? Please share your preferred travel window and duration.\n\n"
+                f"Our AI agents will check seasonal weather, local festival calendars, live flight schedules, and hotel availability for those exact dates.",
+                date_replies,
                 "discovery",
                 "dates"
             )
@@ -465,13 +569,14 @@ class DiscoveryAgent:
         # 4. Party type
         if not prefs.party_type:
             return (
-                f"Who will you be traveling with on this {prefs.duration_days}-day trip?",
+                f"Who will be joining you on this {prefs.duration_days}-day journey to **{prefs.destination}**?",
                 [
-                    SuggestedReply(label="🎒 Solo Traveler (Independent Explorer)", value="Solo Traveler"),
-                    SuggestedReply(label="💑 Couple / Romantic Getaway", value="Couple / Romantic"),
-                    SuggestedReply(label="👨‍👩‍👧‍👦 Family with Children", value="Family with Children"),
-                    SuggestedReply(label="🍻 Group of Friends", value="Group of Friends"),
-                    SuggestedReply(label="✏️ Other (Write your own)", value="other", is_other=True, placeholder="Enter party type (e.g. Senior parents, College reunion)..."),
+                    SuggestedReply(label="🎒 Solo Explorer (Independent, agile & self-paced)", value="Solo Explorer"),
+                    SuggestedReply(label="💑 Couple / Romantic Getaway (Intimate dining & scenic moments)", value="Couple / Romantic"),
+                    SuggestedReply(label="👨‍👩‍👧‍👦 Family with Children (Kid-friendly pacing & spacious stays)", value="Family with Children"),
+                    SuggestedReply(label="🍻 Group of Friends (Dynamic shared adventures & vibrant vibe)", value="Group of Friends"),
+                    SuggestedReply(label="🧓 Multi-Generational Family (Comfortable transit & accessible sights)", value="Multi-Generational Family"),
+                    SuggestedReply(label="✏️ Other (Write your travel party)", value="other", is_other=True, placeholder="Enter party details (e.g. Senior parents, College reunion, Photography club)..."),
                 ],
                 "discovery",
                 "party_type"
@@ -480,84 +585,220 @@ class DiscoveryAgent:
         # 5. Travel pace
         if not prefs.travel_pace:
             return (
-                "What travel pace best matches your preferred rhythm?",
+                f"What travel pace best matches how you and your {prefs.party_type or 'party'} like to experience new places?",
                 [
-                    SuggestedReply(label="☕ Relaxed & Leisurely (Slow mornings, ample downtime)", value="Relaxed pace"),
-                    SuggestedReply(label="⚖️ Balanced & Moderate (2–3 key highlights daily + free time)", value="Balanced pace"),
-                    SuggestedReply(label="⚡ Fast-Paced & Energetic (Action-packed, see everything)", value="Fast-paced"),
-                    SuggestedReply(label="✏️ Other (Write your own)", value="other", is_other=True, placeholder="Enter custom pace (e.g. Early mornings only, nocturnal vibe)..."),
+                    SuggestedReply(label="☕ Relaxed & Leisurely (Slow mornings, café downtime, 1–2 highlights daily)", value="Relaxed pace"),
+                    SuggestedReply(label="⚖️ Balanced & Curated (2–3 iconic highlights daily + scenic pauses & free time)", value="Balanced pace"),
+                    SuggestedReply(label="⚡ Action-Packed & High-Energy (Early starts, see everything, immersive days)", value="Fast-paced"),
+                    SuggestedReply(label="✏️ Other (Write custom pacing)", value="other", is_other=True, placeholder="Enter custom pace (e.g. Sunrise photographer pace, Nocturnal night-owl vibe)..."),
                 ],
                 "discovery",
                 "travel_pace"
             )
 
-        # 6. Budget
+        # 6. Budget (INR Default)
         if not prefs.budget_amount:
-            curr = prefs.budget_currency or "USD"
-            sym = "€" if curr == "EUR" else ("£" if curr == "GBP" else ("₹" if curr == "INR" else ("¥" if curr == "JPY" else "$")))
+            curr = prefs.budget_currency or "INR"
+            if curr == "INR":
+                budget_replies = [
+                    SuggestedReply(label="🎒 Smart Budget (~₹45,000 / person) (Boutique budget stays, public transit & street eats)", value="₹45000"),
+                    SuggestedReply(label="🏨 Comfort & Balanced (~₹95,000 / person) (4-star hotels, scenic rail, curated dining)", value="₹95000"),
+                    SuggestedReply(label="👑 Luxury & Indulgent (~₹2,20,000+ / person) (5-star heritage resorts, private transfers, fine dining)", value="₹220000"),
+                    SuggestedReply(label="✏️ Other (Write your target budget in ₹)", value="other", is_other=True, placeholder="Enter budget per person in ₹ (e.g. ₹60000, ₹1.5 Lakh, ₹3 Lakh)..."),
+                ]
+            elif curr == "EUR":
+                budget_replies = [
+                    SuggestedReply(label="🎒 Smart Budget (~€1,400 / person)", value="€1400"),
+                    SuggestedReply(label="🏨 Comfort & Balanced (~€2,800 / person)", value="€2800"),
+                    SuggestedReply(label="👑 Luxury & Premium (~€5,500+ / person)", value="€5500"),
+                    SuggestedReply(label="✏️ Other (Write target budget in €)", value="other", is_other=True, placeholder="Enter budget per person in € (e.g. €2000, €4500)..."),
+                ]
+            elif curr == "GBP":
+                budget_replies = [
+                    SuggestedReply(label="🎒 Smart Budget (~£1,200 / person)", value="£1200"),
+                    SuggestedReply(label="🏨 Comfort & Balanced (~£2,500 / person)", value="£2500"),
+                    SuggestedReply(label="👑 Luxury & Premium (~£5,000+ / person)", value="£5000"),
+                    SuggestedReply(label="✏️ Other (Write target budget in £)", value="other", is_other=True, placeholder="Enter budget per person in £ (e.g. £1800, £4000)..."),
+                ]
+            elif curr == "JPY":
+                budget_replies = [
+                    SuggestedReply(label="🎒 Smart Budget (~¥200,000 / person)", value="¥200000"),
+                    SuggestedReply(label="🏨 Comfort & Balanced (~¥450,000 / person)", value="¥450000"),
+                    SuggestedReply(label="👑 Luxury & Premium (~¥900,000+ / person)", value="¥900000"),
+                    SuggestedReply(label="✏️ Other (Write target budget in ¥)", value="other", is_other=True, placeholder="Enter budget per person in ¥ (e.g. ¥300000, ¥600000)..."),
+                ]
+            else: # USD default
+                budget_replies = [
+                    SuggestedReply(label="🎒 Smart Budget (~$1,500 / person)", value="$1500"),
+                    SuggestedReply(label="🏨 Comfort & Balanced (~$3,000 / person)", value="$3000"),
+                    SuggestedReply(label="👑 Luxury & Premium (~$6,000+ / person)", value="$6000"),
+                    SuggestedReply(label="✏️ Other (Write target budget in $)", value="other", is_other=True, placeholder="Enter budget per person in $ (e.g. $2200, $4500)..."),
+                ]
+
             return (
-                f"What is your target budget per person (in {curr}) for lodging, dining, and activities?",
-                [
-                    SuggestedReply(label=f"🎒 Smart Budget (~{sym}1,500)", value=f"{sym}1500"),
-                    SuggestedReply(label=f"🏨 Moderate & Comfortable (~{sym}3,000)", value=f"{sym}3000"),
-                    SuggestedReply(label=f"👑 Luxury & Premium (~{sym}6,000+)", value=f"{sym}6000"),
-                    SuggestedReply(label="✏️ Other (Write your own)", value="other", is_other=True, placeholder=f"Enter target budget per person (e.g. {sym}2200, {sym}4500)..."),
-                ],
+                f"What is your target budget per person (in {curr}) for lodging, transit, dining, and activities in **{prefs.destination}**?",
+                budget_replies,
                 "discovery",
                 "budget"
             )
 
         # 7. Transport preference
         if not prefs.transport_preference:
+            if any(k in dest_str for k in ["japan", "tokyo", "kyoto"]):
+                transit_replies = [
+                    SuggestedReply(label="🚆 Shinkansen Bullet Trains (Fast, iconic & center-to-center)", value="Shinkansen bullet trains preferred"),
+                    SuggestedReply(label="✈️ Domestic Flights (Fast point-to-point connections)", value="Flights preferred"),
+                    SuggestedReply(label="🔄 Optimal Blend (Bullet trains + regional flights)", value="Both flights and trains"),
+                    SuggestedReply(label="🚗 Private Chauffeur & Transfers (Door-to-door comfort)", value="Private chauffeur and car"),
+                ]
+            elif any(k in dest_str for k in ["swiss", "switzerland", "alps"]):
+                transit_replies = [
+                    SuggestedReply(label="🚆 Panoramic Rail & Glacier Express (Swiss Travel Pass)", value="Panoramic Swiss rail preferred"),
+                    SuggestedReply(label="✈️ Quick Flights (Intercity connections)", value="Flights preferred"),
+                    SuggestedReply(label="🔄 Rail & Alpine Road Mix (Trains + scenic mountain drives)", value="Both flights and trains"),
+                    SuggestedReply(label="🚗 Scenic Road Trip (Self-drive through mountain passes)", value="Scenic road trip car rental"),
+                ]
+            elif any(k in dest_str for k in ["rajasthan", "kerala", "goa", "india"]):
+                transit_replies = [
+                    SuggestedReply(label="🚗 Private Chauffeur & AC SUV (Dedicated driver for entire tour)", value="Private chauffeur and car"),
+                    SuggestedReply(label="🚆 High-Speed Vande Bharat & Express Trains (Scenic rail routes)", value="High-speed rail and express trains"),
+                    SuggestedReply(label="✈️ Direct Flights (Fast city connections)", value="Flights preferred"),
+                    SuggestedReply(label="🔄 Both Flights & Private Chauffeur (Optimal combination)", value="Both flights and private car"),
+                ]
+            else:
+                transit_replies = [
+                    SuggestedReply(label="🚆 Scenic High-Speed Trains (Relaxed transit & station access)", value="Scenic high-speed trains preferred"),
+                    SuggestedReply(label="✈️ Flights Preferred (Fastest intercity hops)", value="Flights preferred"),
+                    SuggestedReply(label="🔄 Optimal Blend (Flights for long haul + scenic trains for regional sights)", value="Both flights and trains"),
+                    SuggestedReply(label="🚗 Private Car / Scenic Road Trip (Flexible door-to-door exploring)", value="Private car and road trip"),
+                ]
+            transit_replies.append(
+                SuggestedReply(label="✏️ Other (Write custom transit preference)", value="other", is_other=True, placeholder="Enter transit preference (e.g. Scooter rental, luxury private yacht transfer)...")
+            )
+
             return (
-                f"How would you prefer to travel between cities and regional sights?",
-                [
-                    SuggestedReply(label="🚆 Scenic High-Speed Trains Preferred", value="Scenic high-speed trains preferred"),
-                    SuggestedReply(label="✈️ Flights Preferred (Fastest point-to-point)", value="Flights preferred"),
-                    SuggestedReply(label="🔄 Both Flights & Trains (Optimal mix)", value="Both flights and trains"),
-                    SuggestedReply(label="✏️ Other (Write your own)", value="other", is_other=True, placeholder="Enter transit preference (e.g. Rental car road trip, private chauffeur)..."),
-                ],
+                f"How would you prefer to travel between cities and regional sights in **{prefs.destination}**?",
+                transit_replies,
                 "discovery",
                 "transport"
             )
 
         # 8. Interests & Vibes
-        if len(prefs.interests) == 0:
-            return (
-                f"What experiences and vibes are you most excited to explore in {prefs.destination}?",
-                [
+        if not prefs.interests or len(prefs.interests) == 0:
+            if any(k in dest_str for k in ["japan", "tokyo", "kyoto"]):
+                interest_replies = [
+                    SuggestedReply(label="🍜 Ramen, Kaiseki & Street Food Tasting", value="Culinary & food tasting"),
+                    SuggestedReply(label="⛩️ Historic Temples, Shrines & Geisha Districts", value="History, culture & heritage"),
+                    SuggestedReply(label="🌲 Mt. Fuji Panoramas, Bamboo Groves & Gardens", value="Nature, landscapes & outdoors"),
+                    SuggestedReply(label="🎮 Anime, Akihabara Tech & Shibuya Nightlife", value="Nightlife, arts & entertainment"),
+                    SuggestedReply(label="🛍️ Traditional Craft Markets & Ginza Shopping", value="Shopping & local markets"),
+                    SuggestedReply(label="♨️ Onsen Thermal Hot Springs & Zen Wellness", value="Wellness & relaxation"),
+                ]
+            elif any(k in dest_str for k in ["swiss", "switzerland", "alps"]):
+                interest_replies = [
+                    SuggestedReply(label="🏔️ Alpine Hiking, Cable Cars & Glacier Vistas", value="Nature, landscapes & outdoors"),
+                    SuggestedReply(label="🧀 Swiss Fondue, Chocolate Tastings & Local Dining", value="Culinary & food tasting"),
+                    SuggestedReply(label="🏰 Medieval Castles & Old Town Heritage", value="History, culture & heritage"),
+                    SuggestedReply(label="🚢 Scenic Lake Cruises & Mountain Viewpoints", value="Photography & viewpoints"),
+                    SuggestedReply(label="🛍️ Swiss Watchmaking Boutiques & Artisan Shops", value="Shopping & local markets"),
+                    SuggestedReply(label="🧖 Alpine Thermal Spas & Mountain Wellness", value="Wellness & relaxation"),
+                ]
+            elif any(k in dest_str for k in ["rajasthan", "kerala", "goa", "india"]):
+                interest_replies = [
+                    SuggestedReply(label="🏰 Royal Forts, Palaces & UNESCO Heritage", value="History, culture & heritage"),
+                    SuggestedReply(label="🍛 Authentic Regional Thali & Royal Street Eats", value="Culinary & food tasting"),
+                    SuggestedReply(label="🌿 Serene Backwaters, Houseboats & Tea Estates", value="Nature, landscapes & outdoors"),
+                    SuggestedReply(label="🛍️ Vibrant Bazaars, Handcrafted Textiles & Gems", value="Shopping & local markets"),
+                    SuggestedReply(label="🧘 Ayurvedic Wellness, Spas & Yoga Retreats", value="Wellness & relaxation"),
+                    SuggestedReply(label="📸 Golden Hour Desert Safaris & Sunset Viewpoints", value="Photography & viewpoints"),
+                ]
+            else:
+                interest_replies = [
                     SuggestedReply(label="🍜 Culinary Tastings, Street Food & Local Eateries", value="Culinary & food tasting"),
-                    SuggestedReply(label="⛩️ Historic Heritage, Temples & Architecture", value="History, culture & heritage"),
-                    SuggestedReply(label="🌲 Scenic Nature, Hiking & Panoramic Viewpoints", value="Nature, landscapes & outdoors"),
-                    SuggestedReply(label="🍸 Nightlife, Speakeasies & Modern Arts", value="Nightlife, arts & entertainment"),
-                    SuggestedReply(label="🛍️ Local Markets, Boutiques & Artisan Shopping", value="Shopping & local markets"),
-                    SuggestedReply(label="✏️ Other (Write your own)", value="other", is_other=True, placeholder="Enter custom interests (e.g. Photography, scuba diving, wellness)..."),
-                ],
+                    SuggestedReply(label="⛩️ Historic Heritage, Ancient Architecture & Museums", value="History, culture & heritage"),
+                    SuggestedReply(label="🌲 Scenic Nature, Mountain Panoramas & Outdoors", value="Nature, landscapes & outdoors"),
+                    SuggestedReply(label="🍸 Vibrant Nightlife, Speakeasies & Live Arts", value="Nightlife, arts & entertainment"),
+                    SuggestedReply(label="🛍️ Local Markets, Designer Boutiques & Shopping", value="Shopping & local markets"),
+                    SuggestedReply(label="📸 Photography, Golden Hour Sights & Hidden Gems", value="Photography & viewpoints"),
+                ]
+            interest_replies.append(
+                SuggestedReply(label="✏️ Other (Write custom passions)", value="other", is_other=True, placeholder="Enter custom interests (e.g. Scuba diving, architectural walks, vintage vinyl hunting)...")
+            )
+
+            return (
+                f"What experiences and activities excite you most about visiting **{prefs.destination}**?",
+                interest_replies,
                 "discovery",
                 "interests"
             )
 
         # 9. Accommodation style
         if not prefs.stay_preference:
+            if any(k in dest_str for k in ["japan", "tokyo", "kyoto"]):
+                stay_replies = [
+                    SuggestedReply(label="🏮 Traditional Onsen Ryokan with Tatami & Kaiseki", value="Authentic cultural stays (Ryokan)"),
+                    SuggestedReply(label="🎨 Boutique & Aesthetic Design Hotels", value="Boutique design hotels"),
+                    SuggestedReply(label="👑 5-Star Luxury Hotels with City Views", value="5-star luxury hotels"),
+                    SuggestedReply(label="🏙️ Centrally Located Smart Modern Hotels (Steps to Station)", value="Centrally located modern hotels"),
+                ]
+            elif any(k in dest_str for k in ["swiss", "switzerland", "alps"]):
+                stay_replies = [
+                    SuggestedReply(label="🪵 Traditional Alpine Wooden Chalets & Lodges", value="Authentic alpine chalets"),
+                    SuggestedReply(label="🎨 Boutique Mountain Design Hotels with Spas", value="Boutique mountain hotels"),
+                    SuggestedReply(label="👑 5-Star Luxury Grand Palace Resorts", value="5-star luxury hotels"),
+                    SuggestedReply(label="🏙️ Central Historic Old Town City Hotels", value="Central historic hotels"),
+                ]
+            elif any(k in dest_str for k in ["rajasthan", "kerala", "goa", "india"]):
+                stay_replies = [
+                    SuggestedReply(label="🏰 Heritage Havelis & Royal Palaces", value="Heritage palace & haveli stays"),
+                    SuggestedReply(label="🌿 Eco-Luxury Ayurvedic Resorts & Houseboats", value="Eco-luxury nature stays"),
+                    SuggestedReply(label="🎨 Chic Boutique Heritage Hotels", value="Boutique hotels"),
+                    SuggestedReply(label="👑 5-Star International Luxury Beach/City Resorts", value="5-star luxury resorts"),
+                ]
+            else:
+                stay_replies = [
+                    SuggestedReply(label="🎨 Boutique & Aesthetic Design Hotels", value="Boutique design hotels"),
+                    SuggestedReply(label="🏮 Authentic Heritage & Cultural Stays", value="Authentic cultural stays"),
+                    SuggestedReply(label="👑 5-Star Luxury Resorts with Premium Spas", value="5-star luxury hotels"),
+                    SuggestedReply(label="🏙️ Centrally Located Modern City Hotels", value="Centrally located modern hotels"),
+                    SuggestedReply(label="🏡 Private Scenic Villa or Serviced Apartment", value="Private serviced apartments"),
+                ]
+            stay_replies.append(
+                SuggestedReply(label="✏️ Other (Write custom lodging style)", value="other", is_other=True, placeholder="Enter lodging style (e.g. Eco-lodge, penthouse with terrace, historic monastery)...")
+            )
+
             return (
-                f"What style of accommodations do you envision for {prefs.destination}?",
-                [
-                    SuggestedReply(label="🎨 Boutique & Aesthetic Design Hotels", value="Boutique hotels"),
-                    SuggestedReply(label="🏮 Authentic Cultural Stays (e.g. Ryokan, Historic Villa)", value="Authentic cultural stays"),
-                    SuggestedReply(label="👑 5-Star Luxury Resorts with Premium Amenities", value="5-star luxury hotels"),
-                    SuggestedReply(label="🏙️ Centrally Located Modern City Hotels", value="Centrally located smart hotels"),
-                    SuggestedReply(label="✏️ Other (Write your own)", value="other", is_other=True, placeholder="Enter stay style (e.g. Eco-lodge, serviced penthouse apartment)..."),
-                ],
+                f"What accommodation style fits your vision for **{prefs.destination}**?",
+                stay_replies,
                 "discovery",
                 "stay"
             )
 
-        # 10. Completed!
-        curr = prefs.budget_currency or "USD"
+        # 10. Dining & Dietary Preferences
+        if not prefs.dining_preference:
+            return (
+                f"Lastly, what are your dining & dietary preferences for **{prefs.destination}**?\n\n"
+                f"This allows our culinary agents to curate daily lunch, dinner, and café recommendations that match your diet.",
+                [
+                    SuggestedReply(label="🥗 Pure Vegetarian & Vegan Friendly (Plant-based dining)", value="Pure Vegetarian & Vegan Friendly"),
+                    SuggestedReply(label="🍲 Street Food & Iconic Local Eateries (Must-try regional bites)", value="Authentic Local Street Food & Night Markets"),
+                    SuggestedReply(label="🍷 Fine Dining & Gourmet Tasting Menus (Michelin-starred & chef-driven)", value="Fine Dining & Michelin-Starred Experiences"),
+                    SuggestedReply(label="🥩 Coastal Seafood & Regional Specialties (Non-vegetarian feasts)", value="Coastal Seafood & Regional Specialties"),
+                    SuggestedReply(label="🕌 Halal-Friendly Dining (Certified halal eateries)", value="Halal-Certified Dining"),
+                    SuggestedReply(label="✨ Authentic Local Cuisine (No dietary restrictions)", value="Authentic Regional Cuisine (No Dietary Restrictions)"),
+                    SuggestedReply(label="✏️ Other (Write custom dietary notes)", value="other", is_other=True, placeholder="Enter dietary notes (e.g. Jain food, Gluten-free, Nut allergy, Coffee lover)..."),
+                ],
+                "discovery",
+                "dining"
+            )
+
+        # 11. All 10 Options Completed! Present Final Blueprint
+        curr = prefs.budget_currency or "INR"
         dates_display = prefs.dates or f"{prefs.duration_days} Days"
         season_display = f" ({prefs.season} Season • {prefs.travel_month})" if prefs.season and prefs.travel_month else ""
+        
         return (
-            f"All your journey details are confirmed! Here is your custom travel blueprint:\n\n"
+            f"All 10 travel criteria are verified and locked in! Here is your custom travel blueprint:\n\n"
             f"• Destination: **{prefs.destination}**\n"
             f"• Departure: **{prefs.origin}**\n"
             f"• Travel Dates: **{dates_display}**{season_display}\n"
@@ -566,13 +807,15 @@ class DiscoveryAgent:
             f"• Pacing: **{prefs.travel_pace.title()}**\n"
             f"• Budget: **{curr} {prefs.budget_amount:,.0f}**\n"
             f"• Transit: **{prefs.transport_preference.title()}**\n"
-            f"• Focus: **{', '.join(prefs.interests) if prefs.interests else 'Curated Highlights'}**\n"
-            f"• Stays: **{prefs.stay_preference.title() if prefs.stay_preference else 'Boutique'}**\n\n"
-            f"Our specialized AI agents (Web Intelligence, Transit, Lodging, Itinerary, and Budget) are ready to engineer your complete itinerary with live web pricing and verified citations. Click below to launch!",
+            f"• Stays: **{prefs.stay_preference.title() if prefs.stay_preference else 'Boutique'}**\n"
+            f"• Dining: **{prefs.dining_preference.title() if prefs.dining_preference else 'Local Curated'}**\n"
+            f"• Focus: **{', '.join(prefs.interests) if prefs.interests else 'Curated Highlights'}**\n\n"
+            f"Our multi-agent system (Web Intelligence, Transit Specialist, Lodging Agent, Itinerary Architect, and Budget Auditor) is ready to engineer your complete, day-by-day travel architecture with live web pricing and verified booking links.\n\n"
+            f"Click below to generate your complete trip plan!",
             [
                 SuggestedReply(label="🚀 Generate Complete Trip Plan Now", value="Generate Plan Now"),
                 SuggestedReply(label="✏️ Adjust Any Preference", value="I want to adjust my preferences"),
             ],
-            "ready_to_plan",
+            "options_completed",
             "ready"
         )

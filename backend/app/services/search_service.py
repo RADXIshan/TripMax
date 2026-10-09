@@ -81,27 +81,39 @@ def is_valid_content_url(url: str) -> bool:
 class SearchService:
     @staticmethod
     async def search_duckduckgo(query: str, max_results: int = 5) -> List[Dict[str, str]]:
-        """Perform search using ddgs library in threadpool with strict ad-filtering"""
+        """Perform search using ddgs library in threadpool with strict ad-filtering and graceful fallback"""
         def _sync_search():
-            try:
-                from ddgs import DDGS
-                results = []
-                with DDGS() as ddgs:
-                    # Request slightly more to filter out ads
-                    for r in ddgs.text(query, max_results=max_results * 2):
-                        url = clean_url(r.get("href", ""))
-                        if is_valid_content_url(url):
-                            results.append({
-                                "title": r.get("title", ""),
-                                "url": url,
-                                "snippet": r.get("body", "")
-                            })
-                            if len(results) >= max_results:
-                                break
-                return results
-            except Exception as e:
-                print(f"[SearchService] DDGS error: {e}", flush=True)
-                return []
+            from ddgs import DDGS
+            
+            # Try full query first, then a simplified keyword search if no results found
+            attempts = [query]
+            words = query.strip().split()
+            if len(words) > 5:
+                attempts.append(" ".join(words[:5]))
+
+            for current_q in attempts:
+                try:
+                    results = []
+                    with DDGS() as ddgs:
+                        for r in ddgs.text(current_q, max_results=max_results * 2):
+                            url = clean_url(r.get("href", ""))
+                            if is_valid_content_url(url):
+                                results.append({
+                                    "title": r.get("title", ""),
+                                    "url": url,
+                                    "snippet": r.get("body", "")
+                                })
+                                if len(results) >= max_results:
+                                    break
+                    if results:
+                        return results
+                except Exception as e:
+                    err_msg = str(e)
+                    # DuckDuckGo raises 'No results found.' when no matching documents or rate-limited
+                    if "No results found" in err_msg:
+                        continue
+                    print(f"[SearchService] DDGS notice ({current_q[:30]}): {err_msg}", flush=True)
+            return []
 
         return await asyncio.to_thread(_sync_search)
 
@@ -141,11 +153,16 @@ class SearchService:
 
     @classmethod
     async def multi_search(cls, queries: List[str], max_per_query: int = 4) -> List[Dict[str, str]]:
-        """Run multiple queries concurrently and deduplicate by URL"""
-        tasks = []
-        for q in queries:
-            tasks.append(cls.search(q, max_results=max_per_query))
-        
+        """Run multiple queries with slight throttling to prevent search engine rate-limiting"""
+        sem = asyncio.Semaphore(2)
+
+        async def _throttled_search(q: str, idx: int):
+            if idx > 0:
+                await asyncio.sleep(0.2 * idx)
+            async with sem:
+                return await cls.search(q, max_results=max_per_query)
+
+        tasks = [_throttled_search(q, i) for i, q in enumerate(queries)]
         all_res = await asyncio.gather(*tasks, return_exceptions=True)
         unique_results = {}
         

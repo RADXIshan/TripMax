@@ -57,6 +57,23 @@ class TransitAgent:
                 f_num = f.get("flight_number") or f.get("flight_no") or "Intercontinental Express"
                 dur = f.get("duration") or "Direct Flight"
                 price = float(f.get("price") or f.get("estimated_price") or 380)
+                
+                raw_pros = f.get("pros")
+                if not raw_pros:
+                    f_pros = ["Direct non-stop service", "Complimentary in-flight amenities"]
+                elif isinstance(raw_pros, list):
+                    f_pros = [str(x) for x in raw_pros]
+                else:
+                    f_pros = [p.strip() for p in str(raw_pros).split("\n") if p.strip()] or [str(raw_pros)]
+
+                raw_cons = f.get("cons")
+                if not raw_cons:
+                    f_cons = ["Popular peak departure route"]
+                elif isinstance(raw_cons, list):
+                    f_cons = [str(x) for x in raw_cons]
+                else:
+                    f_cons = [p.strip() for p in str(raw_cons).split("\n") if p.strip()] or [str(raw_cons)]
+
                 flights.append(FlightOption(
                     airline=airline,
                     flight_number=f_num,
@@ -66,8 +83,8 @@ class TransitAgent:
                     stops=f.get("stops", "Non-stop"),
                     estimated_price=round(price * rate if curr != "USD" else price, 0),
                     currency=curr,
-                    pros=f.get("pros", ["Direct non-stop service", "Complimentary in-flight amenities"]),
-                    cons=f.get("cons", ["Popular peak departure route"]),
+                    pros=f_pros,
+                    cons=f_cons,
                     booking_url=google_flights_link,
                     provider="Google Flights & Carrier Direct",
                     source_name=f"{airline} Official Schedule",
@@ -82,6 +99,15 @@ class TransitAgent:
                 t_name = t.get("train_type") or t.get("train_name") or "Express Rail"
                 route = t.get("route") or f"{origin} ➔ {dest}"
                 t_price = float(t.get("price") or t.get("estimated_price") or 65)
+                
+                raw_t_pros = t.get("pros")
+                if not raw_t_pros:
+                    t_pros = ["Downtown to downtown terminal", "Zero luggage fees"]
+                elif isinstance(raw_t_pros, list):
+                    t_pros = [str(x) for x in raw_t_pros]
+                else:
+                    t_pros = [p.strip() for p in str(raw_t_pros).split("\n") if p.strip()] or [str(raw_t_pros)]
+
                 trains.append(TrainOption(
                     operator=operator,
                     train_name=t_name,
@@ -91,7 +117,7 @@ class TransitAgent:
                     estimated_price=round(t_price * rate if curr != "USD" else t_price, 0),
                     currency=curr,
                     scenic_highlights=t.get("scenic_highlights", "City-to-city downtown transit with scenic regional views and zero security queues."),
-                    pros=t.get("pros", ["Downtown to downtown terminal", "Zero luggage fees"]),
+                    pros=t_pros,
                     booking_url=trainline_link,
                     provider="Trainline / Rail Network",
                     source_name=f"{operator} Timetable",

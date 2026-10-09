@@ -119,7 +119,7 @@ def get_multi_stay_links(
     checkin: str = "", 
     checkout: str = "",
     price_per_night: Optional[float] = None,
-    currency: str = "USD"
+    currency: str = "INR"
 ) -> List[BookingLink]:
     target = f"{hotel_name}, {destination}"
     rate_str = f"~{currency} {round(price_per_night):,}/nt" if price_per_night else "Verified Guest Reviews"
@@ -223,7 +223,7 @@ def get_multi_activity_links(
     attraction: str, 
     destination: str,
     estimated_cost: Optional[float] = None,
-    currency: str = "USD"
+    currency: str = "INR"
 ) -> List[BookingLink]:
     cost_str = f"~{currency} {round(estimated_cost):,}" if estimated_cost and estimated_cost > 0 else "Free / Walk-in"
     return [

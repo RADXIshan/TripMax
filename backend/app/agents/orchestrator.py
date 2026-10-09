@@ -77,12 +77,14 @@ class AgentOrchestrator:
         preferences.destination = preferences.destination or "World Explorer"
         preferences.origin = preferences.origin or "Home City"
         preferences.duration_days = preferences.duration_days or 5
-        preferences.budget_amount = preferences.budget_amount or 2500
-        preferences.budget_currency = preferences.budget_currency or "USD"
+        preferences.budget_currency = preferences.budget_currency or "INR"
+        if not preferences.budget_amount:
+            preferences.budget_amount = 120000.0 if preferences.budget_currency == "INR" else 2500.0
         preferences.party_type = preferences.party_type or "Travelers"
         preferences.travel_pace = preferences.travel_pace or "balanced"
         preferences.transport_preference = preferences.transport_preference or "both"
         preferences.stay_preference = preferences.stay_preference or "boutique"
+        preferences.dining_preference = preferences.dining_preference or "Authentic Local & Street Food"
         if not preferences.dates:
             preferences.dates = "Nov 10 – Nov 17, 2026"
             preferences.start_date = "2026-11-10"
@@ -205,6 +207,7 @@ class AgentOrchestrator:
                 response = await client.aio.models.generate_content(
                     model=model_name,
                     contents=prompt,
+                    config={"automatic_function_calling": {"disable": True}},
                 )
                 if response and response.text:
                     return response.text.strip()

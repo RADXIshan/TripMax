@@ -17,7 +17,7 @@ class Settings(BaseSettings):
     CLIENT_URL: str = "http://localhost:5173"
     GEMINI_API_KEY: Optional[str] = None
     TAVILY_API_KEY: Optional[str] = None
-    DEFAULT_CURRENCY: str = "USD"
+    DEFAULT_CURRENCY: str = "INR"
 
     class Config:
         env_file = [str(backend_dir / ".env"), str(root_dir / ".env"), ".env"]

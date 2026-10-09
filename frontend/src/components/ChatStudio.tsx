@@ -83,11 +83,27 @@ export const ChatStudio: React.FC<ChatStudioProps> = ({
   };
 
   const samplePresets = [
-    { label: "🇯🇵 Kyoto & Tokyo (6 Days)", prompt: "I want to plan a 6-day trip to Kyoto and Tokyo focusing on food and temples" },
-    { label: "🇨🇭 Swiss Alps Trains (5 Days)", prompt: "5-day trip to Swiss Alps focusing on scenic rail routes and mountain hiking" },
-    { label: "🇮🇹 Amalfi Coast (7 Days)", prompt: "7 days in Amalfi Coast, romantic pace with scenic coastal views and local pasta" },
-    { label: "🇫🇷 Paris Arts & Cafes (4 Days)", prompt: "4 days in Paris exploring art galleries, historic streets, and charming bistros" }
+    { label: "🇯🇵 Tokyo & Kyoto (7 Days)", prompt: "I want to plan a 7-day trip to Tokyo and Kyoto focusing on culinary ramen and historic temples departing from New Delhi" },
+    { label: "🏔️ Swiss Alps Scenic Rail (7 Days)", prompt: "7-day trip to Swiss Alps focusing on panoramic rail routes and mountain hiking departing from Mumbai" },
+    { label: "🏰 Rajasthan Royal Heritage (7 Days)", prompt: "7-day royal heritage journey to Jaipur and Udaipur exploring palaces, desert forts, and authentic dining" },
+    { label: "🏖️ Goa Coastal Getaway (5 Days)", prompt: "5-day relaxed vacation in Goa focusing on beach sunsets, Portuguese heritage, and seafood" }
   ];
+
+  const completedOptionsCount = [
+    Boolean(preferences.destination),
+    Boolean(preferences.origin),
+    Boolean((preferences.dates || preferences.start_date) && preferences.duration_days),
+    Boolean(preferences.party_type),
+    Boolean(preferences.travel_pace),
+    Boolean(preferences.budget_amount && preferences.budget_amount > 0),
+    Boolean(preferences.transport_preference),
+    Boolean(preferences.interests && preferences.interests.length > 0),
+    Boolean(preferences.stay_preference),
+    Boolean(preferences.dining_preference),
+  ].filter(Boolean).length;
+
+  const isAllOptionsCompleted = completedOptionsCount >= 10 || 
+    messages.some(m => m.stage === 'options_completed' || m.stage === 'ready_to_plan' || m.stage === 'plan_ready');
 
   return (
     <div className="flex flex-col h-full bg-stone-900 border-r border-stone-800 transition-colors">
@@ -132,40 +148,84 @@ export const ChatStudio: React.FC<ChatStudioProps> = ({
         </div>
       </div>
 
-      {/* Extracted Trip Profile Summary Tag Cloud */}
+      {/* Extracted Trip Profile Summary Tag Cloud & Progress Indicator */}
       {(preferences.destination || preferences.origin || preferences.budget_amount) && (
-        <div className="px-4 py-2.5 bg-stone-900/60 border-b border-stone-800 flex items-center gap-2 overflow-x-auto text-[11px]">
-          <span className="text-stone-400 font-medium">Locked Criteria:</span>
-          {preferences.destination && (
-            <span className="px-2 py-0.5 rounded-md bg-stone-800 text-stone-200 font-medium whitespace-nowrap">
-              📍 {preferences.destination}
-            </span>
-          )}
-          {preferences.origin && (
-            <span className="px-2 py-0.5 rounded-md bg-stone-800 text-stone-200 font-medium whitespace-nowrap">
-              🛫 From {preferences.origin}
-            </span>
-          )}
-          {preferences.duration_days && (
-            <span className="px-2 py-0.5 rounded-md bg-stone-800 text-stone-200 font-medium whitespace-nowrap">
-              ⏱️ {preferences.duration_days} Days
-            </span>
-          )}
-          {(preferences.dates || preferences.start_date) && (
-            <span className="px-2 py-0.5 rounded-md bg-stone-800 text-stone-200 font-medium whitespace-nowrap">
-              📅 {preferences.dates || `${preferences.start_date} – ${preferences.end_date}`}
-            </span>
-          )}
-          {preferences.budget_amount && (
-            <span className="px-2 py-0.5 rounded-md bg-stone-800 text-stone-200 font-medium whitespace-nowrap">
-              💰 {preferences.budget_currency} {preferences.budget_amount.toLocaleString()}
-            </span>
-          )}
-          {preferences.party_type && (
-            <span className="px-2 py-0.5 rounded-md bg-stone-800 text-stone-200 font-medium whitespace-nowrap">
-              👥 {preferences.party_type}
-            </span>
-          )}
+        <div className="px-4 py-2 bg-stone-900/60 border-b border-stone-800 space-y-1.5 text-[11px]">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="text-stone-400 font-medium">Parameters:</span>
+              <span className={`px-2 py-0.5 rounded-full font-semibold text-[10px] ${
+                isAllOptionsCompleted 
+                  ? 'bg-emerald-950/80 text-emerald-300 border border-emerald-800/60' 
+                  : 'bg-stone-800 text-stone-300 border border-stone-700'
+              }`}>
+                {isAllOptionsCompleted ? '✓ 10/10 Options Completed' : `${completedOptionsCount}/10 Options Locked`}
+              </span>
+            </div>
+            {!isAllOptionsCompleted && (
+              <span className="text-[10px] text-stone-500 italic">
+                Answer remaining options to unlock plan generation
+              </span>
+            )}
+          </div>
+
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5">
+            {preferences.destination && (
+              <span className="px-2 py-0.5 rounded-md bg-stone-800 text-stone-200 font-medium whitespace-nowrap">
+                📍 {preferences.destination}
+              </span>
+            )}
+            {preferences.origin && (
+              <span className="px-2 py-0.5 rounded-md bg-stone-800 text-stone-200 font-medium whitespace-nowrap">
+                🛫 {preferences.origin}
+              </span>
+            )}
+            {preferences.duration_days && (
+              <span className="px-2 py-0.5 rounded-md bg-stone-800 text-stone-200 font-medium whitespace-nowrap">
+                ⏱️ {preferences.duration_days} Days
+              </span>
+            )}
+            {(preferences.dates || preferences.start_date) && (
+              <span className="px-2 py-0.5 rounded-md bg-stone-800 text-stone-200 font-medium whitespace-nowrap">
+                📅 {preferences.dates || `${preferences.start_date} – ${preferences.end_date}`}
+              </span>
+            )}
+            {preferences.party_type && (
+              <span className="px-2 py-0.5 rounded-md bg-stone-800 text-stone-200 font-medium whitespace-nowrap">
+                👥 {preferences.party_type}
+              </span>
+            )}
+            {preferences.travel_pace && (
+              <span className="px-2 py-0.5 rounded-md bg-stone-800 text-stone-200 font-medium whitespace-nowrap">
+                ⚡ {preferences.travel_pace}
+              </span>
+            )}
+            {preferences.budget_amount && (
+              <span className="px-2 py-0.5 rounded-md bg-stone-800 text-stone-200 font-medium whitespace-nowrap">
+                💰 {preferences.budget_currency || 'INR'} {preferences.budget_amount.toLocaleString()}
+              </span>
+            )}
+            {preferences.transport_preference && (
+              <span className="px-2 py-0.5 rounded-md bg-stone-800 text-stone-200 font-medium whitespace-nowrap">
+                🚆 {preferences.transport_preference}
+              </span>
+            )}
+            {preferences.stay_preference && (
+              <span className="px-2 py-0.5 rounded-md bg-stone-800 text-stone-200 font-medium whitespace-nowrap">
+                🏮 {preferences.stay_preference}
+              </span>
+            )}
+            {preferences.dining_preference && (
+              <span className="px-2 py-0.5 rounded-md bg-stone-800 text-stone-200 font-medium whitespace-nowrap">
+                🥗 {preferences.dining_preference}
+              </span>
+            )}
+            {preferences.interests && preferences.interests.length > 0 && (
+              <span className="px-2 py-0.5 rounded-md bg-stone-800 text-stone-200 font-medium whitespace-nowrap">
+                ✨ {preferences.interests.join(', ')}
+              </span>
+            )}
+          </div>
         </div>
       )}
 
@@ -356,24 +416,26 @@ export const ChatStudio: React.FC<ChatStudioProps> = ({
           </div>
         )}
 
-        {/* Generate Plan Prominent CTA Banner */}
-        {!isGeneratingPlan && (preferences.destination || isPlanReady) && (
-          <div className="p-3.5 rounded-xl bg-stone-850/95 border border-stone-700 text-stone-100 flex items-center justify-between gap-3 shadow-md">
+        {/* Generate Plan Prominent CTA Banner - Only shown when all options are completed or plan is ready */}
+        {!isGeneratingPlan && (isPlanReady || isAllOptionsCompleted) && (
+          <div className="p-3.5 rounded-xl bg-stone-850/95 border border-stone-700 text-stone-100 flex items-center justify-between gap-3 shadow-md animate-in fade-in slide-in-from-bottom-2 duration-200">
             <div>
               <div className="text-xs font-semibold flex items-center gap-1.5 text-stone-100">
                 <Compass className="w-3.5 h-3.5 text-stone-400" />
-                <span>Ready to Build Trip Architecture?</span>
+                <span>{isPlanReady ? "Plan Architecture Active" : "All 10 Preferences Confirmed & Locked!"}</span>
               </div>
               <p className="text-[11px] text-stone-400 mt-0.5">
-                {preferences.destination ? `Destination: ${preferences.destination}` : 'Ready to synthesize complete plan'}
+                {isPlanReady 
+                  ? (preferences.destination ? `Destination: ${preferences.destination}` : 'Ready to re-synthesize complete plan')
+                  : `Ready to synthesize complete multi-agent plan for ${preferences.destination}`}
               </p>
             </div>
             <button
               onClick={onGeneratePlan}
               disabled={isGeneratingPlan}
-              className="text-xs font-semibold px-3.5 py-1.5 rounded-lg bg-stone-100 hover:bg-white text-stone-900 border border-stone-200 transition-all cursor-pointer whitespace-nowrap shadow-xs hover:shadow disabled:opacity-50 disabled:cursor-not-allowed"
+              className="text-xs font-semibold px-4 py-2 rounded-lg bg-stone-100 hover:bg-white text-stone-900 border border-stone-200 transition-all cursor-pointer whitespace-nowrap shadow-xs hover:shadow disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
             >
-              {isPlanReady ? "Regenerate Plan" : "Generate Plan"}
+              <span>{isPlanReady ? "Regenerate Plan" : "🚀 Generate Plan"}</span>
             </button>
           </div>
         )}

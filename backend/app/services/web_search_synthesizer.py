@@ -48,7 +48,7 @@ class WebSearchSynthesizer:
         dest = prefs.destination
         origin = prefs.origin or "Home City"
         days = prefs.duration_days or 5
-        curr = prefs.budget_currency or "USD"
+        curr = prefs.budget_currency or "INR"
         budget = prefs.budget_amount or 2000
 
         # Construct concise context from web search
@@ -65,8 +65,8 @@ Verified Web Intelligence:
 
 REQUIREMENTS:
 1. 'stays': Exactly 4 real, famous, highly rated hotels in {dest} across tiers (Boutique, Authentic Heritage, 5-Star Luxury, Smart Value). Include real hotel name, real neighborhood, rating (4.8+), review_count, estimated price_per_night in {curr}, why_recommended, badge, verified_review_snippet, key_amenities (list of 5).
-2. 'flights': 2 real operating airlines connecting {origin} to {dest} with real flight numbers, routes, times, prices, and pros/cons.
-3. 'trains': 2 real high-speed rail lines or airport express lines serving {dest} with real operators, durations, and prices.
+2. 'flights': 2 real operating airlines connecting {origin} to {dest} with real flight numbers, routes, times, prices, 'pros' (array of strings), and 'cons' (array of strings).
+3. 'trains': 2 real high-speed rail lines or airport express lines serving {dest} with real operators, durations, prices, and 'pros' (array of strings).
 4. 'days': Array of {min(days, 5)} days. For EACH day:
    - 'title', 'theme'
    - 'morning': {{'title': 'Real Monument/Attraction Name', 'location': 'Neighborhood', 'duration': '2-3 hours', 'description': '...', 'estimated_cost': number in {curr}, 'tags': [...]}}
@@ -87,7 +87,10 @@ Output strictly valid JSON only. No markdown formatting.
                 resp = client.models.generate_content(
                     model=m,
                     contents=prompt,
-                    config={"response_mime_type": "application/json"}
+                    config={
+                        "response_mime_type": "application/json",
+                        "automatic_function_calling": {"disable": True}
+                    }
                 )
                 if resp and resp.text:
                     cleaned_txt = resp.text.strip()
@@ -111,7 +114,7 @@ Output strictly valid JSON only. No markdown formatting.
     ) -> List[StayOption]:
         dest = prefs.destination
         days = max(prefs.duration_days or 5, 1)
-        curr = prefs.budget_currency or "USD"
+        curr = prefs.budget_currency or "INR"
         checkin = prefs.start_date or "2026-11-10"
         checkout = prefs.end_date or "2026-11-17"
         dates_label = f"{checkin} to {checkout}"
@@ -208,7 +211,7 @@ Output strictly valid JSON only. No markdown formatting.
     ) -> List[ItineraryDay]:
         dest = prefs.destination
         days_count = min(max(prefs.duration_days or 5, 1), 14)
-        curr = prefs.budget_currency or "USD"
+        curr = prefs.budget_currency or "INR"
         
         start_dt = None
         if prefs.start_date:

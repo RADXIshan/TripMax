@@ -28,7 +28,7 @@ def format_trip_record(record: TripRecord) -> Dict[str, Any]:
         "duration_days": record.duration_days or 1,
         "dates": record.dates or "",
         "total_budget": record.total_budget or 0.0,
-        "currency": record.currency or "USD",
+        "currency": record.currency or "INR",
         "tagline": record.tagline or "",
         "savedAt": saved_at_formatted,
         "plan": plan_data
@@ -67,7 +67,7 @@ def save_trip(
     tagline = plan.get("tagline", "")
     budget_obj = plan.get("budget", {}) if isinstance(plan.get("budget"), dict) else {}
     total_budget = float(budget_obj.get("total_estimated", 0.0))
-    currency = str(budget_obj.get("currency", "USD"))
+    currency = str(budget_obj.get("currency", "INR"))
 
     plan_json_str = json.dumps(plan)
 

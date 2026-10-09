@@ -33,7 +33,7 @@ async def generate_trip(
                     dates=plan.dates,
                     tagline=plan.tagline,
                     total_budget=plan.budget.total_estimated if plan.budget else 0.0,
-                    currency=plan.budget.currency if plan.budget else "USD",
+                    currency=plan.budget.currency if plan.budget else "INR",
                     plan_json=json.dumps(plan_dict)
                 )
                 db.merge(record)
@@ -70,7 +70,7 @@ async def refine_trip(
                     dates=updated_plan.dates,
                     tagline=updated_plan.tagline,
                     total_budget=updated_plan.budget.total_estimated if updated_plan.budget else 0.0,
-                    currency=updated_plan.budget.currency if updated_plan.budget else "USD",
+                    currency=updated_plan.budget.currency if updated_plan.budget else "INR",
                     plan_json=json.dumps(plan_dict)
                 )
                 db.merge(record)
@@ -83,21 +83,23 @@ async def refine_trip(
 
 @router.get("/sample")
 async def get_sample_plan():
-    """Generates a sample 5-day Kyoto trip plan for instant preview"""
+    """Generates a sample curated trip plan for instant preview"""
     sample_prefs = TripPreferences(
-        destination="Kyoto, Japan",
-        origin="San Francisco (SFO)",
+        destination="Tokyo & Kyoto, Japan",
+        origin="New Delhi (DEL)",
         dates="Nov 10 – Nov 17, 2026",
         start_date="2026-11-10",
         end_date="2026-11-17",
         travel_month="November 2026",
         season="Autumn",
         duration_days=7,
-        budget_amount=2800.0,
-        budget_currency="USD",
-        party_type="Couple",
+        budget_amount=220000.0,
+        budget_currency="INR",
+        party_type="Couple / Romantic",
         travel_pace="balanced",
         transport_preference="both",
+        stay_preference="Boutique & Authentic Stays",
+        dining_preference="Local Culinary Tastings & Street Food",
         interests=["culture & history", "food", "photography & viewpoints"]
     )
     plan = await orchestrator.generate_trip_plan(sample_prefs)

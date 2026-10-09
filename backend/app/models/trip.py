@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from typing import List, Optional, Dict, Any
 
 class TripPreferences(BaseModel):
@@ -11,11 +11,12 @@ class TripPreferences(BaseModel):
     season: Optional[str] = None
     duration_days: Optional[int] = None
     budget_amount: Optional[float] = None
-    budget_currency: str = "USD"
+    budget_currency: str = "INR"
     party_type: Optional[str] = None  # solo, couple, friends, family
     travel_pace: Optional[str] = None  # relaxed, balanced, fast-paced
     transport_preference: Optional[str] = None  # flight, train, both
     stay_preference: Optional[str] = None  # boutique, luxury, budget_hotel, hostel, apartment, authentic
+    dining_preference: Optional[str] = None  # vegetarian, vegan, street food, fine dining, halal, etc.
     interests: List[str] = Field(default_factory=list)  # food, culture, history, nightlife, nature, shopping, photography, relaxation
     special_requirements: Optional[str] = None
     completed_steps: List[str] = Field(default_factory=list)
@@ -45,6 +46,26 @@ class BookingLink(BaseModel):
     url: str
     price_hint: Optional[str] = None
 
+def _coerce_str_list(v: Any) -> List[str]:
+    if v is None:
+        return []
+    if isinstance(v, list):
+        return [str(item).strip() for item in v if item is not None and str(item).strip()]
+    if isinstance(v, str):
+        v = v.strip()
+        if not v:
+            return []
+        if "\n" in v:
+            return [line.lstrip("•-* \t").strip() for line in v.split("\n") if line.strip()]
+        if ";" in v:
+            return [p.strip() for p in v.split(";") if p.strip()]
+        if "." in v and len(v.split(".")) > 1 and len(v) > 60:
+            return [p.strip() for p in v.split(".") if p.strip()]
+        if "," in v and len(v.split(",")) > 1 and len(v) < 120:
+            return [p.strip() for p in v.split(",") if p.strip()]
+        return [v]
+    return [str(v)]
+
 class FlightOption(BaseModel):
     airline: str
     flight_number: Optional[str] = None
@@ -53,7 +74,7 @@ class FlightOption(BaseModel):
     duration: str
     stops: str
     estimated_price: float
-    currency: str = "USD"
+    currency: str = "INR"
     pros: List[str] = Field(default_factory=list)
     cons: List[str] = Field(default_factory=list)
     booking_url: str
@@ -64,6 +85,11 @@ class FlightOption(BaseModel):
     image_url: Optional[str] = None
     booking_links: List[BookingLink] = Field(default_factory=list)
 
+    @field_validator("pros", "cons", mode="before")
+    @classmethod
+    def _validate_flight_pros_cons(cls, v: Any) -> List[str]:
+        return _coerce_str_list(v)
+
 class TrainOption(BaseModel):
     operator: str
     train_name: str
@@ -71,7 +97,7 @@ class TrainOption(BaseModel):
     duration: str
     class_tier: str
     estimated_price: float
-    currency: str = "USD"
+    currency: str = "INR"
     scenic_highlights: str
     pros: List[str] = Field(default_factory=list)
     booking_url: str
@@ -82,6 +108,11 @@ class TrainOption(BaseModel):
     image_url: Optional[str] = None
     booking_links: List[BookingLink] = Field(default_factory=list)
 
+    @field_validator("pros", mode="before")
+    @classmethod
+    def _validate_train_pros(cls, v: Any) -> List[str]:
+        return _coerce_str_list(v)
+
 class StayOption(BaseModel):
     id: str
     name: str
@@ -91,7 +122,7 @@ class StayOption(BaseModel):
     review_count: Optional[int] = 320
     price_per_night: float
     total_price: float
-    currency: str = "USD"
+    currency: str = "INR"
     key_amenities: List[str] = Field(default_factory=list)
     why_recommended: str
     booking_url: str
@@ -103,6 +134,11 @@ class StayOption(BaseModel):
     dates: Optional[str] = None
     verified_review_snippet: Optional[str] = None
     booking_links: List[BookingLink] = Field(default_factory=list)
+
+    @field_validator("key_amenities", mode="before")
+    @classmethod
+    def _validate_amenities(cls, v: Any) -> List[str]:
+        return _coerce_str_list(v)
 
 class ResearchSource(BaseModel):
     title: str
@@ -123,6 +159,11 @@ class ActivityItem(BaseModel):
     source_url: Optional[str] = None
     source_snippet: Optional[str] = None
     booking_links: List[BookingLink] = Field(default_factory=list)
+
+    @field_validator("tags", mode="before")
+    @classmethod
+    def _validate_tags(cls, v: Any) -> List[str]:
+        return _coerce_str_list(v)
 
 class DiningRecommendation(BaseModel):
     place: str
@@ -152,7 +193,7 @@ class ItineraryDay(BaseModel):
     sources: List[ResearchSource] = Field(default_factory=list)
 
 class BudgetBreakdown(BaseModel):
-    currency: str = "USD"
+    currency: str = "INR"
     target_budget: Optional[float] = None
     total_estimated: float
     transit_cost: float
