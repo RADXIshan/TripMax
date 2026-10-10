@@ -639,13 +639,476 @@ GLOBAL_DESTINATIONS: Dict[str, Dict[str, Any]] = {
                 "transit_tips": "Book Uluwatu Kecak tickets in advance to secure front-row sunset views; allow 45 minutes for the transfer to Jimbaran Bay for dinner."
             }
         ]
+    },
+    "bhubaneswar": {
+        "country": "India",
+        "tagline": "The Temple City of India: Sacred Kalinga Architecture, Ashokan Edicts & Odia Culinary Delights",
+        "overview": "Bhubaneswar is an architectural marvel of eastern India, boasting over 500 ancient stone temples spanning from the 6th to 13th centuries, serene Buddhist stupas at Dhauli Giri, ancient Jain caves, and extraordinary Odia gastronomy.",
+        "best_time": "October to March (pleasant 18°C-28°C, cool evening breezes, ideal for temple walking tours)",
+        "transit_tip": "Use the modern 'Mo Bus' rapid transit network or pre-paid autorickshaws / Ola & Uber for effortless local commuting across Bhubaneswar, Cuttack, and Puri.",
+        "currency": "INR",
+        "stays": [
+            {
+                "id": "stay-mayfair-lagoon",
+                "name": "Mayfair Lagoon Bhubaneswar",
+                "type": "5-Star Lagoon Luxury Resort",
+                "neighborhood": "Jaydev Vihar / Central Heritage Belt",
+                "rating": 4.94,
+                "review_count": 2840,
+                "base_usd": 110,
+                "badge": "🌟 #1 Luxury Resort in Odisha",
+                "key_amenities": [
+                    "Lush 10-Acre Landscaped Lagoon with Private Villas",
+                    "Award-Winning Multi-Cuisine Dining (Kanika & Tea Pot)",
+                    "Ayurvedic Spa & Serene Open-Air Swimming Pool",
+                    "Traditional Kalinga Architecture & Sculpted Stone Murals",
+                    "Complimentary Airport Transfers to BBI"
+                ],
+                "why": "Consistently ranked as the crown jewel of hospitality in Bhubaneswar. An urban oasis surrounded by tranquil waters and lush greenery.",
+                "snippet": "Verified guest: 'An absolute paradise right inside the city. The lagoon cottages, peacocks on lawns, and mouth-watering Odia thali made our trip unforgettable.'"
+            },
+            {
+                "id": "stay-welcomhotel-bhubaneswar",
+                "name": "Welcomhotel by ITC Hotels, Bhubaneswar",
+                "type": "Authentic Odisha Heritage Luxury",
+                "neighborhood": "Dumduma / Khandagiri Foothills",
+                "rating": 4.91,
+                "review_count": 1420,
+                "base_usd": 85,
+                "badge": "🏮 LEED Platinum Certified Eco-Luxury",
+                "key_amenities": [
+                    "Kalinga Temple Architecture Inspired Stone Jali Carvings",
+                    "Authentic Odia & Royal Indian Dining at Peshawri",
+                    "Kairali Ayurvedic Holistic Wellness Centre",
+                    "Rooftop Infinity Pool Overlooking Khandagiri Hills",
+                    "Spacious Soundproof Rooms with Modern Tech"
+                ],
+                "why": "Blends sustainable five-star luxury with authentic Odisha heritage aesthetics. Close proximity to Udayagiri & Khandagiri Caves.",
+                "snippet": "Verified guest: 'The temple-style architecture is stunning. Outstanding hospitality and the food at WelcomCafe was exemplary.'"
+            },
+            {
+                "id": "stay-trident-bhubaneswar",
+                "name": "Trident Hotel Bhubaneswar (Oberoi Group)",
+                "type": "Boutique Garden Estate Luxury",
+                "neighborhood": "Nayapalli / Secretariat Corridor",
+                "rating": 4.89,
+                "review_count": 1950,
+                "base_usd": 95,
+                "badge": "💎 Prestigious Oberoi Hospitality",
+                "key_amenities": [
+                    "Sprawling 14 Acres of Landscaped Gardens & Fruit Orchards",
+                    "Jogging Track & Resort Pool Surrounded by Palms",
+                    "Legendary Oberoi Signature Service & Fine Dining",
+                    "Artisan Odia Handicrafts Gallery in Lobby",
+                    "High-Speed Fiber Wi-Fi & Executive Business Lounge"
+                ],
+                "why": "Unrivaled peaceful ambiance right in the center of the capital. Renowned for impeccable service standards and lush fruit gardens.",
+                "snippet": "Verified guest: 'A peaceful haven amidst nature. The staff treated us like royalty and arranged fantastic temple guides.'"
+            },
+            {
+                "id": "stay-vivanta-bhubaneswar",
+                "name": "Vivanta Bhubaneswar, DN Square (IHCL)",
+                "type": "Contemporary Smart Luxury",
+                "neighborhood": "Patia / DN Square Corridor",
+                "rating": 4.88,
+                "review_count": 1180,
+                "base_usd": 75,
+                "badge": "🏷️ Best Modern Value (~₹6,200/nt)",
+                "key_amenities": [
+                    "Rooftop Swimming Pool with Skyline Views",
+                    "Mynt 24/7 Global & Regional Specialty Bistro",
+                    "Direct Skywalk Connectivity to DN Regalia Shopping Hub",
+                    "Modern Ergonomic Workstations & Luxury Bedding",
+                    "State-of-the-Art Fitness Center"
+                ],
+                "why": "Ideal for smart travelers seeking modern design, swift connectivity to the airport and IT corridor, backed by the trusted Taj IHCL promise.",
+                "snippet": "Verified guest: 'Ultra-modern amenities, super clean rooms, and top-notch breakfast spread with fresh local sweets.'"
+            }
+        ],
+        "flights": [
+            {
+                "airline": "IndiGo 6E Express",
+                "flight_number": "6E-2041",
+                "origin_airport": "Origin Hub Airport",
+                "dest_airport": "Bhubaneswar Biju Patnaik Int'l (BBI)",
+                "duration": "2h 15m",
+                "stops": "Non-Stop Direct",
+                "price_usd": 65,
+                "departure_time": "08:15 AM",
+                "arrival_time": "10:30 AM",
+                "carbon_footprint": "118 kg CO2 (Fuel-Efficient A321neo)",
+                "verdict": "Fastest and most reliable non-stop morning flight straight into central Bhubaneswar.",
+                "pros": ["On-time performance leader", "BBI airport is located only 15 mins from downtown hotels", "Frequent daily flight schedule"],
+                "cons": ["Hot meals cost extra"]
+            },
+            {
+                "airline": "Air India / Vistara Premium",
+                "flight_number": "AI-877",
+                "origin_airport": "Origin Hub Airport",
+                "dest_airport": "Bhubaneswar Biju Patnaik Int'l (BBI)",
+                "duration": "2h 20m",
+                "stops": "Non-Stop Direct",
+                "price_usd": 85,
+                "departure_time": "11:00 AM",
+                "arrival_time": "01:20 PM",
+                "carbon_footprint": "125 kg CO2",
+                "verdict": "Full-service premium carrier with complimentary hot meals and extra baggage.",
+                "pros": ["Complimentary hot gourmet lunch", "25kg checked baggage included", "Spacious legroom in economy"],
+                "cons": ["Slightly higher ticket price"]
+            }
+        ],
+        "trains": [
+            {
+                "operator": "Indian Railways Vande Bharat Express",
+                "train_type": "Semi-High Speed Train 18",
+                "route": "Origin Junction -> Bhubaneswar (BBS)",
+                "duration": "5h 45m",
+                "stops": "3 Strategic Fast Halts",
+                "price_usd": 22,
+                "departure_time": "06:10 AM",
+                "arrival_time": "11:55 AM",
+                "verdict": "India's premier semi-high speed train with panoramic windows, 180° rotatable seats, and hot gourmet catering.",
+                "pros": ["Executive Chair Car with luxury reclining seats", "Onboard hot meals & tea included in ticket", "Arrives directly at central Bhubaneswar BBS Station"],
+                "cons": ["Bookings open 60 days in advance and sell out rapidly"]
+            },
+            {
+                "operator": "Bhubaneswar Rajdhani Express (AC Superfast)",
+                "train_type": "Premier AC Sleeper Rail",
+                "route": "Trunk Express Corridor -> Bhubaneswar (BBS)",
+                "duration": "7h 30m",
+                "stops": "Limited Express Halts",
+                "price_usd": 28,
+                "departure_time": "05:05 PM",
+                "arrival_time": "12:35 AM",
+                "verdict": "Classic high-speed express route with full AC comfort and pristine bed linen.",
+                "pros": ["Highest rail track priority", "All-inclusive gourmet dinner & refreshments", "Very comfortable AC berths"],
+                "cons": ["Longer duration than morning flight"]
+            }
+        ],
+        "days": [
+            {
+                "day": 1,
+                "title": "Ancient Kalinga Sanctums: Lingaraj & Mukteshvara Temples",
+                "theme": "Sacred 10th-Century Stone Architecture & Heritage Tanks",
+                "morning": {
+                    "time": "08:30 AM",
+                    "title": "Lingaraj Temple & Sacred Bindu Sagar Lake Walk",
+                    "location": "Old Town Heritage District, Bhubaneswar",
+                    "duration": "2.5 hours",
+                    "description": "Witness the towering 180-foot deula spire of Lingaraj Temple, a pinnacle of Kalinga architectural genius dating to the 11th century, surrounded by 150 subsidiary shrines and the sacred waters of Bindu Sagar.",
+                    "cost": 5,
+                    "tags": ["Kalinga Architecture", "11th Century Sanctuary", "Sacred Bindu Sagar"],
+                    "wiki_query": "Lingaraj Temple",
+                    "source_name": "Archaeological Survey of India (ASI) Portal",
+                    "source_url": "https://asi.nic.in/",
+                    "source_snippet": "Lingaraj Temple represents the quintessence of the Kalinga style of temple architecture."
+                },
+                "lunch": {
+                    "place": "Dalma Restaurant (Unit 4 Heritage Stalls)",
+                    "dish": "Authentic Odia Thali: Dalma, Potala Rasa, Machha Besara & Ghee Rice",
+                    "vibe": "Beloved traditional dining institution serving home-cooked authentic Odia classics",
+                    "source_name": "Eater India & Culinary Heritage Guild",
+                    "source_url": "https://www.google.com/search?q=dalma+bhubaneswar+authentic+food",
+                    "source_snippet": "The definitive spot in Bhubaneswar to taste authentic slow-cooked Dalma and roasted spiced vegetables."
+                },
+                "afternoon": {
+                    "time": "02:30 PM",
+                    "title": "Mukteshvara & Rajarani Temples (Gem of Odisha Architecture)",
+                    "location": "Old Town Cultural Corridor",
+                    "duration": "2.5 hours",
+                    "description": "Admire the world-renowned Torana archway of the 10th-century Mukteshvara Temple, hailed as the 'Gem of Odisha Architecture', followed by the exquisite red-and-gold sandstone carvings of Rajarani Temple.",
+                    "cost": 3,
+                    "tags": ["Mukteshvara Torana", "Rajarani Carvings", "10th Century Sculpture"],
+                    "wiki_query": "Mukteshvara Temple, Bhubaneswar",
+                    "source_name": "Odisha Tourism Development Corporation (OTDC)",
+                    "source_url": "https://odishatourism.gov.in/",
+                    "source_snippet": "Mukteshvara Temple marks the transition between the early and later phases of Kalinga temple architecture."
+                },
+                "evening": {
+                    "time": "06:30 PM",
+                    "title": "Ekamra Haat Traditional Craft Village & Folk Performances",
+                    "location": "Jaydev Vihar Craft Corridor",
+                    "duration": "2 hours",
+                    "description": "Browse genuine Pattachitra palm-leaf paintings, silver filigree (Tarakasi) from Cuttack, and Sambalpuri handloom textiles while enjoying live evening folk Odissi dance recitals.",
+                    "cost": 2,
+                    "tags": ["Silver Filigree", "Pattachitra Art", "Sambalpuri Textiles"],
+                    "wiki_query": "Ekamra Haat",
+                    "source_name": "Boyanika & Odisha State Handloom Guild",
+                    "source_url": "https://odishatourism.gov.in/",
+                    "source_snippet": "Open-air artisan market celebrating Odisha's indigenous handlooms and GI-tagged crafts."
+                },
+                "dinner": {
+                    "place": "Kanika at Mayfair Lagoon",
+                    "dish": "Chhena Poda (Caramelized Cottage Cheese Dessert) & Bamboo Steamed Mutton / Mustard Fish",
+                    "vibe": "Elegantly appointed royal Odia fine dining with traditional brass tableware",
+                    "source_name": "Mayfair Hotels Fine Dining Archive",
+                    "source_url": "https://www.mayfairhotels.com/",
+                    "source_snippet": "Kanika is renowned as Bhubaneswar's leading authentic fine-dining Odia destination."
+                },
+                "transit_tips": "Old Town temples are pedestrian-friendly; remember to remove footwear and leather belts before entering the sanctums."
+            },
+            {
+                "day": 2,
+                "title": "Rock-Cut Caves & Ashokan Peace Monument: Dhauli & Khandagiri",
+                "theme": "Buddhist Serenity & Ancient Jain Monastic Architecture",
+                "morning": {
+                    "time": "08:30 AM",
+                    "title": "Dhauli Giri Shanti Stupa & Emperor Ashoka's Rock Edict",
+                    "location": "Dhauli Hills, Daya River Bank",
+                    "duration": "2.5 hours",
+                    "description": "Stand atop the historic Dhauli Hills where the epochal Kalinga War in 261 BC transformed Emperor Ashoka from warrior to Buddhist emissary. Inspect the 3rd-century BC Ashokan rock edicts with carved elephant.",
+                    "cost": 2,
+                    "tags": ["Dhauli Shanti Stupa", "Ashokan Rock Edict 261 BC", "Buddhist Peace Memorial"],
+                    "wiki_query": "Dhauli",
+                    "source_name": "Odisha Tourism Heritage Board",
+                    "source_url": "https://odishatourism.gov.in/",
+                    "source_snippet": "Dhauli Hills are presumed to be the site of the Kalinga War where Ashoka renounced warfare for Dhamma."
+                },
+                "lunch": {
+                    "place": "Pahala Sweet Haven (Old NH16 Village)",
+                    "dish": "Warm Spongy Pahala Rasagola & Fresh Baked Chhena Jhili",
+                    "vibe": "Iconic highway sweet cluster preparing GI-tagged Rasagolas in bubbling brass cauldrons",
+                    "source_name": "Odisha Culinary GI Registry",
+                    "source_url": "https://odishatourism.gov.in/",
+                    "source_snippet": "Pahala village is world-famous for warm, light, freshly made Rasagola that melts on the tongue."
+                },
+                "afternoon": {
+                    "time": "02:30 PM",
+                    "title": "Udayagiri & Khandagiri Caves (Ancient Monastic Rock Cells)",
+                    "location": "Khandagiri Hillock, West Bhubaneswar",
+                    "duration": "2.5 hours",
+                    "description": "Explore 33 rock-hewn caves carved by King Kharavela in the 2nd century BC, including the magnificent double-story Rani Gumpha (Queen's Cave) and Hathi Gumpha with ancient Brahmi inscriptions.",
+                    "cost": 4,
+                    "tags": ["Rani Gumpha", "2nd Century BC Caves", "Hathi Gumpha Brahmi Inscription"],
+                    "wiki_query": "Udayagiri and Khandagiri Caves",
+                    "source_name": "Archaeological Survey of India (ASI)",
+                    "source_url": "https://asi.nic.in/",
+                    "source_snippet": "Udayagiri and Khandagiri caves were carved out for Jain ascetics by King Kharavela."
+                },
+                "evening": {
+                    "time": "06:30 PM",
+                    "title": "Sunset View from Khandagiri Summit & Street Food Boulevard",
+                    "location": "Khandagiri Heights & Master Canteen Market",
+                    "duration": "2 hours",
+                    "description": "Catch golden sunset panoramas over the lush forest canopy from Khandagiri hilltop, then head downtown for legendary Cuttack-style Dahibara Aloo Dum and spicy Ghugni.",
+                    "cost": 3,
+                    "tags": ["Hilltop Sunset", "Dahibara Aloo Dum", "Street Food Safari"],
+                    "wiki_query": "Dahi vada",
+                    "source_name": "Odisha Street Food Guild",
+                    "source_url": "https://odishatourism.gov.in/",
+                    "source_snippet": "Dahibara Aloo Dum is Odisha's most iconic and beloved culinary export."
+                },
+                "dinner": {
+                    "place": "Nimantran Restaurant (Odisha Tourism Showcase)",
+                    "dish": "Santula (Spiced Vegetable Stew), Badi Chura, and Mati Handi Mutton",
+                    "vibe": "Official flagship culinary showcase managed by Odisha Tourism Development Corp",
+                    "source_name": "OTDC Nimantran Portal",
+                    "source_url": "https://odishatourism.gov.in/",
+                    "source_snippet": "Nimantran offers an authentic gastronomic tour across every coastal and tribal district of Odisha."
+                },
+                "transit_tips": "Wear comfortable walking shoes with good grip for climbing the carved rock steps at Udayagiri and Khandagiri."
+            },
+            {
+                "day": 3,
+                "title": "Day Excursion: UNESCO Konark Sun Temple & Puri Golden Beach",
+                "theme": "The Legendary 13th-Century Black Pagoda & Coastal Sea Breeze",
+                "morning": {
+                    "time": "08:00 AM",
+                    "title": "Konark Sun Temple (The Architectural Chariot of Surya)",
+                    "location": "Konark UNESCO Heritage Complex (65km from BBI)",
+                    "duration": "3 hours",
+                    "description": "Be awestruck by the 13th-century Sun Temple built by King Narasimhadeva I, conceived as a colossal cosmic chariot drawn by 7 horses with 24 intricately carved stone sun wheels acting as precise sundials.",
+                    "cost": 6,
+                    "tags": ["UNESCO World Heritage", "24 Stone Sundials", "13th Century Black Pagoda"],
+                    "wiki_query": "Konark Sun Temple",
+                    "source_name": "UNESCO World Heritage Centre",
+                    "source_url": "https://whc.unesco.org/en/list/246",
+                    "source_snippet": "Konark is a monumental representation of the chariot of Surya, the Sun god, with 24 wheels carved in stone."
+                },
+                "lunch": {
+                    "place": "Wildgrass Restaurant (Puri Coastal Heritage Garden)",
+                    "dish": "Chingudi Malai Curry (Jumbo Prawns in Coconut Milk) & Coastal Fried Fish",
+                    "vibe": "Shaded garden oasis serving freshly caught Bay of Bengal seafood with fragrant Gobindobhog rice",
+                    "source_name": "Lonely Planet Odisha Dining Guide",
+                    "source_url": "https://www.lonelyplanet.com/india/odisha",
+                    "source_snippet": "Wildgrass is celebrated for fresh seafood and tranquil garden setting just off VIP Road."
+                },
+                "afternoon": {
+                    "time": "02:30 PM",
+                    "title": "Puri Jagannath Temple Heritage Corridor & Ananda Bazar",
+                    "location": "Badadanda (Grand Road), Puri",
+                    "duration": "2.5 hours",
+                    "description": "Walk along the magnificent newly inaugurated Srimandir Parikrama Heritage Corridor around the sacred 12th-century Jagannath Temple, taking in the grand deula spire, Lion's Gate (Singhadwara), and sacred Ananda Bazar.",
+                    "cost": 2,
+                    "tags": ["Srimandir Heritage Corridor", "Puri Grand Road", "12th Century Sanctuary"],
+                    "wiki_query": "Jagannath Temple, Puri",
+                    "source_name": "Shree Jagannatha Temple Administration (SJTA)",
+                    "source_url": "https://jagannath.nic.in/",
+                    "source_snippet": "One of the four sacred Char Dham pilgrimage shrines in India, renowned for its monumental annual Rath Yatra."
+                },
+                "evening": {
+                    "time": "05:30 PM",
+                    "title": "Blue Flag Certified Golden Beach & Marine Drive Sunset",
+                    "location": "Puri-Konark Marine Drive Coastal Belt",
+                    "duration": "2 hours",
+                    "description": "Feel the refreshing sea breeze on the pristine Blue Flag certified sands of Puri Golden Beach as fishermen haul their wooden catamarans against the pink and purple twilight sky.",
+                    "cost": 1,
+                    "tags": ["Blue Flag Beach", "Marine Drive", "Bay of Bengal Sunset"],
+                    "wiki_query": "Puri",
+                    "source_name": "Foundation for Environmental Education (Blue Flag)",
+                    "source_url": "https://www.blueflag.global/",
+                    "source_snippet": "Puri Golden Beach holds international Blue Flag certification for pristine water quality, safety, and eco-management."
+                },
+                "dinner": {
+                    "place": "Tea Pot Restaurant at Mayfair Heritage Puri",
+                    "dish": "Royal Crab Curry, Steamed Basmati Rice & Khira Mohana",
+                    "vibe": "Colonial seaside luxury with waves crashing just beyond the palm trees",
+                    "source_name": "Mayfair Heritage Ocean Dining",
+                    "source_url": "https://www.mayfairhotels.com/",
+                    "source_snippet": "Delightful seaside dining overlooking the surf with fresh catches and heritage charm."
+                },
+                "transit_tips": "Hire an AC cab for the scenic 65km Marine Drive loop from Bhubaneswar through Konark to Puri and return."
+            },
+            {
+                "day": 4,
+                "title": "Wildlife & Living Heritage: Nandankanan & Odisha State Museum",
+                "theme": "White Tiger Safari & Ancient Palm-Leaf Manuscript Treasures",
+                "morning": {
+                    "time": "08:30 AM",
+                    "title": "Nandankanan Zoological Park (White Tiger Safari & Kanjia Lake)",
+                    "location": "Chandaka Forest Belt, North Bhubaneswar",
+                    "duration": "3 hours",
+                    "description": "Board the open-air safari bus into lush natural forest enclosures to spot rare white tigers, Indian leopards, and Asiatic lions, followed by the botanical garden and tranquil Kanjia Lake.",
+                    "cost": 4,
+                    "tags": ["White Tiger Safari", "Kanjia Lake", "Botanical Sanctuary"],
+                    "wiki_query": "Nandankanan Zoological Park",
+                    "source_name": "Forest and Environment Department, Odisha",
+                    "source_url": "https://www.nandankanan.org/",
+                    "source_snippet": "Nandankanan is India's leading sanctuary for white tigers and breeding programs for endangered species."
+                },
+                "lunch": {
+                    "place": "Odiyan Ethnic Dining",
+                    "dish": "Mudhi Mansa (Spiced Mutton with Puffed Rice) & Badi Chura",
+                    "vibe": "Charming village-themed restaurant celebrating interior Baripada and coastal recipes",
+                    "source_name": "Odisha Culinary Heritage Guild",
+                    "source_url": "https://odishatourism.gov.in/",
+                    "source_snippet": "Authentic regional culinary specialties prepared using traditional stone-ground spices."
+                },
+                "afternoon": {
+                    "time": "02:30 PM",
+                    "title": "Odisha State Museum & Tribal Art Heritage Galleries",
+                    "location": "BJB Nagar Cultural Corridor",
+                    "duration": "2.5 hours",
+                    "description": "Inspect ancient palm-leaf manuscripts inscribed with iron styluses, Buddhist sculptures from Lalitgiri, copper plate inscriptions, and intricate tribal musical instruments from 62 indigenous tribes.",
+                    "cost": 2,
+                    "tags": ["Palm-Leaf Manuscripts", "Tribal Art Gallery", "Lalitgiri Buddhist Bronzes"],
+                    "wiki_query": "Odisha State Museum",
+                    "source_name": "Department of Tourism and Culture, Odisha",
+                    "source_url": "https://odishastatemuseum.nic.in/",
+                    "source_snippet": "Houses an invaluable collection of archaeology, epigraphy, numismatics, and traditional palm-leaf manuscripts."
+                },
+                "evening": {
+                    "time": "06:00 PM",
+                    "title": "Handloom Shopping at Boyanika & Utkalika Master Craftsmen",
+                    "location": "Janpath Commercial Hub",
+                    "duration": "2 hours",
+                    "description": "Acquire authentic GI-tagged Sambalpuri Ikat sarees, Kotpad organic-dyed weaves, and exquisite silver filigree ornaments directly from government-certified master weaver cooperatives.",
+                    "cost": 0,
+                    "tags": ["Sambalpuri Ikat", "GI-Tagged Weaves", "Master Weaver Collectibles"],
+                    "wiki_query": "Sambalpuri sari",
+                    "source_name": "Handlooms, Textiles and Handicrafts Dept, Odisha",
+                    "source_url": "https://boyanika.com/",
+                    "source_snippet": "Apex handloom cooperative marketing directly for Odisha's heritage weaver communities."
+                },
+                "dinner": {
+                    "place": "Zaika Continental & Regional Tandoor",
+                    "dish": "Charcoal Smoked Kebabs, Dal Makhani & Warm Chhena Gaja",
+                    "vibe": "Elegant dining terrace with live Indian classical instrumental sitar music",
+                    "source_name": "Bhubaneswar Fine Dining Circle",
+                    "source_url": "https://odishatourism.gov.in/",
+                    "source_snippet": "Renowned for atmospheric garden ambiance and rich North Indian & regional culinary blends."
+                },
+                "transit_tips": "Nandankanan is best visited early morning during cooler feeding hours when animals are most active."
+            },
+            {
+                "day": 5,
+                "title": "Tantric Shrines & Chilika Lagoon: Hirapur & Mangalajodi",
+                "theme": "Sacred 64 Yogini Sanctum & Migratory Wetland Haven",
+                "morning": {
+                    "time": "08:00 AM",
+                    "title": "Chausath Yogini Temple at Hirapur (9th-Century Hypaethral Temple)",
+                    "location": "Hirapur Rural Enclave (15km from BBI)",
+                    "duration": "2 hours",
+                    "description": "Step into one of only four surviving hypaethral (roofless) Yogini temples in India. Carved in the 9th century, the circular black chlorite stone sanctum encloses 64 exquisite dancing female deities representing cosmic energy.",
+                    "cost": 3,
+                    "tags": ["9th-Century Yogini Sanctum", "Black Chlorite Sculptures", "Tantric Heritage"],
+                    "wiki_query": "Chausath Yogini Temple, Hirapur",
+                    "source_name": "Archaeological Survey of India (ASI)",
+                    "source_url": "https://asi.nic.in/",
+                    "source_snippet": "The circular enclosure at Hirapur contains 64 recesses, each housing an exquisitely carved idol of a Yogini."
+                },
+                "lunch": {
+                    "place": "Mangalajodi Ecotourism Dining Pavilion",
+                    "dish": "Fresh Chilika Prawn & Crab Thali with Steamed Basmati & Tomato Khatta",
+                    "vibe": "Eco-friendly wooden pavilion overlooking the sparkling Chilika lagoon marshes",
+                    "source_name": "Chilika Development Authority (CDA)",
+                    "source_url": "https://www.chilika.com/",
+                    "source_snippet": "Community-run eco-resort preparing fresh catches with sweet and sour tomato-date chutney."
+                },
+                "afternoon": {
+                    "time": "01:30 PM",
+                    "title": "Mangalajodi Bird Haven Wooden Boat Safari on Chilika Lake",
+                    "location": "Chilika Lake Wetland Sanctuary",
+                    "duration": "3 hours",
+                    "description": "Glide silently on hand-rowed wooden country boats through freshwater reed marshes harboring over 1.5 million migratory birds, including flamingos, purple swamphens, and northern pintails from Siberia.",
+                    "cost": 8,
+                    "tags": ["Chilika Lake Ramsar Site", "Hand-Rowed Boat Safari", "Migratory Bird Sanctuary"],
+                    "wiki_query": "Chilika Lake",
+                    "source_name": "Ramsar Wetlands of International Importance",
+                    "source_url": "https://rsis.ramsar.org/ris/229",
+                    "source_snippet": "Chilika Lake is Asia's largest brackish water lagoon and a vital wintering ground for migratory waterfowl."
+                },
+                "evening": {
+                    "time": "06:30 PM",
+                    "title": "Sunset Horizon over Chilika & Farewell Souvenir Walk",
+                    "location": "Barkul Jetty & Marine Promenade",
+                    "duration": "1.5 hours",
+                    "description": "Watch breathtaking golden-red reflections across the vast expanse of Chilika Lake as migratory flocks head to roost, concluding your extraordinary 5-day Odisha architecture expedition.",
+                    "cost": 0,
+                    "tags": ["Lagoon Sunset", "Chilika Reflections", "Farewell Promenade"],
+                    "wiki_query": "Chilika Lake",
+                    "source_name": "Odisha Tourism Ecotourism Portal",
+                    "source_url": "https://odishatourism.gov.in/",
+                    "source_snippet": "Chilika's expansive waters offer some of the most serene sunset horizons in eastern India."
+                },
+                "dinner": {
+                    "place": "Tea Pot Restaurant at Mayfair Lagoon",
+                    "dish": "Grand Farewell Royal Odia Buffet & Fresh Chhena Poda with Malpua",
+                    "vibe": "Sumptuous poolside buffet celebrating regional and royal recipes in a tranquil tropical setting",
+                    "source_name": "Mayfair Lagoon Gastronomy",
+                    "source_url": "https://www.mayfairhotels.com/",
+                    "source_snippet": "An iconic banquet destination offering a masterclass in Odia and global gourmet dishes."
+                },
+                "transit_tips": "Mangalajodi is accessible within 1h 20m drive from Bhubaneswar; quiet wooden boats ensure zero noise disturbance to the birds."
+            }
+        ]
     }
 }
 
 def get_destination_data(dest_query: str) -> Optional[Dict[str, Any]]:
     """Checks if destination matches any of our rich curated destination records"""
     q = dest_query.lower()
+    
+    # Direct alias resolution for Indian & global destinations
+    if any(k in q for k in ["bhubaneswar", "odisha", "orissa", "puri", "konark", "lingaraj", "cuttack"]):
+        return GLOBAL_DESTINATIONS.get("bhubaneswar")
+    if any(k in q for k in ["barcelona", "catalonia"]):
+        return GLOBAL_DESTINATIONS.get("barcelona")
+    if any(k in q for k in ["bali", "ubud", "seminyak", "canggu", "uluwatu"]):
+        return GLOBAL_DESTINATIONS.get("bali")
+
     for key, data in GLOBAL_DESTINATIONS.items():
-        if key in q or data.get("country", "").lower() in q:
+        if key in q:
             return data
     return None
+

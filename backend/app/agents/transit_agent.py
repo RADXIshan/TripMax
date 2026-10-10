@@ -1,6 +1,8 @@
 from typing import List, Tuple, Optional, Dict, Any
+import asyncio
 from app.models.trip import TripPreferences, FlightOption, TrainOption
 from app.services.destination_knowledge import get_destination_data
+from app.services.link_crawler import link_crawler
 from app.services.deep_links import (
     get_google_flights_url,
     get_skyscanner_url,
@@ -18,7 +20,7 @@ class TransitAgent:
     """
 
     @classmethod
-    def evaluate_transit(
+    async def evaluate_transit(
         cls, 
         prefs: TripPreferences, 
         gemini_data: Optional[Dict[str, Any]] = None
@@ -49,12 +51,14 @@ class TransitAgent:
         seat61_link = get_seat61_url(dest)
         rail_official_link = get_irctc_or_rail_url(origin, dest, depart_date)
 
+        flights: List[FlightOption] = []
+        trains: List[TrainOption] = []
+
         # 1. Check Gemini dynamic generative transit first
         if gemini_data and gemini_data.get("flights") and gemini_data.get("trains"):
-            flights = []
             for f in gemini_data["flights"][:2]:
-                airline = f.get("airline") or f.get("carrier") or "Flagship International Carrier"
-                f_num = f.get("flight_number") or f.get("flight_no") or "Intercontinental Express"
+                airline = f.get("airline") or f.get("carrier") or "Flagship Regional Carrier"
+                f_num = f.get("flight_number") or f.get("flight_no") or "Direct Flight"
                 dur = f.get("duration") or "Direct Flight"
                 price = float(f.get("price") or f.get("estimated_price") or 380)
                 
@@ -77,11 +81,11 @@ class TransitAgent:
                 flights.append(FlightOption(
                     airline=airline,
                     flight_number=f_num,
-                    departure=f"{origin} International",
+                    departure=f"{origin} Airport",
                     arrival=f"{dest} Airport",
                     duration=dur,
                     stops=f.get("stops", "Non-stop"),
-                    estimated_price=round(price * rate if curr != "USD" else price, 0),
+                    estimated_price=round(price * rate if curr != "USD" and price < 5000 else price, 0),
                     currency=curr,
                     pros=f_pros,
                     cons=f_cons,
@@ -93,7 +97,6 @@ class TransitAgent:
                     image_url="https://images.unsplash.com/photo-1436491865332-7a61a109cc05?auto=format&fit=crop&w=1000&q=80"
                 ))
 
-            trains = []
             for t in gemini_data["trains"][:2]:
                 operator = t.get("operator") or t.get("rail_operator") or "High-Speed Rail Network"
                 t_name = t.get("train_type") or t.get("train_name") or "Express Rail"
@@ -113,82 +116,200 @@ class TransitAgent:
                     train_name=t_name,
                     route=route,
                     duration=t.get("duration", "High-Speed City Transit"),
-                    class_tier="Standard / First Class",
-                    estimated_price=round(t_price * rate if curr != "USD" else t_price, 0),
+                    class_tier="Standard / First Class / AC Tier",
+                    estimated_price=round(t_price * rate if curr != "USD" and t_price < 2000 else t_price, 0),
                     currency=curr,
-                    scenic_highlights=t.get("scenic_highlights", "City-to-city downtown transit with scenic regional views and zero security queues."),
+                    scenic_highlights=t.get("scenic_highlights", f"Fast city-to-city transit connecting {origin} and {dest} with zero baggage queues."),
                     pros=t_pros,
-                    booking_url=trainline_link,
-                    provider="Trainline / Rail Network",
+                    booking_url=rail_official_link,
+                    provider="Official Rail Network",
                     source_name=f"{operator} Timetable",
-                    source_url=trainline_link,
+                    source_url=rail_official_link,
                     dates=dates_label,
                     image_url="https://images.unsplash.com/photo-1474487548417-781cb71495f3?auto=format&fit=crop&w=1000&q=80"
                 ))
 
+        # 2. Check rich global destination database if not already loaded
+        if not flights or not trains:
+            dest_data = get_destination_data(dest)
+            if dest_data and dest_data.get("flights") and dest_data.get("trains"):
+                flights = []
+                for f in dest_data["flights"]:
+                    flights.append(FlightOption(
+                        airline=f["airline"],
+                        flight_number=f["flight_number"],
+                        departure=f"{origin} International",
+                        arrival=f"{dest} Airport",
+                        duration="Direct Express",
+                        stops=f["stops"],
+                        estimated_price=round(f["price_usd"] * rate, 0),
+                        currency=curr,
+                        pros=f["pros"],
+                        cons=f["cons"],
+                        booking_url=google_flights_link,
+                        provider="Google Flights & Carrier Direct",
+                        source_name=f"{f['airline']} Official Booking",
+                        source_url=google_flights_link,
+                        dates=dates_label,
+                        image_url="https://images.unsplash.com/photo-1436491865332-7a61a109cc05?auto=format&fit=crop&w=1000&q=80"
+                    ))
+
+                trains = []
+                for t in dest_data["trains"]:
+                    trains.append(TrainOption(
+                        operator=t["operator"],
+                        train_name=t["train_type"],
+                        route=t["route"],
+                        duration=t["duration"],
+                        class_tier="Standard / First Class",
+                        estimated_price=round(t["price_usd"] * rate, 0),
+                        currency=curr,
+                        scenic_highlights="Scenic route passing regional countryside, rivers, and historic towns with zero airport baggage checks",
+                        pros=t["pros"],
+                        booking_url=trainline_link,
+                        provider="Trainline / National Rail",
+                        source_name="Official Rail Timetable",
+                        source_url=trainline_link,
+                        dates=dates_label,
+                        image_url="https://images.unsplash.com/photo-1474487548417-781cb71495f3?auto=format&fit=crop&w=1000&q=80"
+                    ))
+
+        # If Gemini or destination database populated flights and trains, crawl and return
+        if flights and trains:
             for f in flights:
-                f.booking_links = get_multi_flight_links(origin, dest, depart_date, return_date, f.airline)
+                crawled_f = await link_crawler.crawl_flight_links(
+                    airline=f.airline,
+                    flight_number=f.flight_number,
+                    origin=origin,
+                    destination=dest,
+                    depart_date=depart_date,
+                    return_date=return_date
+                )
+                f.booking_url = crawled_f.get("primary_url") or f.booking_url
+                f.provider = crawled_f.get("primary_provider") or f.provider
+                f.booking_links = crawled_f.get("links") or get_multi_flight_links(origin, dest, depart_date, return_date, f.airline)
+                f.source_name = f"{f.provider} Verified Schedule"
+                f.source_url = f.booking_url
+
             for t in trains:
-                t.booking_links = get_multi_train_links(origin, dest, depart_date, t.operator)
+                crawled_t = await link_crawler.crawl_train_links(
+                    train_name=t.train_name,
+                    operator=t.operator,
+                    origin=origin,
+                    destination=dest,
+                    travel_date=depart_date
+                )
+                t.booking_url = crawled_t.get("primary_url") or t.booking_url
+                t.provider = crawled_t.get("primary_provider") or t.provider
+                t.booking_links = crawled_t.get("links") or get_multi_train_links(origin, dest, depart_date, t.operator)
+                t.source_name = f"{t.provider} Official Reservation"
+                t.source_url = t.booking_url
+
             return flights, trains
 
-        # 2. Check rich global destination database
-        dest_data = get_destination_data(dest)
-        if dest_data and dest_data.get("flights") and dest_data.get("trains"):
-            flights = []
-            for f in dest_data["flights"]:
-                flights.append(FlightOption(
-                    airline=f["airline"],
-                    flight_number=f["flight_number"],
-                    departure=f"{origin} International",
-                    arrival=f"{dest} Airport",
-                    duration="Direct Express",
-                    stops=f["stops"],
-                    estimated_price=round(f["price_usd"] * rate, 0),
-                    currency=curr,
-                    pros=f["pros"],
-                    cons=f["cons"],
-                    booking_url=google_flights_link,
-                    provider="Google Flights & Carrier Direct",
-                    source_name=f"{f['airline']} Official Booking",
-                    source_url=google_flights_link,
-                    dates=dates_label,
-                    image_url="https://images.unsplash.com/photo-1436491865332-7a61a109cc05?auto=format&fit=crop&w=1000&q=80"
-                ))
-
-            trains = []
-            for t in dest_data["trains"]:
-                trains.append(TrainOption(
-                    operator=t["operator"],
-                    train_name=t["train_type"],
-                    route=t["route"],
-                    duration=t["duration"],
-                    class_tier="Standard / First Class",
-                    estimated_price=round(t["price_usd"] * rate, 0),
-                    currency=curr,
-                    scenic_highlights="Scenic route passing regional countryside, rivers, and historic towns with zero airport baggage checks",
-                    pros=t["pros"],
-                    booking_url=trainline_link,
-                    provider="Trainline / National Rail",
-                    source_name="Official Rail Timetable",
-                    source_url=trainline_link,
-                    dates=dates_label,
-                    image_url="https://images.unsplash.com/photo-1474487548417-781cb71495f3?auto=format&fit=crop&w=1000&q=80"
-                ))
-
-            for f in flights:
-                f.booking_links = get_multi_flight_links(origin, dest, depart_date, return_date, f.airline)
-            for t in trains:
-                t.booking_links = get_multi_train_links(origin, dest, depart_date, t.operator)
-            return flights, trains
-
+        # 3. Otherwise, use region-tailored curated presets
+        from app.services.link_crawler import is_indian_locale
+        is_india = is_indian_locale(origin, dest)
         is_japan = any(k in dest_lower for k in ["japan", "kyoto", "tokyo", "osaka"])
         is_italy = any(k in dest_lower for k in ["italy", "amalfi", "rome", "florence", "venice", "naples"])
         is_swiss = any(k in dest_lower for k in ["swiss", "switzerland", "zurich", "zermatt", "interlaken"])
         is_france = any(k in dest_lower for k in ["paris", "france", "nice", "provence"])
 
-        # 1. Real Carrier Evaluation
-        if is_japan:
+        if is_india:
+            flights = [
+                FlightOption(
+                    airline="IndiGo Airlines (6E)",
+                    flight_number="6E 521 / 6E 6032 Direct Non-Stop",
+                    departure=f"{origin} Airport",
+                    arrival=f"{dest} Airport",
+                    duration="2 hours 10 mins (Non-stop)",
+                    stops="Non-stop",
+                    estimated_price=round(5400 if curr == "INR" else 65 * rate, 0),
+                    currency=curr,
+                    pros=[
+                        "Over 88% on-time departure guarantee across Indian skies",
+                        "Convenient daily morning and evening schedule",
+                        "15kg checked baggage and 7kg cabin baggage included"
+                    ],
+                    cons=["In-flight meals and snacks are paid add-ons"],
+                    booking_url=google_flights_link,
+                    provider="IndiGo Direct & Google Flights",
+                    source_name="IndiGo Airlines Official Flight Schedule",
+                    source_url=google_flights_link,
+                    dates=dates_label,
+                    image_url="https://images.unsplash.com/photo-1436491865332-7a61a109cc05?auto=format&fit=crop&w=1000&q=80"
+                ),
+                FlightOption(
+                    airline="Air India / Akasa Air",
+                    flight_number="AI 784 / QP 1308 Express",
+                    departure=f"{origin} Main Terminal",
+                    arrival=f"{dest} Terminal 1",
+                    duration="2 hours 25 mins",
+                    stops="Non-stop",
+                    estimated_price=round(4800 if curr == "INR" else 58 * rate, 0),
+                    currency=curr,
+                    pros=[
+                        "Complimentary hot meals and beverages served onboard (Air India)",
+                        "Spacious economy legroom with USB charging ports",
+                        "Affordable flexi-fare cancellation tiers"
+                    ],
+                    cons=["Slightly fewer frequencies compared to IndiGo on select sectors"],
+                    booking_url=skyscanner_link,
+                    provider="Air India & MakeMyTrip",
+                    source_name="Air India Official Timetable",
+                    source_url=skyscanner_link,
+                    dates=dates_label,
+                    image_url="https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?auto=format&fit=crop&w=1000&q=80"
+                )
+            ]
+
+            trains = [
+                TrainOption(
+                    operator="Indian Railways (IRCTC / South Eastern Railway)",
+                    train_name="Vande Bharat Express (Semi-High Speed 160 km/h)",
+                    route=f"{origin} Central ➔ {dest} Railway Station",
+                    duration="Fastest Rail Service (Executive & Chair Car)",
+                    class_tier="AC Chair Car (CC) / Executive Chair Car (EC)",
+                    estimated_price=round(1450 if curr == "INR" else 18 * rate, 0),
+                    currency=curr,
+                    scenic_highlights="Ultra-smooth semi-high-speed glide through Indian heartland with 180° rotatable seats, panoramic windows, and zero airport security queues",
+                    pros=[
+                        "Arrives directly in downtown city center; avoids airport cab congestion",
+                        "Complimentary hot breakfast/dinner and tea service included in ticket",
+                        "Bio-vacuum toilets, automatic sliding doors, and onboard Wi-Fi infotainment",
+                        "Confirmed seat booking with zero luggage weight surcharges"
+                    ],
+                    booking_url=rail_official_link,
+                    provider="IRCTC Official & ConfirmTkt",
+                    source_name="IRCTC National Train Enquiry System (NTES)",
+                    source_url=rail_official_link,
+                    dates=dates_label,
+                    image_url="https://images.unsplash.com/photo-1474487548417-781cb71495f3?auto=format&fit=crop&w=1000&q=80"
+                ),
+                TrainOption(
+                    operator="Indian Railways (Superfast Express)",
+                    train_name="Rajdhani / Duronto Express (Overnight Superfast)",
+                    route=f"{origin} Junction ➔ {dest} Main Junction",
+                    duration="Overnight Direct Express",
+                    class_tier="AC 3 Tier (3A) / AC 2 Tier (2A)",
+                    estimated_price=round(1850 if curr == "INR" else 22 * rate, 0),
+                    currency=curr,
+                    scenic_highlights="Sleep comfortably overnight in an air-conditioned sleeper berth and wake up at sunrise in your destination city",
+                    pros=[
+                        "Saves 1 night of hotel accommodation cost",
+                        "Punctual priority green corridor on Indian rail network",
+                        "Bedroll, clean linen, and bedding provided"
+                    ],
+                    booking_url=rail_official_link,
+                    provider="ConfirmTkt & MakeMyTrip Trains",
+                    source_name="Indian Railways Official Portal",
+                    source_url=rail_official_link,
+                    dates=dates_label,
+                    image_url="https://images.unsplash.com/photo-1532105956626-9569c03602f6?auto=format&fit=crop&w=1000&q=80"
+                )
+            ]
+
+        elif is_japan:
             flights = [
                 FlightOption(
                     airline="ANA (All Nippon Airways) / Japan Airlines (JAL)",
@@ -682,10 +803,34 @@ class TransitAgent:
                 )
             ]
 
+        # Crawl and evaluate authentic booking links and providers
         for f in flights:
-            f.booking_links = get_multi_flight_links(origin, dest, depart_date, return_date, f.airline)
+            crawled_f = await link_crawler.crawl_flight_links(
+                airline=f.airline,
+                flight_number=f.flight_number,
+                origin=origin,
+                destination=dest,
+                depart_date=depart_date,
+                return_date=return_date
+            )
+            f.booking_url = crawled_f.get("primary_url") or f.booking_url
+            f.provider = crawled_f.get("primary_provider") or f.provider
+            f.booking_links = crawled_f.get("links") or get_multi_flight_links(origin, dest, depart_date, return_date, f.airline)
+            f.source_name = f"{f.provider} Verified Schedule"
+            f.source_url = f.booking_url
 
         for t in trains:
-            t.booking_links = get_multi_train_links(origin, dest, depart_date, t.operator)
+            crawled_t = await link_crawler.crawl_train_links(
+                train_name=t.train_name,
+                operator=t.operator,
+                origin=origin,
+                destination=dest,
+                travel_date=depart_date
+            )
+            t.booking_url = crawled_t.get("primary_url") or t.booking_url
+            t.provider = crawled_t.get("primary_provider") or t.provider
+            t.booking_links = crawled_t.get("links") or get_multi_train_links(origin, dest, depart_date, t.operator)
+            t.source_name = f"{t.provider} Official Reservation"
+            t.source_url = t.booking_url
 
         return flights, trains

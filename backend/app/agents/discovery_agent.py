@@ -376,7 +376,7 @@ class DiscoveryAgent:
             if "dining" not in prefs.completed_steps:
                 prefs.completed_steps.append("dining")
 
-        # Fallbacks across full message if not set
+        # Universal opportunistic extraction across all inputs
         if not prefs.destination:
             dest_patterns = [
                 r'\b(?:to|in|visit|explore|trip to)\s+([a-zA-Z\s]{3,30})(?:for|\?|\.|\,|$|\bfrom\b)',
@@ -388,6 +388,8 @@ class DiscoveryAgent:
                     cand = m.group(1).strip()
                     if cand.lower() not in ["a trip", "my family", "budget", "flights", "vacation", "hotels", "days"]:
                         prefs.destination = cand.title()
+                        if "destination" not in prefs.completed_steps:
+                            prefs.completed_steps.append("destination")
                         break
 
         if not prefs.origin:
@@ -396,16 +398,109 @@ class DiscoveryAgent:
                 cand = origin_match.group(1).strip()
                 if cand.lower() not in ["a trip", "here", "home"]:
                     prefs.origin = cand.title()
+                    if "origin" not in prefs.completed_steps:
+                        prefs.completed_steps.append("origin")
 
-        if not prefs.duration_days:
+        if not prefs.duration_days or not prefs.dates:
             dur_match = re.search(r'(\d+)\s*(?:days?|nights?|day)', text_lower)
             if dur_match:
                 try:
                     d = int(dur_match.group(1))
                     if 1 <= d <= 60:
                         prefs.duration_days = d
+                        if "duration" not in prefs.completed_steps:
+                            prefs.completed_steps.append("duration")
+                        if not prefs.dates:
+                            dates_str, start_date, end_date, travel_month, season, _ = cls._parse_dates_and_duration(text_clean)
+                            prefs.dates = dates_str
+                            prefs.start_date = start_date
+                            prefs.end_date = end_date
+                            prefs.travel_month = travel_month
+                            prefs.season = season
+                            if "dates" not in prefs.completed_steps:
+                                prefs.completed_steps.append("dates")
                 except ValueError:
                     pass
+
+        if not prefs.party_type:
+            if any(w in text_lower for w in ["solo", "myself", "alone"]):
+                prefs.party_type = "Solo Explorer"
+                prefs.completed_steps.append("party_type")
+            elif any(w in text_lower for w in ["couple", "romantic", "partner", "wife", "husband", "honeymoon"]):
+                prefs.party_type = "Couple / Romantic"
+                prefs.completed_steps.append("party_type")
+            elif any(w in text_lower for w in ["family", "kid", "child", "children", "parents"]):
+                prefs.party_type = "Family with Children"
+                prefs.completed_steps.append("party_type")
+            elif any(w in text_lower for w in ["friends", "buddies", "group", "mates", "colleagues"]):
+                prefs.party_type = "Group of Friends"
+                prefs.completed_steps.append("party_type")
+
+        if not prefs.travel_pace:
+            if any(w in text_lower for w in ["relax", "chill", "slow", "unhurried", "leisurely"]):
+                prefs.travel_pace = "relaxed"
+                prefs.completed_steps.append("travel_pace")
+            elif any(w in text_lower for w in ["fast", "packed", "action", "energetic", "see everything"]):
+                prefs.travel_pace = "fast-paced"
+                prefs.completed_steps.append("travel_pace")
+            elif any(w in text_lower for w in ["balance", "moderate", "mix"]):
+                prefs.travel_pace = "balanced"
+                prefs.completed_steps.append("travel_pace")
+
+        if not prefs.budget_amount:
+            lakh_match = re.search(r'(\d+(?:\.\d+)?)\s*(?:lakhs?|lacs?|l\b)', text_lower)
+            k_match = re.search(r'(\d+(?:\.\d+)?)\s*k\b', text_lower)
+            if lakh_match:
+                try:
+                    num_val = float(lakh_match.group(1)) * 100000.0
+                    if num_val > 0:
+                        prefs.budget_amount = num_val
+                        prefs.budget_currency = prefs.budget_currency or "INR"
+                        prefs.completed_steps.append("budget")
+                except ValueError:
+                    pass
+            elif k_match:
+                try:
+                    num_val = float(k_match.group(1)) * 1000.0
+                    if num_val > 0:
+                        prefs.budget_amount = num_val
+                        prefs.budget_currency = prefs.budget_currency or "INR"
+                        prefs.completed_steps.append("budget")
+                except ValueError:
+                    pass
+            elif any(w in text_lower for w in ["rupee", "inr", "rs", "₹", "budget"]):
+                num_match = re.search(r'(\d[\d,]+(?:\.\d+)?)', text_clean)
+                if num_match:
+                    try:
+                        num_val = float(num_match.group(1).replace(",", ""))
+                        if num_val >= 500:
+                            prefs.budget_amount = num_val
+                            prefs.budget_currency = prefs.budget_currency or "INR"
+                            prefs.completed_steps.append("budget")
+                    except ValueError:
+                        pass
+
+        if not prefs.transport_preference:
+            if "train" in text_lower and "flight" not in text_lower:
+                prefs.transport_preference = "train"
+                prefs.completed_steps.append("transport")
+            elif "flight" in text_lower and "train" not in text_lower:
+                prefs.transport_preference = "flight"
+                prefs.completed_steps.append("transport")
+            elif "both" in text_lower or ("train" in text_lower and "flight" in text_lower):
+                prefs.transport_preference = "both"
+                prefs.completed_steps.append("transport")
+
+        if not prefs.dining_preference:
+            if any(w in text_lower for w in ["pure veg", "vegetarian", "jain", "vegan"]):
+                prefs.dining_preference = "Pure Vegetarian & Vegan Friendly"
+                prefs.completed_steps.append("dining")
+            elif any(w in text_lower for w in ["street food", "street eat", "local food"]):
+                prefs.dining_preference = "Authentic Local Street Food & Night Markets"
+                prefs.completed_steps.append("dining")
+            elif any(w in text_lower for w in ["seafood", "fish", "crab"]):
+                prefs.dining_preference = "Coastal Seafood & Regional Specialties"
+                prefs.completed_steps.append("dining")
 
         return prefs
 

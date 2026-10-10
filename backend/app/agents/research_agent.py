@@ -1,3 +1,4 @@
+import asyncio
 from typing import List, Dict
 from app.services.search_service import search_service
 from app.models.trip import TripPreferences, ResearchSource
@@ -18,14 +19,15 @@ class ResearchAgent:
         interests_str = " ".join(prefs.interests) if prefs.interests else "culture food scenic"
 
         queries = [
-            f"{dest} top sights attractions travel guide",
-            f"{dest} travel guide lonely planet",
-            f"best places to stay neighborhoods {dest}",
-            f"must eat local dishes food guide {dest}",
-            f"{dest} public transit getting around tips"
+            f"{dest} top attractions travel guide wikitravel",
+            f"best places to stay hotels {dest}",
+            f"must eat traditional dishes {dest}"
         ]
 
-        raw_results = await search_service.multi_search(queries, max_per_query=3)
+        try:
+            raw_results = await asyncio.wait_for(search_service.multi_search(queries, max_per_query=2), timeout=3.0)
+        except Exception:
+            raw_results = []
 
         sources: List[ResearchSource] = []
         for r in raw_results[:12]:

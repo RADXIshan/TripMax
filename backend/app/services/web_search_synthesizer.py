@@ -7,6 +7,7 @@ import httpx
 from app.config import get_gemini_key
 from app.services.image_service import image_service
 from app.services.search_service import search_service
+from app.services.link_crawler import link_crawler
 from app.services.deep_links import (
     get_multi_stay_links,
     get_multi_flight_links,
@@ -79,18 +80,21 @@ REQUIREMENTS:
 Output strictly valid JSON only. No markdown formatting.
 """
 
-        models_to_try = ["gemini-flash-latest", "gemini-flash-lite-latest"]
+        models_to_try = ["gemini-3.8-flash", "gemini-flash-latest", "gemini-flash-lite-latest"]
         for m in models_to_try:
             try:
                 from google import genai
                 client = genai.Client(api_key=api_key)
-                resp = client.models.generate_content(
-                    model=m,
-                    contents=prompt,
-                    config={
-                        "response_mime_type": "application/json",
-                        "automatic_function_calling": {"disable": True}
-                    }
+                resp = await asyncio.wait_for(
+                    client.aio.models.generate_content(
+                        model=m,
+                        contents=prompt,
+                        config={
+                            "response_mime_type": "application/json",
+                            "automatic_function_calling": {"disable": True}
+                        }
+                    ),
+                    timeout=8.0
                 )
                 if resp and resp.text:
                     cleaned_txt = resp.text.strip()
@@ -129,7 +133,12 @@ Output strictly valid JSON only. No markdown formatting.
                 rating = float(s.get("rating") or 4.9)
                 # Fetch authentic Wikipedia photo of hotel or city
                 img = image_service.get_image_for_query(name, category="hotel", destination=dest)
-                links = get_multi_stay_links(name, dest, checkin, checkout, price, curr)
+                
+                # Live crawl hotel links for official direct portal and regional OTAs
+                crawled = await link_crawler.crawl_hotel_links(name, dest, checkin, checkout, price, curr)
+                links = crawled.get("links") or get_multi_stay_links(name, dest, checkin, checkout, price, curr)
+                primary_url = crawled.get("primary_url") or (links[0].url if links else "")
+                primary_prov = crawled.get("primary_provider") or "Official Direct & Verified"
 
                 stays.append(StayOption(
                     id=f"stay-dyn-{idx+1}",
@@ -143,12 +152,12 @@ Output strictly valid JSON only. No markdown formatting.
                     currency=curr,
                     key_amenities=s.get("key_amenities", ["Central Location", "Complimentary Breakfast", "High-Speed Wi-Fi"]),
                     why_recommended=s.get("why_recommended", f"Highly rated hotel in {dest} with verified guest reviews."),
-                    booking_url=links[0].url if links else f"https://www.booking.com/searchresults.html?ss={urllib.parse.quote(name)}",
-                    provider="Booking.com & Verified Inventory",
+                    booking_url=primary_url,
+                    provider=primary_prov,
                     badge=s.get("badge", f"🌟 Top Rated ({rating}/5)"),
                     image_url=img,
-                    source_name="Verified Guest Reviews (Booking.com & Google Hotels)",
-                    source_url=links[0].url if links else "",
+                    source_name=f"{primary_prov} & Google Hotels Live Rates",
+                    source_url=primary_url,
                     dates=dates_label,
                     verified_review_snippet=s.get("verified_review_snippet", "Verified guest: 'Spotless clean rooms, wonderful hospitality, and unbeatable central location.'"),
                     booking_links=links
@@ -176,7 +185,11 @@ Output strictly valid JSON only. No markdown formatting.
         for idx, tier in enumerate(default_hotel_tiers):
             hotel_name = found_names[idx] if idx < len(found_names) else f"{tier[0]} {dest}"
             img = image_service.get_image_for_query(hotel_name, category="hotel", destination=dest)
-            links = get_multi_stay_links(hotel_name, dest, checkin, checkout, tier[3], curr)
+            crawled = await link_crawler.crawl_hotel_links(hotel_name, dest, checkin, checkout, tier[3], curr)
+            links = crawled.get("links") or get_multi_stay_links(hotel_name, dest, checkin, checkout, tier[3], curr)
+            primary_url = crawled.get("primary_url") or (links[0].url if links else "")
+            primary_prov = crawled.get("primary_provider") or "Official Direct & Verified"
+
             stays.append(StayOption(
                 id=f"stay-live-{idx+1}",
                 name=hotel_name,
@@ -189,12 +202,12 @@ Output strictly valid JSON only. No markdown formatting.
                 currency=curr,
                 key_amenities=["Artisan Breakfast Included", "Panoramic Rooftop Skyline Lounge", "High-Speed Fiber Wi-Fi", "Dedicated Concierge Service"],
                 why_recommended=f"Ranked among top accommodations in {dest}. Walking distance to iconic sights with outstanding verified guest scores.",
-                booking_url=links[0].url if links else "",
-                provider="Booking.com Official",
+                booking_url=primary_url,
+                provider=primary_prov,
                 badge=tier[4],
                 image_url=img,
-                source_name="Booking.com & Google Hotels Live Inventory",
-                source_url=links[0].url if links else "",
+                source_name=f"{primary_prov} & Google Hotels Live Rates",
+                source_url=primary_url,
                 dates=dates_label,
                 verified_review_snippet="Verified guest: 'Spectacular service, comfortable beds, and central location that saved us hours of travel.'",
                 booking_links=links

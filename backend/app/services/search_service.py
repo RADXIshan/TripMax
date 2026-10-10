@@ -115,7 +115,10 @@ class SearchService:
                     print(f"[SearchService] DDGS notice ({current_q[:30]}): {err_msg}", flush=True)
             return []
 
-        return await asyncio.to_thread(_sync_search)
+        try:
+            return await asyncio.wait_for(asyncio.to_thread(_sync_search), timeout=2.5)
+        except Exception:
+            return []
 
     @staticmethod
     async def search_tavily(query: str, max_results: int = 5) -> List[Dict[str, str]]:

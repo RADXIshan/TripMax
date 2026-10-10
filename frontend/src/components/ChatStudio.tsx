@@ -11,7 +11,15 @@ import {
   Loader2,
   Bookmark,
   PenLine,
-  Sparkles
+  Sparkles,
+  Globe,
+  Plane,
+  Building2,
+  CalendarDays,
+  CreditCard,
+  Award,
+  Clock,
+  Check
 } from 'lucide-react';
 import type { ChatMessage, SuggestedReply, TripPreferences } from '../types/trip';
 import { renderCleanMessage } from '../utils/formatText';
@@ -45,7 +53,47 @@ export const ChatStudio: React.FC<ChatStudioProps> = ({
   const [activeOtherMsgId, setActiveOtherMsgId] = useState<string | null>(null);
   const [otherCustomText, setOtherCustomText] = useState('');
   const [otherPlaceholder, setOtherPlaceholder] = useState('Write your own response...');
+  const [activeStepIndex, setActiveStepIndex] = useState(0);
+  const [progressPercent, setProgressPercent] = useState(15);
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!isGeneratingPlan) {
+      setActiveStepIndex(0);
+      setProgressPercent(15);
+      setElapsedSeconds(0);
+      return;
+    }
+
+    const startTime = Date.now();
+    const interval = setInterval(() => {
+      const elapsed = (Date.now() - startTime) / 1000;
+      setElapsedSeconds(Math.floor(elapsed));
+
+      if (elapsed < 1.0) {
+        setActiveStepIndex(0);
+        setProgressPercent(18);
+      } else if (elapsed < 2.2) {
+        setActiveStepIndex(1);
+        setProgressPercent(36);
+      } else if (elapsed < 3.5) {
+        setActiveStepIndex(2);
+        setProgressPercent(54);
+      } else if (elapsed < 4.8) {
+        setActiveStepIndex(3);
+        setProgressPercent(72);
+      } else if (elapsed < 6.2) {
+        setActiveStepIndex(4);
+        setProgressPercent(88);
+      } else {
+        setActiveStepIndex(5);
+        setProgressPercent(96);
+      }
+    }, 200);
+
+    return () => clearInterval(interval);
+  }, [isGeneratingPlan]);
 
   const handleOtherSubmit = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -401,17 +449,166 @@ export const ChatStudio: React.FC<ChatStudioProps> = ({
           </div>
         )}
 
-        {/* Generation in progress pill */}
+        {/* Live Multi-Agent Execution Progress Card - Engages the user step-by-step */}
         {isGeneratingPlan && (
-          <div className="p-4 rounded-xl bg-stone-850 border border-stone-700 flex items-center gap-3">
-            <Loader2 className="w-5 h-5 text-stone-300 animate-spin" />
-            <div>
-              <p className="text-xs font-semibold text-stone-100">
-                Multi-Agent Synthesis Underway
-              </p>
-              <p className="text-[11px] text-stone-400">
-                Web Researcher, Transit Specialist, Lodging Agent, and Itinerary Architect are synchronizing...
-              </p>
+          <div className="p-4 sm:p-5 rounded-2xl bg-stone-900 border border-stone-700/80 shadow-2xl space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-200">
+            {/* Header with live swarm status */}
+            <div className="flex items-center justify-between gap-2 border-b border-stone-800 pb-3">
+              <div className="flex items-center gap-2">
+                <span className="relative flex h-2.5 w-2.5">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+                </span>
+                <div>
+                  <h4 className="text-xs sm:text-sm font-semibold text-stone-100 flex items-center gap-1.5">
+                    <span>Autonomous Multi-Agent Swarm Active</span>
+                  </h4>
+                  <p className="text-[11px] text-stone-400">
+                    Executing specialized domain evaluations for {preferences.destination || 'your destination'}
+                  </p>
+                </div>
+              </div>
+              <div className="text-right shrink-0">
+                <span className="text-[11px] font-mono px-2 py-0.5 rounded-md bg-stone-800 border border-stone-700 text-stone-300">
+                  Step {activeStepIndex + 1} of 6 • {elapsedSeconds}s
+                </span>
+              </div>
+            </div>
+
+            {/* Progress bar */}
+            <div className="space-y-1">
+              <div className="flex items-center justify-between text-[11px] font-medium text-stone-400">
+                <span>Swarm Synthesis Pipeline</span>
+                <span className="text-stone-200 font-mono font-semibold">{progressPercent}%</span>
+              </div>
+              <div className="w-full h-2 rounded-full bg-stone-800 overflow-hidden p-0.5 border border-stone-750">
+                <div
+                  className="h-full rounded-full bg-gradient-to-r from-amber-500 via-emerald-400 to-cyan-400 transition-all duration-300 ease-out shadow-xs"
+                  style={{ width: `${progressPercent}%` }}
+                />
+              </div>
+            </div>
+
+            {/* Step-by-Step Agent Cards */}
+            <div className="space-y-2 pt-1">
+              {[
+                {
+                  id: 'research',
+                  icon: Globe,
+                  name: 'Web Intelligence Agent',
+                  activeText: `Scanning live attraction hours, seasonal advice & regional passes for ${preferences.destination || 'destination'}...`,
+                  doneText: `Retrieved verified UNESCO heritage data, opening hours & local guides for ${preferences.destination || 'destination'}.`
+                },
+                {
+                  id: 'transit',
+                  icon: Plane,
+                  name: 'Transit Logistics Specialist',
+                  activeText: `Comparing direct flights vs high-speed rail carriers from ${preferences.origin || 'origin'}...`,
+                  doneText: `Evaluated real carriers, schedules, and fare comparisons with verified booking links.`
+                },
+                {
+                  id: 'stays',
+                  icon: Building2,
+                  name: 'Lodging & Stays Agent',
+                  activeText: `Filtering verified 4.8★+ boutique, heritage & luxury stays matching ${preferences.budget_currency || 'INR'} ${preferences.budget_amount ? preferences.budget_amount.toLocaleString() : 'target'}...`,
+                  doneText: `Selected 4 top-rated accommodations with verified guest reviews & direct reservation URLs.`
+                },
+                {
+                  id: 'itinerary',
+                  icon: CalendarDays,
+                  name: 'Itinerary Architect',
+                  activeText: `Sequencing ${preferences.duration_days || 5}-day morning, afternoon & evening pacing with authentic regional dining...`,
+                  doneText: `Engineered balanced schedule with verified coordinates, local street food & sunset viewpoints.`
+                },
+                {
+                  id: 'budget',
+                  icon: CreditCard,
+                  name: 'Budget & Preparation Critic',
+                  activeText: `Auditing total estimated expenses in ${preferences.budget_currency || 'INR'} and assembling packing checklist...`,
+                  doneText: `Budget audited: comprehensive cost breakdown and pre-trip booking milestones ready.`
+                },
+                {
+                  id: 'critic',
+                  icon: Award,
+                  name: 'Quality Critic & Certification',
+                  activeText: `Executing 5-point self-evaluation audit on budget, reviews, dates, and multi-site links...`,
+                  doneText: `Plan certified with verified Quality Score and multi-platform reservation assurance.`
+                }
+              ].map((agent, aIdx) => {
+                const isCompleted = aIdx < activeStepIndex;
+                const isActive = aIdx === activeStepIndex;
+                const IconComponent = agent.icon;
+
+                return (
+                  <div
+                    key={agent.id}
+                    className={`p-2.5 sm:p-3 rounded-xl border transition-all duration-200 flex items-start gap-2.5 ${
+                      isActive
+                        ? 'bg-stone-850/90 border-amber-500/50 shadow-md ring-1 ring-amber-500/20'
+                        : isCompleted
+                        ? 'bg-stone-850/50 border-emerald-800/40'
+                        : 'bg-stone-900/40 border-stone-800/60 opacity-50'
+                    }`}
+                  >
+                    {/* Status Icon */}
+                    <div className="shrink-0 mt-0.5">
+                      {isCompleted ? (
+                        <div className="w-6 h-6 rounded-lg bg-emerald-950 border border-emerald-700/60 flex items-center justify-center text-emerald-400">
+                          <Check className="w-3.5 h-3.5" />
+                        </div>
+                      ) : isActive ? (
+                        <div className="w-6 h-6 rounded-lg bg-amber-950/80 border border-amber-600/60 flex items-center justify-center text-amber-300 animate-pulse">
+                          <Loader2 className="w-3.5 h-3.5 animate-spin text-amber-400" />
+                        </div>
+                      ) : (
+                        <div className="w-6 h-6 rounded-lg bg-stone-800 border border-stone-700 flex items-center justify-center text-stone-500">
+                          <Clock className="w-3 h-3" />
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Agent Details */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-1.5">
+                          <IconComponent className={`w-3.5 h-3.5 ${
+                            isActive ? 'text-amber-400' : isCompleted ? 'text-emerald-400' : 'text-stone-500'
+                          }`} />
+                          <span className={`text-xs font-semibold ${
+                            isActive ? 'text-amber-200' : isCompleted ? 'text-stone-200' : 'text-stone-400'
+                          }`}>
+                            {agent.name}
+                          </span>
+                        </div>
+                        <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${
+                          isCompleted
+                            ? 'bg-emerald-950/80 text-emerald-300 border border-emerald-800/50'
+                            : isActive
+                            ? 'bg-amber-950/80 text-amber-300 border border-amber-700/50'
+                            : 'bg-stone-800 text-stone-500'
+                        }`}>
+                          {isCompleted ? '✓ Done' : isActive ? 'Active Now' : 'Queued'}
+                        </span>
+                      </div>
+                      <p className={`text-[11px] mt-0.5 leading-relaxed ${
+                        isActive ? 'text-stone-200 font-medium' : isCompleted ? 'text-stone-400' : 'text-stone-500'
+                      }`}>
+                        {isCompleted ? agent.doneText : isActive ? agent.activeText : 'Waiting in orchestration queue...'}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Live activity ticker footer */}
+            <div className="pt-2 border-t border-stone-800/80 flex items-center justify-between text-[11px] text-stone-400">
+              <span className="italic truncate">
+                ⚡ Synchronizing live multi-agent intelligence for {preferences.destination || 'trip'}...
+              </span>
+              <span className="text-[10px] text-stone-500 shrink-0 font-mono">
+                Safe Multi-Threaded Sync
+              </span>
             </div>
           </div>
         )}

@@ -381,9 +381,34 @@ export const App = () => {
             stage: "plan_ready"
           }
         ]);
+      } else {
+        const errJson = await res.json().catch(() => ({}));
+        const errMsg = errJson.detail || "Unable to generate travel blueprint. Please check parameters and try again.";
+        setToastMessage(`⚠️ Plan Generation Notice: ${errMsg}`);
+        setTimeout(() => setToastMessage(null), 4000);
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: `err-${Date.now()}`,
+            role: 'assistant',
+            content: `I encountered a delay generating the plan: ${errMsg}. Please click 'Generate Plan' again to retry.`,
+            agent_name: "Orchestrator"
+          }
+        ]);
       }
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
+      setToastMessage("⚠️ Network error during plan generation. Please retry.");
+      setTimeout(() => setToastMessage(null), 3000);
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: `err-${Date.now()}`,
+          role: 'assistant',
+          content: "Network connection was interrupted while synchronizing agents. Please check connection and try again.",
+          agent_name: "Orchestrator"
+        }
+      ]);
     } finally {
       setIsGeneratingPlan(false);
     }

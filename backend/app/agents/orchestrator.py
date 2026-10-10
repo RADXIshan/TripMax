@@ -1,5 +1,6 @@
 import uuid
 import json
+import asyncio
 from typing import List, Dict, Any, Optional
 from app.config import get_gemini_key
 from app.models.trip import (
@@ -117,7 +118,7 @@ class AgentOrchestrator:
 
         # 2. Transit Agent (Flights vs Trains)
         logs.append(f"🚆✈️ [TransitAgent] Evaluating real flight carriers vs high-speed trains for {preferences.dates}...")
-        flights, trains = TransitAgent.evaluate_transit(preferences, gemini_data)
+        flights, trains = await TransitAgent.evaluate_transit(preferences, gemini_data)
         logs.append(f"✅ [TransitAgent] Evaluated {len(flights)} flight options and {len(trains)} rail routes with deep booking URLs.")
 
         # 3. Stay Agent
@@ -201,13 +202,16 @@ class AgentOrchestrator:
             f"Highlight both scenic train and flight connectivity. Do not use markdown double asterisks (**) or raw bullet asterisks; keep sentences smooth, clean, and natural."
         )
         
-        models_to_try = ['gemini-flash-latest', 'gemini-flash-lite-latest', 'gemini-2.5-flash', 'gemini-2.0-flash']
+        models_to_try = ['gemini-3.8-flash', 'gemini-flash-latest', 'gemini-flash-lite-latest']
         for model_name in models_to_try:
             try:
-                response = await client.aio.models.generate_content(
-                    model=model_name,
-                    contents=prompt,
-                    config={"automatic_function_calling": {"disable": True}},
+                response = await asyncio.wait_for(
+                    client.aio.models.generate_content(
+                        model=model_name,
+                        contents=prompt,
+                        config={"automatic_function_calling": {"disable": True}},
+                    ),
+                    timeout=3.5
                 )
                 if response and response.text:
                     return response.text.strip()

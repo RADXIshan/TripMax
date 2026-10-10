@@ -1,8 +1,10 @@
+import asyncio
 from typing import List, Optional, Dict, Any
 from app.models.trip import TripPreferences, StayOption
 from app.services.deep_links import get_booking_com_url, get_airbnb_url, get_google_hotels_url, get_multi_stay_links
 from app.services.destination_knowledge import get_destination_data
 from app.services.image_service import image_service
+from app.services.link_crawler import link_crawler
 
 class StayAgent:
     """
@@ -43,13 +45,28 @@ class StayAgent:
 
         # 1. Check Gemini dynamic generative stays first if available
         if gemini_data and gemini_data.get("stays"):
+            raw_stays = gemini_data["stays"][:4]
+            img_tasks = [
+                image_service.get_image_for_query_async(
+                    s.get("name") or s.get("hotel_name") or s.get("title") or f"Boutique Hotel {dest}",
+                    category="hotel",
+                    destination=dest
+                )
+                for s in raw_stays
+            ]
+            imgs = await asyncio.gather(*img_tasks, return_exceptions=True)
+
             stays = []
-            for idx, s in enumerate(gemini_data["stays"][:4]):
+            for idx, s in enumerate(raw_stays):
                 name = s.get("name") or s.get("hotel_name") or s.get("title") or f"Boutique Hotel {dest}"
                 price = float(s.get("price_per_night") or s.get("price") or 160)
                 rating = float(s.get("rating") or 4.9)
-                img = image_service.get_image_for_query(name, category="hotel", destination=dest)
-                links = get_multi_stay_links(name, dest, checkin, checkout, price, curr)
+                img = imgs[idx] if idx < len(imgs) and isinstance(imgs[idx], str) else image_service.get_image_for_query(name, category="hotel", destination=dest)
+                crawled = await link_crawler.crawl_hotel_links(name, dest, checkin, checkout, price, curr)
+                links = crawled.get("links") or get_multi_stay_links(name, dest, checkin, checkout, price, curr)
+                primary_url = crawled.get("primary_url") or links[0].url
+                primary_provider = crawled.get("primary_provider") or "Official Hotel Direct"
+
                 stays.append(StayOption(
                     id=f"stay-dyn-{idx+1}",
                     name=name,
@@ -62,12 +79,12 @@ class StayAgent:
                     currency=curr,
                     key_amenities=s.get("key_amenities", ["Central Location", "Complimentary Breakfast", "High-Speed Wi-Fi"]),
                     why_recommended=s.get("why_recommended", f"Highly rated hotel in {dest} with verified guest reviews."),
-                    booking_url=links[0].url if links else booking_link,
-                    provider="Booking.com & Verified Inventory",
+                    booking_url=primary_url,
+                    provider=primary_provider,
                     badge=s.get("badge", f"🌟 Top Rated ({rating}/5)"),
                     image_url=img,
-                    source_name="Verified Guest Reviews (Booking.com & Google Hotels)",
-                    source_url=links[0].url if links else booking_link,
+                    source_name=f"{primary_provider} & Verified Inventory",
+                    source_url=primary_url,
                     dates=dates_label,
                     verified_review_snippet=s.get("verified_review_snippet", "Verified guest: 'Spotless clean rooms, wonderful hospitality, and unbeatable central location.'"),
                     booking_links=links
@@ -77,11 +94,22 @@ class StayAgent:
         # 2. Check rich global destination database
         dest_data = get_destination_data(dest)
         if dest_data and dest_data.get("stays"):
+            raw_stays = dest_data["stays"]
+            img_tasks = [
+                image_service.get_image_for_query_async(s["name"], category="hotel", destination=dest)
+                for s in raw_stays
+            ]
+            imgs = await asyncio.gather(*img_tasks, return_exceptions=True)
+
             stays = []
-            for s in dest_data["stays"]:
+            for idx, s in enumerate(raw_stays):
                 price = round(s["base_usd"] * rate, 0)
-                img = image_service.get_image_for_query(s["name"], category="hotel", destination=dest)
-                links = get_multi_stay_links(s["name"], dest, checkin, checkout, price, curr)
+                img = imgs[idx] if idx < len(imgs) and isinstance(imgs[idx], str) else image_service.get_image_for_query(s["name"], category="hotel", destination=dest)
+                crawled = await link_crawler.crawl_hotel_links(s["name"], dest, checkin, checkout, price, curr)
+                links = crawled.get("links") or get_multi_stay_links(s["name"], dest, checkin, checkout, price, curr)
+                primary_url = crawled.get("primary_url") or links[0].url
+                primary_provider = crawled.get("primary_provider") or "Official Hotel Direct"
+
                 stays.append(StayOption(
                     id=s["id"],
                     name=s["name"],
@@ -94,12 +122,12 @@ class StayAgent:
                     currency=curr,
                     key_amenities=s["key_amenities"],
                     why_recommended=s["why"],
-                    booking_url=links[0].url if links else booking_link,
-                    provider="Booking.com Official",
+                    booking_url=primary_url,
+                    provider=primary_provider,
                     badge=s["badge"],
                     image_url=img,
-                    source_name=f"{s['name']} Live Inventory",
-                    source_url=links[0].url if links else booking_link,
+                    source_name=f"{primary_provider} & Verified Inventory",
+                    source_url=primary_url,
                     dates=dates_label,
                     verified_review_snippet=s["snippet"],
                     booking_links=links

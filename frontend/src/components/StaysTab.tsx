@@ -201,7 +201,7 @@ export const StaysTab: React.FC<StaysTabProps> = ({ plan }) => {
                     rel="noreferrer"
                     className="px-3.5 py-2 rounded-xl bg-stone-100 hover:bg-white text-stone-900 text-xs font-semibold flex items-center gap-1.5 transition-all shadow-xs hover:shadow cursor-pointer"
                   >
-                    <span>Check {stay.provider}</span>
+                    <span>Book on {stay.provider}</span>
                     <ExternalLink className="w-3 h-3" />
                   </a>
                 </div>
