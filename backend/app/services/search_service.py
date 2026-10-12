@@ -116,9 +116,38 @@ class SearchService:
             return []
 
         try:
-            return await asyncio.wait_for(asyncio.to_thread(_sync_search), timeout=2.5)
-        except Exception:
+            return await asyncio.wait_for(asyncio.to_thread(_sync_search), timeout=8.0)
+        except Exception as e:
+            print(f"[SearchService] DDGS error: {e}", flush=True)
             return []
+
+    @staticmethod
+    async def search_wikipedia(query: str, max_results: int = 4) -> List[Dict[str, str]]:
+        """Search Wikipedia API for authentic places and landmarks"""
+        try:
+            clean_q = urllib.parse.quote(query.strip())
+            url = f"https://en.wikipedia.org/w/rest.php/v1/search/page?q={clean_q}&limit={max_results}"
+            headers = {"User-Agent": "TripMaxTravelAssistant/2.0 (contact@tripmax.travel)"}
+            async with httpx.AsyncClient(timeout=5.0) as client:
+                res = await client.get(url, headers=headers)
+                if res.status_code == 200:
+                    data = res.json()
+                    results = []
+                    for page in data.get("pages", []):
+                        title = page.get("title", "")
+                        key = page.get("key", title)
+                        desc = page.get("description", "") or page.get("excerpt", "")
+                        clean_desc = re.sub(r'<[^>]+>', '', desc)
+                        if title and key:
+                            results.append({
+                                "title": title,
+                                "url": f"https://en.wikipedia.org/wiki/{urllib.parse.quote(key.replace(' ', '_'))}",
+                                "snippet": clean_desc or f"Verified architectural and historical overview of {title}."
+                            })
+                    return results
+        except Exception as e:
+            print(f"[SearchService] Wikipedia search error: {e}", flush=True)
+        return []
 
     @staticmethod
     async def search_tavily(query: str, max_results: int = 5) -> List[Dict[str, str]]:
@@ -189,6 +218,11 @@ class SearchService:
 
         # Fallback to DDGS
         results = await cls.search_duckduckgo(query, max_results=max_results)
+        if results:
+            return results
+
+        # Fallback to Wikipedia search for destination/attractions
+        results = await cls.search_wikipedia(query, max_results=max_results)
         return results
 
 search_service = SearchService()

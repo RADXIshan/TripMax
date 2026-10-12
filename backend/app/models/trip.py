@@ -113,6 +113,34 @@ class TrainOption(BaseModel):
     def _validate_train_pros(cls, v: Any) -> List[str]:
         return _coerce_str_list(v)
 
+class LocalTransitMode(BaseModel):
+    name: str
+    category: str  # City Metro, Rapid Bus Transit, Ride-Hailing & Cabs, Bike Rental, Ferry
+    description: str
+    recommended_pass_or_app: str
+    estimated_cost: str
+    official_link: Optional[str] = None
+
+class RegionalExcursion(BaseModel):
+    destination_name: str
+    distance_and_duration: str
+    transit_mode: str
+    highlights: str
+    booking_or_info_url: Optional[str] = None
+
+    @field_validator("highlights", mode="before")
+    @classmethod
+    def _validate_highlights(cls, v: Any) -> str:
+        if isinstance(v, list):
+            return " • ".join(str(x).strip() for x in v if x and str(x).strip())
+        return str(v).strip() if v is not None else ""
+
+class LocalMobilityInfo(BaseModel):
+    overview: str
+    transit_modes: List[LocalTransitMode] = Field(default_factory=list)
+    regional_excursions: List[RegionalExcursion] = Field(default_factory=list)
+    insider_tips: List[str] = Field(default_factory=list)
+
 class StayOption(BaseModel):
     id: str
     name: str
@@ -230,6 +258,7 @@ class TripPlan(BaseModel):
     overview: str
     best_time_to_visit: str
     local_transport_pass_tip: str
+    local_mobility: Optional[LocalMobilityInfo] = None
     flights: List[FlightOption] = Field(default_factory=list)
     trains: List[TrainOption] = Field(default_factory=list)
     stays: List[StayOption] = Field(default_factory=list)

@@ -162,6 +162,7 @@ class AgentOrchestrator:
             overview=overview,
             best_time_to_visit=f"{preferences.season or 'Spring/Autumn'} ({preferences.travel_month or 'Peak Season'}) for optimal seasonal weather and cultural highlights in {dest}.",
             local_transport_pass_tip=f"Pick up the regional unlimited public transit smartcard upon arrival at {dest} airport or central station.",
+            local_mobility=WebSearchSynthesizer.build_local_mobility(preferences, gemini_data),
             flights=flights,
             trains=trains,
             stays=stays,

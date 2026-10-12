@@ -108,7 +108,7 @@ export const ItineraryTab: React.FC<ItineraryTabProps> = ({ plan }) => {
             loading="lazy"
           />
           {/* Subtle gradient vignette */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent pointer-events-none md:hidden" />
+          <div className="absolute inset-0 bg-linear-to-t from-black/60 via-black/10 to-transparent pointer-events-none md:hidden" />
 
           {/* Time Badge Overlay */}
           <div className="absolute top-3 left-3 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-stone-950/80 backdrop-blur-md border border-white/20 text-white text-[11px] font-semibold shadow-xs">
@@ -507,7 +507,7 @@ export const ItineraryTab: React.FC<ItineraryTabProps> = ({ plan }) => {
                 alt={currentDay.title}
                 className="w-full h-full object-cover group-hover:scale-103 transition-transform duration-700"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-black/10" />
+              <div className="absolute inset-0 bg-linear-to-t from-black/80 via-black/30 to-black/10" />
 
               <div className="absolute inset-0 p-5 flex flex-col justify-between text-white">
                 <div className="flex items-center justify-between gap-2">
@@ -673,7 +673,7 @@ export const ItineraryTab: React.FC<ItineraryTabProps> = ({ plan }) => {
                       </div>
 
                       <div className="pt-1 flex items-center justify-between text-[10px] text-stone-400 border-t border-stone-800">
-                        <span className="truncate max-w-[200px]">
+                        <span className="truncate max-w-50">
                           {src.url.replace(/^https?:\/\/(?:www\.)?/, '').split('/')[0]}
                         </span>
                         <a 
@@ -754,7 +754,7 @@ export const ItineraryTab: React.FC<ItineraryTabProps> = ({ plan }) => {
                     </div>
 
                     <div className="mt-3 pt-2 border-t border-stone-800 flex items-center justify-between text-[10px] text-stone-400">
-                      <span className="truncate max-w-[140px]">
+                      <span className="truncate max-w-35">
                         {src.url.replace(/^https?:\/\/(?:www\.)?/, '').split('/')[0]}
                       </span>
                       <a

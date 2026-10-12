@@ -1,4 +1,5 @@
 import asyncio
+import urllib.parse
 from typing import List, Dict
 from app.services.search_service import search_service
 from app.models.trip import TripPreferences, ResearchSource
@@ -25,36 +26,41 @@ class ResearchAgent:
         ]
 
         try:
-            raw_results = await asyncio.wait_for(search_service.multi_search(queries, max_per_query=2), timeout=3.0)
-        except Exception:
+            raw_results = await asyncio.wait_for(search_service.multi_search(queries, max_per_query=3), timeout=12.0)
+        except Exception as e:
+            print(f"[ResearchAgent] Search error: {e}", flush=True)
             raw_results = []
 
         sources: List[ResearchSource] = []
         for r in raw_results[:12]:
-            if r.get("title") and r.get("url"):
+            t = r.get("title", "").strip()
+            u = r.get("url", "").strip()
+            # Ensure URL is not a raw search engine query
+            if t and u and not any(bad in u.lower() for bad in ["google.com/search", "bing.com/search", "duckduckgo.com"]):
                 sources.append(ResearchSource(
-                    title=r.get("title", ""),
-                    url=r.get("url", ""),
+                    title=t,
+                    url=u,
                     snippet=r.get("snippet", "")[:280]
                 ))
 
         # If search returned few results (e.g. offline/rate limit), provide curated high-quality reference links
         if len(sources) < 3:
+            dest_slug = dest.replace(' ', '_')
             sources.extend([
                 ResearchSource(
-                    title=f"Wikitravel Guide: {dest}",
-                    url=f"https://wikitravel.org/en/{dest.replace(' ', '_')}",
-                    snippet=f"Comprehensive travel overview, districts, transit, and local customs for {dest}."
+                    title=f"Wikipedia Cultural & Architectural Archive: {dest}",
+                    url=f"https://en.wikipedia.org/wiki/{dest_slug}",
+                    snippet=f"Authoritative history, prominent monuments, museums, and architectural landmarks in {dest}."
                 ),
                 ResearchSource(
-                    title=f"The Man in Seat 61: Train Travel Guide",
-                    url="https://www.seat61.com/",
-                    snippet=f"Expert guide to scenic rail travel, international train connections, and booking tips."
+                    title=f"Wikitravel Comprehensive Destination Guide: {dest}",
+                    url=f"https://wikitravel.org/en/{dest_slug}",
+                    snippet=f"District maps, cultural etiquette, transit hubs, and authentic neighborhood highlights for {dest}."
                 ),
                 ResearchSource(
-                    title=f"Eater / Michelin Local Dining Guide: {dest}",
-                    url=f"https://www.google.com/search?q={dest}+eater+best+food+guide",
-                    snippet=f"Curated culinary hotspots, street food stalls, and traditional regional dishes in {dest}."
+                    title=f"TripAdvisor Verified Attractions & Gastronomy: {dest}",
+                    url=f"https://www.tripadvisor.com/Search?q={urllib.parse.quote_plus(dest)}",
+                    snippet=f"Traveler-vetted heritage landmarks, top-rated local dining bistros, and authentic street food experiences in {dest}."
                 )
             ])
 

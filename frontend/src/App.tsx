@@ -750,8 +750,12 @@ ${plan.itinerary.map((d) => `### Day ${d.day}: ${d.title}
                         <span className="font-semibold text-stone-200">{plan.budget.currency} {plan.budget.total_estimated.toLocaleString()}</span>
                       </div>
                       <div className="flex justify-between py-1">
-                        <span className="text-stone-400">Flights / Trains:</span>
-                        <span className="font-semibold text-stone-200">{plan.flights.length} flights, {plan.trains.length} rail</span>
+                        <span className="text-stone-400">Transit:</span>
+                        <span className="font-semibold text-stone-200">
+                          {plan.trains.length > 0 
+                            ? `${plan.flights.length} flights, ${plan.trains.length} rail` 
+                            : `${plan.flights.length} flights (Air Transit)`}
+                        </span>
                       </div>
                     </div>
                   </div>

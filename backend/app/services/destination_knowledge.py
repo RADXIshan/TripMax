@@ -649,23 +649,42 @@ GLOBAL_DESTINATIONS: Dict[str, Dict[str, Any]] = {
         "currency": "INR",
         "stays": [
             {
-                "id": "stay-mayfair-lagoon",
-                "name": "Mayfair Lagoon Bhubaneswar",
-                "type": "5-Star Lagoon Luxury Resort",
-                "neighborhood": "Jaydev Vihar / Central Heritage Belt",
-                "rating": 4.94,
-                "review_count": 2840,
-                "base_usd": 110,
-                "badge": "🌟 #1 Luxury Resort in Odisha",
+                "id": "stay-ginger-bhubaneswar",
+                "name": "Ginger Hotel Bhubaneswar",
+                "type": "Smart Comfort & Urban Transit Hub",
+                "neighborhood": "Jaydev Vihar / Opp. NALCO Headquarters",
+                "rating": 4.74,
+                "review_count": 3120,
+                "base_usd": 28,
+                "badge": "🏷️ Best Value on Goibibo (~₹2,300/nt)",
                 "key_amenities": [
-                    "Lush 10-Acre Landscaped Lagoon with Private Villas",
-                    "Award-Winning Multi-Cuisine Dining (Kanika & Tea Pot)",
-                    "Ayurvedic Spa & Serene Open-Air Swimming Pool",
-                    "Traditional Kalinga Architecture & Sculpted Stone Murals",
-                    "Complimentary Airport Transfers to BBI"
+                    "Prime Jaydev Vihar Location near Planetarium & Transit",
+                    "Square Meal Restaurant & 24/7 Room Service",
+                    "Ergonomic Work Desk & High-Speed Wi-Fi",
+                    "Clean Soundproof Rooms with Air Conditioning",
+                    "Reliable Hospitality Backed by IHCL (Taj Group)"
                 ],
-                "why": "Consistently ranked as the crown jewel of hospitality in Bhubaneswar. An urban oasis surrounded by tranquil waters and lush greenery.",
-                "snippet": "Verified guest: 'An absolute paradise right inside the city. The lagoon cottages, peacocks on lawns, and mouth-watering Odia thali made our trip unforgettable.'"
+                "why": "Outstanding price-to-comfort ratio in central Bhubaneswar. Clean, modern, and ideal for value-conscious travelers.",
+                "snippet": "Verified guest: 'Spotless rooms, great staff, and perfect location in Jaydev Vihar. Excellent budget stay.'"
+            },
+            {
+                "id": "stay-lemon-tree-bhubaneswar",
+                "name": "Lemon Tree Premier Bhubaneswar",
+                "type": "Modern Upscale Business & Leisure",
+                "neighborhood": "Maitree Vihar / Chandrasekharpur",
+                "rating": 4.86,
+                "review_count": 1840,
+                "base_usd": 42,
+                "badge": "🌟 Recommended Boutique Comfort (~₹3,500/nt)",
+                "key_amenities": [
+                    "Rooftop Swimming Pool & Spa Fresco",
+                    "Citrus Cafe Multi-Cuisine All-Day Dining",
+                    "Republic of Noodles Pan-Asian Specialty Restaurant",
+                    "Close Proximity to Infocity & Cultural Hubs",
+                    "Complimentary High-Speed Wi-Fi & Fitness Center"
+                ],
+                "why": "Stylish contemporary design with premium amenities at an accessible mid-tier price point.",
+                "snippet": "Verified guest: 'Super comfortable beds, fantastic breakfast buffet, and attentive hospitality. Great value for money.'"
             },
             {
                 "id": "stay-welcomhotel-bhubaneswar",
@@ -674,8 +693,8 @@ GLOBAL_DESTINATIONS: Dict[str, Dict[str, Any]] = {
                 "neighborhood": "Dumduma / Khandagiri Foothills",
                 "rating": 4.91,
                 "review_count": 1420,
-                "base_usd": 85,
-                "badge": "🏮 LEED Platinum Certified Eco-Luxury",
+                "base_usd": 78,
+                "badge": "🏮 LEED Platinum Eco-Heritage (~₹6,500/nt)",
                 "key_amenities": [
                     "Kalinga Temple Architecture Inspired Stone Jali Carvings",
                     "Authentic Odia & Royal Indian Dining at Peshawri",
@@ -687,53 +706,34 @@ GLOBAL_DESTINATIONS: Dict[str, Dict[str, Any]] = {
                 "snippet": "Verified guest: 'The temple-style architecture is stunning. Outstanding hospitality and the food at WelcomCafe was exemplary.'"
             },
             {
-                "id": "stay-trident-bhubaneswar",
-                "name": "Trident Hotel Bhubaneswar (Oberoi Group)",
-                "type": "Boutique Garden Estate Luxury",
-                "neighborhood": "Nayapalli / Secretariat Corridor",
-                "rating": 4.89,
-                "review_count": 1950,
-                "base_usd": 95,
-                "badge": "💎 Prestigious Oberoi Hospitality",
+                "id": "stay-mayfair-lagoon",
+                "name": "Mayfair Lagoon Bhubaneswar",
+                "type": "5-Star Lagoon Luxury Resort",
+                "neighborhood": "Jaydev Vihar / Central Heritage Belt",
+                "rating": 4.94,
+                "review_count": 2840,
+                "base_usd": 98,
+                "badge": "💎 #1 Luxury Resort in Odisha (~₹8,100/nt)",
                 "key_amenities": [
-                    "Sprawling 14 Acres of Landscaped Gardens & Fruit Orchards",
-                    "Jogging Track & Resort Pool Surrounded by Palms",
-                    "Legendary Oberoi Signature Service & Fine Dining",
-                    "Artisan Odia Handicrafts Gallery in Lobby",
-                    "High-Speed Fiber Wi-Fi & Executive Business Lounge"
+                    "Lush 10-Acre Landscaped Lagoon with Private Villas",
+                    "Award-Winning Multi-Cuisine Dining (Kanika & Tea Pot)",
+                    "Ayurvedic Spa & Serene Open-Air Swimming Pool",
+                    "Traditional Kalinga Architecture & Sculpted Stone Murals",
+                    "Complimentary Airport Transfers to BBI"
                 ],
-                "why": "Unrivaled peaceful ambiance right in the center of the capital. Renowned for impeccable service standards and lush fruit gardens.",
-                "snippet": "Verified guest: 'A peaceful haven amidst nature. The staff treated us like royalty and arranged fantastic temple guides.'"
-            },
-            {
-                "id": "stay-vivanta-bhubaneswar",
-                "name": "Vivanta Bhubaneswar, DN Square (IHCL)",
-                "type": "Contemporary Smart Luxury",
-                "neighborhood": "Patia / DN Square Corridor",
-                "rating": 4.88,
-                "review_count": 1180,
-                "base_usd": 75,
-                "badge": "🏷️ Best Modern Value (~₹6,200/nt)",
-                "key_amenities": [
-                    "Rooftop Swimming Pool with Skyline Views",
-                    "Mynt 24/7 Global & Regional Specialty Bistro",
-                    "Direct Skywalk Connectivity to DN Regalia Shopping Hub",
-                    "Modern Ergonomic Workstations & Luxury Bedding",
-                    "State-of-the-Art Fitness Center"
-                ],
-                "why": "Ideal for smart travelers seeking modern design, swift connectivity to the airport and IT corridor, backed by the trusted Taj IHCL promise.",
-                "snippet": "Verified guest: 'Ultra-modern amenities, super clean rooms, and top-notch breakfast spread with fresh local sweets.'"
+                "why": "Consistently ranked as the crown jewel of hospitality in Bhubaneswar. An urban oasis surrounded by tranquil waters and lush greenery.",
+                "snippet": "Verified guest: 'An absolute paradise right inside the city. The lagoon cottages, peacocks on lawns, and mouth-watering Odia thali made our trip unforgettable.'"
             }
         ],
         "flights": [
             {
                 "airline": "IndiGo 6E Express",
                 "flight_number": "6E-2041",
-                "origin_airport": "Origin Hub Airport",
+                "origin_airport": "Origin Airport",
                 "dest_airport": "Bhubaneswar Biju Patnaik Int'l (BBI)",
                 "duration": "2h 15m",
                 "stops": "Non-Stop Direct",
-                "price_usd": 65,
+                "price_usd": 48,
                 "departure_time": "08:15 AM",
                 "arrival_time": "10:30 AM",
                 "carbon_footprint": "118 kg CO2 (Fuel-Efficient A321neo)",
@@ -742,49 +742,106 @@ GLOBAL_DESTINATIONS: Dict[str, Dict[str, Any]] = {
                 "cons": ["Hot meals cost extra"]
             },
             {
-                "airline": "Air India / Vistara Premium",
-                "flight_number": "AI-877",
-                "origin_airport": "Origin Hub Airport",
+                "airline": "Air India / Akasa Air",
+                "flight_number": "AI-877 / QP-1380",
+                "origin_airport": "Origin Airport",
                 "dest_airport": "Bhubaneswar Biju Patnaik Int'l (BBI)",
                 "duration": "2h 20m",
                 "stops": "Non-Stop Direct",
-                "price_usd": 85,
+                "price_usd": 55,
                 "departure_time": "11:00 AM",
                 "arrival_time": "01:20 PM",
                 "carbon_footprint": "125 kg CO2",
                 "verdict": "Full-service premium carrier with complimentary hot meals and extra baggage.",
-                "pros": ["Complimentary hot gourmet lunch", "25kg checked baggage included", "Spacious legroom in economy"],
+                "pros": ["Complimentary hot gourmet lunch", "Checked baggage included", "Spacious legroom in economy"],
                 "cons": ["Slightly higher ticket price"]
             }
         ],
         "trains": [
             {
-                "operator": "Indian Railways Vande Bharat Express",
-                "train_type": "Semi-High Speed Train 18",
-                "route": "Origin Junction -> Bhubaneswar (BBS)",
-                "duration": "5h 45m",
-                "stops": "3 Strategic Fast Halts",
-                "price_usd": 22,
-                "departure_time": "06:10 AM",
-                "arrival_time": "11:55 AM",
-                "verdict": "India's premier semi-high speed train with panoramic windows, 180° rotatable seats, and hot gourmet catering.",
-                "pros": ["Executive Chair Car with luxury reclining seats", "Onboard hot meals & tea included in ticket", "Arrives directly at central Bhubaneswar BBS Station"],
-                "cons": ["Bookings open 60 days in advance and sell out rapidly"]
+                "operator": "Indian Railways (South Western / East Coast Railway)",
+                "train_type": "Prashanti Express (18464) / Vande Bharat",
+                "route": "Origin ➔ Bhubaneswar Railway Station (BBS)",
+                "duration": "Direct Superfast Rail",
+                "stops": "Major Fast Halts",
+                "price_usd": 15,
+                "departure_time": "01:40 PM",
+                "arrival_time": "06:50 PM (+1)",
+                "verdict": "Dedicated direct superfast express with AC 2-Tier, 3-Tier, and Chair Car linking to central Bhubaneswar.",
+                "pros": ["Direct city-center connectivity with zero luggage weight fees", "Clean bedroll & pantry car hot meals", "Arrives directly at central Bhubaneswar BBS Station"],
+                "cons": ["Popular train requiring advance reservation"]
             },
             {
-                "operator": "Bhubaneswar Rajdhani Express (AC Superfast)",
-                "train_type": "Premier AC Sleeper Rail",
-                "route": "Trunk Express Corridor -> Bhubaneswar (BBS)",
-                "duration": "7h 30m",
+                "operator": "Indian Railways (Superfast Express)",
+                "train_type": "Howrah Superfast Express (12864) / Rajdhani Express",
+                "route": "Origin Junction ➔ Bhubaneswar (BBS)",
+                "duration": "Express Direct Rail",
                 "stops": "Limited Express Halts",
-                "price_usd": 28,
-                "departure_time": "05:05 PM",
-                "arrival_time": "12:35 AM",
-                "verdict": "Classic high-speed express route with full AC comfort and pristine bed linen.",
-                "pros": ["Highest rail track priority", "All-inclusive gourmet dinner & refreshments", "Very comfortable AC berths"],
-                "cons": ["Longer duration than morning flight"]
+                "price_usd": 12,
+                "departure_time": "08:35 PM",
+                "arrival_time": "11:20 PM (+1)",
+                "verdict": "Priority trunk superfast express corridor with reliable overnight sleeper berths.",
+                "pros": ["Punctual priority green signal corridor", "Comfortable air-conditioned sleeper accommodation", "Saves one night of hotel stay"],
+                "cons": ["Longer travel duration than morning flight"]
             }
         ],
+        "local_mobility": {
+            "overview": "Navigating Bhubaneswar and the sacred Odisha Golden Triangle is fast and comfortable via the modern CRUT Mo Bus network, air-conditioned app cabs, and regional express rail.",
+            "transit_modes": [
+                {
+                    "name": "Mo Bus (CRUT AC & Electric Network)",
+                    "category": "City Rapid Bus & Metro Feeder",
+                    "description": "Over 40 modern bus routes connecting BBI Airport, Railway Station, Master Canteen, Khandagiri, Infocity, and Old Town. Pay digitally via Chalo App.",
+                    "recommended_pass_or_app": "Chalo App / Mo Bus Smart Card",
+                    "estimated_cost": "₹10 to ₹40 per trip (~₹100/day)",
+                    "official_link": "https://www.capitalregiontransport.in/"
+                },
+                {
+                    "name": "Ola Cabs & Uber Premier",
+                    "category": "On-Demand AC Cabs",
+                    "description": "Fast, reliable on-demand AC cabs for cross-city travel, airport pickups, and Nandankanan day trips with upfront digital fares.",
+                    "recommended_pass_or_app": "Ola App / Uber App",
+                    "estimated_cost": "₹180 - ₹450 per ride",
+                    "official_link": "https://www.uber.com/in/en/ride/"
+                },
+                {
+                    "name": "Heritage Auto-Rickshaw & Mo E-Ride",
+                    "category": "Last-Mile & Temple Lanes",
+                    "description": "Electric green shuttles and auto-rickshaws ideal for exploring narrow 10th-century stone temple alleys around Lingaraj and Bindu Sagar.",
+                    "recommended_pass_or_app": "Uber Auto / Fixed Agreed Fare",
+                    "estimated_cost": "₹30 - ₹100 per ride",
+                    "official_link": "https://www.capitalregiontransport.in/"
+                }
+            ],
+            "regional_excursions": [
+                {
+                    "destination_name": "Puri & Golden Beach Excursion",
+                    "distance_and_duration": "60 km • 1 hour 15 mins via NH-316",
+                    "transit_mode": "Puri Vande Bharat Express (20836) or Private AC Cab",
+                    "highlights": "Shree Jagannath Temple, Blue Flag Certified Golden Beach, Raghurajpur Heritage Pattachitra Village",
+                    "booking_or_info_url": "https://www.confirmtkt.com/trains/bhubaneswar-to-puri-train-tickets"
+                },
+                {
+                    "destination_name": "Konark UNESCO Sun Temple & Marine Drive",
+                    "distance_and_duration": "65 km • 1 hour 25 mins via Marine Drive",
+                    "transit_mode": "OTDC Conducted Tour Bus or AC Cab",
+                    "highlights": "13th-Century Architectural Chariot Marvel, Chandrabhaga Beach sunset, Surfing & Marine Drive",
+                    "booking_or_info_url": "https://odishatourism.gov.in/"
+                },
+                {
+                    "destination_name": "Chilika Lake & Satapada Dolphin Cruise",
+                    "distance_and_duration": "105 km • 2 hours 15 mins via NH-16",
+                    "transit_mode": "Full-Day Private Cab & OTDC Speedboat",
+                    "highlights": "Asia's largest brackish lagoon, endangered Irrawaddy dolphin sightings, Rajhans Island sea mouth",
+                    "booking_or_info_url": "https://odishatourism.gov.in/"
+                }
+            ],
+            "insider_tips": [
+                "Download the 'Chalo App' upon arrival for live GPS tracking of Mo Bus arrival times at your nearest stop.",
+                "For the Golden Triangle (Bhubaneswar-Puri-Konark), hiring a full-day AC cab (~₹2,600-₹3,000) lets you catch sunrise at Chandrabhaga and evening Aarti in Puri comfortably.",
+                "Autos in Old Town heritage alleys don't run on meters; agree on the fare beforehand or book via Uber Auto for transparent upfront pricing."
+            ]
+        },
         "days": [
             {
                 "day": 1,
@@ -807,8 +864,8 @@ GLOBAL_DESTINATIONS: Dict[str, Dict[str, Any]] = {
                     "place": "Dalma Restaurant (Unit 4 Heritage Stalls)",
                     "dish": "Authentic Odia Thali: Dalma, Potala Rasa, Machha Besara & Ghee Rice",
                     "vibe": "Beloved traditional dining institution serving home-cooked authentic Odia classics",
-                    "source_name": "Eater India & Culinary Heritage Guild",
-                    "source_url": "https://www.google.com/search?q=dalma+bhubaneswar+authentic+food",
+                    "source_name": "TripAdvisor Bhubaneswar Culinary Guide",
+                    "source_url": "https://www.tripadvisor.in/Search?q=Dalma+Restaurant+Bhubaneswar",
                     "source_snippet": "The definitive spot in Bhubaneswar to taste authentic slow-cooked Dalma and roasted spiced vegetables."
                 },
                 "afternoon": {

@@ -1,3 +1,4 @@
+import asyncio
 import json
 import re
 import urllib.parse
@@ -16,6 +17,7 @@ from app.services.deep_links import (
     get_attraction_booking_url,
     get_viator_url
 )
+from app.services.link_crawler import link_crawler, is_indian_locale
 from app.models.trip import (
     TripPreferences,
     StayOption,
@@ -24,7 +26,10 @@ from app.models.trip import (
     ItineraryDay,
     ActivityItem,
     DiningRecommendation,
-    ResearchSource
+    ResearchSource,
+    LocalMobilityInfo,
+    LocalTransitMode,
+    RegionalExcursion
 )
 
 class WebSearchSynthesizer:
@@ -55,9 +60,49 @@ class WebSearchSynthesizer:
         # Construct concise context from web search
         search_snippets = "\n".join([f"- {s.title}: {s.snippet[:140]}" for s in web_sources[:8]])
 
+        from app.services.geo_intelligence import can_have_direct_intercity_trains, resolve_country, is_cross_country
+        can_train, rail_type = can_have_direct_intercity_trains(origin, dest)
+        is_cross = is_cross_country(origin, dest)
+
+        if can_train:
+            trains_instruction = (
+                f"3. 'trains': Exactly 2 REAL, specific, currently operating passenger train services connecting {origin} to {dest} "
+                f"(Domestic/Connected Rail). Include real named train or service (e.g. 'Prashanti Express (18464)', 'Vande Bharat Express', "
+                f"'JR Tokaido Shinkansen (Nozomi)', 'Eurostar', 'TGV INOUI', 'Frecciarossa 1000'), real departure station, real arrival station, "
+                f"operator name, duration, realistic price in {curr}, and pros (array of strings). Never use generic names like 'Semi-High Speed Train 18'."
+            )
+        else:
+            trains_instruction = (
+                f"3. 'trains': CRITICAL GEOGRAPHY RULE: Origin '{origin}' and Destination '{dest}' are in DIFFERENT countries / cross-country "
+                f"across oceans or non-rail connected borders. THERE ARE NO DIRECT PASSENGER TRAINS BETWEEN {origin} AND {dest}. "
+                f"You MUST return 'trains': [] (empty array). DO NOT invent or fabricate any train between {origin} and {dest}. "
+                f"All long-distance travel connecting {origin} and {dest} MUST be exclusively by air ('flights'). "
+                f"Any local trains, metro, and scenic regional day trips inside {dest} must instead be put in 'local_mobility'."
+            )
+
+        flight_instruction = (
+            f"2. 'flights': Exactly 2 REAL, specific, currently operating commercial flights connecting {origin} to {dest}. "
+            f"Give real operating airline name (e.g., IndiGo, Air India, Akasa Air, British Airways, ANA, Air France, Lufthansa, Emirates, Singapore Airlines), "
+            f"real flight number (e.g. '6E 521', 'AI 784', 'NH 8', 'AF 22'), origin airport, destination airport, realistic flight duration, "
+            f"realistic price in {curr}, pros (array of strings), and cons (array of strings). Never use placeholders like 'Origin Hub Airport'."
+        )
+
+        target_nightly = max(round((budget * 0.40) / days), 1000 if curr == "INR" else 40)
+        stays_budget_instruction = (
+            f"1. 'stays': Exactly 4 REAL, highly-rated hotels in {dest} strictly calibrated to user's total budget of {curr} {budget:,.0f} "
+            f"for {days} nights (Target nightly budget is ~{curr} {target_nightly:,.0f}/night):\n"
+            f"   - Option 1 (Recommended Comfort / Boutique): Price ~{curr} {target_nightly:,.0f}/night\n"
+            f"   - Option 2 (Authentic Heritage / Local Charm): Price ~{curr} {round(target_nightly * 1.25):,.0f}/night\n"
+            f"   - Option 3 (Best Value / Budget Saver on MakeMyTrip & Goibibo): Price ~{curr} {round(target_nightly * 0.65):,.0f}/night\n"
+            f"   - Option 4 (Luxury 5-Star Upgrade): Price ~{curr} {round(target_nightly * 2.2):,.0f}/night\n"
+            f"   Include real hotel name, neighborhood, rating (4.5 to 4.9), review_count, realistic price_per_night in {curr}, "
+            f"why_recommended, badge (e.g. '🌟 Top Rated Comfort', '🏷️ Best Value on Goibibo', '🏮 Heritage Charm', '💎 5-Star Luxury'), "
+            f"verified_review_snippet, and key_amenities (list of 5)."
+        )
+
         prompt = f"""
 You are the world's most knowledgeable travel architect.
-Create a real, highly accurate travel blueprint for destination: '{dest}', departing from: '{origin}'.
+Create a real, authentic, highly accurate travel blueprint for destination: '{dest}', departing from: '{origin}'.
 Duration: {days} days. Budget per person: ~{curr} {budget:,.0f}.
 Pace: {prefs.travel_pace or 'balanced'}. Interests: {', '.join(prefs.interests) if prefs.interests else 'culture, food, scenic'}.
 
@@ -65,10 +110,15 @@ Verified Web Intelligence:
 {search_snippets}
 
 REQUIREMENTS:
-1. 'stays': Exactly 4 real, famous, highly rated hotels in {dest} across tiers (Boutique, Authentic Heritage, 5-Star Luxury, Smart Value). Include real hotel name, real neighborhood, rating (4.8+), review_count, estimated price_per_night in {curr}, why_recommended, badge, verified_review_snippet, key_amenities (list of 5).
-2. 'flights': 2 real operating airlines connecting {origin} to {dest} with real flight numbers, routes, times, prices, 'pros' (array of strings), and 'cons' (array of strings).
-3. 'trains': 2 real high-speed rail lines or airport express lines serving {dest} with real operators, durations, prices, and 'pros' (array of strings).
-4. 'days': Array of {min(days, 5)} days. For EACH day:
+{stays_budget_instruction}
+{flight_instruction}
+{trains_instruction}
+4. 'local_mobility': An object detailing mobility inside {dest} and regional day-trip excursions:
+   - 'overview': 1-2 sentence overview on getting around inside {dest} and to neighboring cities/regions.
+   - 'transit_modes': Array of 3-4 real local transit modes inside {dest} (each with 'name', 'category', 'description', 'recommended_pass_or_app', 'estimated_cost', 'official_link').
+   - 'regional_excursions': Array of 2-3 iconic regional excursions or day-trips from {dest} to nearby cities/monuments in that country/state (each with 'destination_name', 'distance_and_duration', 'transit_mode', 'highlights', 'booking_or_info_url').
+   - 'insider_tips': Array of 2-3 insider local mobility tips.
+5. 'days': Array of {min(days, 5)} days. For EACH day:
    - 'title', 'theme'
    - 'morning': {{'title': 'Real Monument/Attraction Name', 'location': 'Neighborhood', 'duration': '2-3 hours', 'description': '...', 'estimated_cost': number in {curr}, 'tags': [...]}}
    - 'lunch': {{'place': 'Real Famous Restaurant', 'dish': 'Authentic Signature Dish', 'vibe': '...'}}
@@ -77,10 +127,13 @@ REQUIREMENTS:
    - 'dinner': {{'place': 'Real Renowned Dinner Restaurant', 'dish': 'Must-Try Specialty', 'vibe': '...'}}
    - 'transit_tips': 'Specific local public transit advice'
 
-Output strictly valid JSON only. No markdown formatting.
+CRITICAL ACCURACY RULES:
+- Never use generic placeholder names like 'Origin Hub Airport', 'Bistro City', 'Restaurant City', 'Semi-High Speed Train 18'.
+- Every monument, hotel, and restaurant MUST be a real, verifiable place in {dest}.
+- Output strictly valid JSON only. No markdown fences.
 """
 
-        models_to_try = ["gemini-3.8-flash", "gemini-flash-latest", "gemini-flash-lite-latest"]
+        models_to_try = ["gemini-flash-lite-latest", "gemini-3.1-flash-lite", "gemini-3.5-flash-lite", "gemini-flash-latest", "gemini-3.8-flash"]
         for m in models_to_try:
             try:
                 from google import genai
@@ -94,7 +147,7 @@ Output strictly valid JSON only. No markdown formatting.
                             "automatic_function_calling": {"disable": True}
                         }
                     ),
-                    timeout=8.0
+                    timeout=14.0
                 )
                 if resp and resp.text:
                     cleaned_txt = resp.text.strip()
@@ -105,7 +158,7 @@ Output strictly valid JSON only. No markdown formatting.
                     if data.get("stays") and data.get("days"):
                         return data
             except Exception as e:
-                # 503 or 429 or network timeout -> try next model or fall back
+                print(f"[WebSearchSynthesizer] Model {m} notice: {e}", flush=True)
                 continue
 
         return None
@@ -175,11 +228,13 @@ Output strictly valid JSON only. No markdown formatting.
             if m:
                 found_names.append(f"{m.group(0).strip()}")
         
+        budget_total = prefs.budget_amount or (25000.0 if curr == "INR" else 1200.0)
+        target_nightly = max(round((budget_total * 0.38) / days), 1800.0 if curr == "INR" else 75.0)
         default_hotel_tiers = [
-            ("The Grand Heritage Hotel", "Boutique Design & Heritage", f"Historic Arts Quarter, {dest}", 185, "🌟 Top Rated Boutique (9.4/10)"),
-            ("The Artisan Villa & Suites", "Authentic Cultural Villa", f"Old Town Central, {dest}", 240, "🏮 Authentic Heritage Haven"),
-            ("The Royal Palace & Spa", "5-Star Ultra Luxury Palace", f"Premier Waterfront / Skyline Avenue, {dest}", 380, "💎 5-Star Luxury Distinction"),
-            ("Citizen Smart City Concept", "Central Modern Smart Concept", f"Central Station / Metro Edges, {dest}", 110, "🏷️ Best Value (~$110/nt)")
+            ("The Grand Heritage Hotel", "Boutique Design & Heritage", f"Historic Arts Quarter, {dest}", target_nightly, "🌟 Top Rated Comfort"),
+            ("The Artisan Villa & Suites", "Authentic Cultural Villa", f"Old Town Central, {dest}", round(target_nightly * 1.3), "🏮 Authentic Local Haven"),
+            ("The Royal Palace & Spa", "5-Star Ultra Luxury Palace", f"Premier Waterfront / Skyline Avenue, {dest}", round(target_nightly * 2.2), "💎 5-Star Luxury Upgrade"),
+            ("Citizen Smart City Concept", "Central Modern Smart Concept", f"Central Station / Metro Edges, {dest}", round(target_nightly * 0.65), "🏷️ Best Value Saver")
         ]
 
         for idx, tier in enumerate(default_hotel_tiers):
@@ -311,8 +366,8 @@ Output strictly valid JSON only. No markdown formatting.
                         booking_url=e_links[0].url if e_links else get_viator_url(e_title, dest),
                         tags=e.get("tags", ["Golden Hour", "Sunset", "Atmosphere"]),
                         image_url=e_img,
-                        source_name=f"Google Travel & Sunset Vantage Points: {dest}",
-                        source_url=f"https://www.google.com/travel/things-to-do?dest_src=ut&dest_mid={urllib.parse.quote(dest)}",
+                        source_name=f"{e_title} Sightseeing Guide",
+                        source_url=f"https://en.wikipedia.org/wiki/{urllib.parse.quote(e_title.replace(' ', '_'))}",
                         source_snippet=f"Popular twilight vantage points and evening promenades reviewed by travelers in {dest}.",
                         booking_links=e_links
                     ),
@@ -321,8 +376,8 @@ Output strictly valid JSON only. No markdown formatting.
                         dish=l.get("dish", "Chef's Signature Regional Platter"),
                         vibe=l.get("vibe", "Vibrant local eatery with authentic regional flavors"),
                         image_url=food_img_1,
-                        source_name="Michelin & Local Food Guide",
-                        source_url=f"https://www.google.com/search?q={urllib.parse.quote(dest)}+best+lunch+restaurants",
+                        source_name="TripAdvisor Local Dining Guide",
+                        source_url=f"https://www.tripadvisor.com/Search?q={urllib.parse.quote_plus(l.get('place', '') + ' ' + dest)}",
                         source_snippet=f"Celebrated midday dining recognized for fresh regional ingredients in {dest}."
                     ),
                     dinner_recommendation=DiningRecommendation(
@@ -330,8 +385,8 @@ Output strictly valid JSON only. No markdown formatting.
                         dish=din.get("dish", "Traditional Local Tasting Menu"),
                         vibe=din.get("vibe", "Intimate evening dining with local wine pairings"),
                         image_url=food_img_2,
-                        source_name="Eater & Culinary Guide",
-                        source_url=f"https://www.google.com/search?q={urllib.parse.quote(dest)}+best+dinner+food+guide",
+                        source_name="TripAdvisor Local Dining Guide",
+                        source_url=f"https://www.tripadvisor.com/Search?q={urllib.parse.quote_plus(din.get('place', '') + ' ' + dest)}",
                         source_snippet=f"Authentic culinary hotspot showcasing local culinary heritage in {dest}."
                     ),
                     transit_tips=raw_d.get("transit_tips", f"Use the local metro or municipal transit smartcard for quick transfers in {dest}."),
@@ -351,32 +406,39 @@ Output strictly valid JSON only. No markdown formatting.
                 ))
             return itinerary
 
-        # Web-Search Synthesizer Fallback if Gemini was unavailable
-        # Extract real attractions from web search sources
+        # Web-Search & Wikipedia Synthesizer Fallback if Gemini was unavailable
+        # Retrieve verified real monuments and attractions from Wikipedia search
+        wiki_places = await search_service.search_wikipedia(f"{dest} tourist attractions", max_results=10)
         real_attractions = []
-        for src in web_sources:
-            t = src.title
-            cleaned = re.sub(r'^(?:Top\s+\d+|The\s+\d+|Best\s+|10\s+|15\s+Things to Do in\s+)', '', t, flags=re.IGNORECASE)
-            cleaned = cleaned.split(" - ")[0].split(" | ")[0].strip()
-            if len(cleaned) > 4 and dest.lower() in t.lower() and cleaned not in real_attractions:
-                real_attractions.append(cleaned)
+        for p in wiki_places:
+            t_name = p.get("title", "")
+            if t_name and t_name.lower() != dest.lower() and not t_name.lower().startswith("list of") and t_name not in [x.get("title") for x in real_attractions]:
+                real_attractions.append(p)
+
+        if not real_attractions:
+            real_attractions = [
+                {"title": f"{dest} Historic Old Town & Heritage Sanctums", "url": f"https://en.wikipedia.org/wiki/{urllib.parse.quote(dest.replace(' ', '_'))}", "snippet": f"Centuries-old historic quarters and monuments in {dest}."},
+                {"title": f"{dest} Botanical Gardens & Panoramic Viewpoint", "url": f"https://en.wikipedia.org/wiki/{urllib.parse.quote(dest.replace(' ', '_'))}", "snippet": f"Lush natural reserves and scenic overlooks in {dest}."}
+            ]
 
         for d in range(1, days_count + 1):
             day_date = start_dt + timedelta(days=d - 1)
             date_label = day_date.strftime("%a, %b %d")
             
-            attract_1 = real_attractions[(d - 1) * 2 % max(len(real_attractions), 1)] if real_attractions else f"{dest} Historic City Center & Cathedral"
-            attract_2 = real_attractions[((d - 1) * 2 + 1) % max(len(real_attractions), 1)] if real_attractions else f"{dest} Panoramic Viewpoint & Botanical Gardens"
+            p1 = real_attractions[(d - 1) * 2 % len(real_attractions)]
+            p2 = real_attractions[((d - 1) * 2 + 1) % len(real_attractions)]
+            attract_1 = p1["title"]
+            attract_2 = p2["title"]
             
             img_1 = image_service.get_image_for_query(attract_1, category="temple", destination=dest)
             img_2 = image_service.get_image_for_query(attract_2, category="museum", destination=dest)
             sunset_img = image_service.get_image_for_query(f"{dest} sunset", category="sunset", destination=dest)
-            food_img_1 = image_service.get_image_for_query(f"{dest} food lunch", category="food", destination=dest)
-            food_img_2 = image_service.get_image_for_query(f"{dest} dinner restaurant", category="food", destination=dest)
+            food_img_1 = image_service.get_image_for_query(f"{dest} signature lunch", category="food", destination=dest)
+            food_img_2 = image_service.get_image_for_query(f"{dest} traditional dinner", category="food", destination=dest)
 
             m_links = get_multi_activity_links(attract_1, dest, 15, curr)
             a_links = get_multi_activity_links(attract_2, dest, 10, curr)
-            e_links = get_multi_activity_links(f"{dest} Golden Hour Promenade", dest, 0, curr)
+            e_links = get_multi_activity_links(f"{dest} Sunset Vantage", dest, 0, curr)
 
             itinerary.append(ItineraryDay(
                 day=d,
@@ -388,29 +450,29 @@ Output strictly valid JSON only. No markdown formatting.
                     title=attract_1,
                     location=f"Central {dest}",
                     duration="2.5 hours",
-                    description=f"Explore {attract_1}, one of the most celebrated highlights in {dest}, with early entry to avoid crowds.",
+                    description=f"Explore {attract_1}, one of the most celebrated highlights in {dest}, with early entry to beat queues.",
                     estimated_cost=15.0,
                     booking_url=m_links[0].url if m_links else get_attraction_booking_url(attract_1, dest),
                     tags=["Must See", "Iconic", "Culture"],
                     image_url=img_1,
-                    source_name=f"Wikitravel Guide: {dest}",
-                    source_url=f"https://wikitravel.org/en/{urllib.parse.quote(dest.replace(' ', '_'))}",
-                    source_snippet=f"Verified visiting guide, operating hours, and historical context for {attract_1}.",
+                    source_name=f"{attract_1} Official Archive",
+                    source_url=p1.get("url") or f"https://en.wikipedia.org/wiki/{urllib.parse.quote(attract_1.replace(' ', '_'))}",
+                    source_snippet=p1.get("snippet") or f"Verified visiting guide and historical overview for {attract_1}.",
                     booking_links=m_links
                 ),
                 afternoon=ActivityItem(
                     time="02:00 PM",
                     title=attract_2,
-                    location=f"Old Town Quarter, {dest}",
+                    location=f"Historic Quarter, {dest}",
                     duration="2.5 hours",
                     description=f"Visit {attract_2}, followed by strolling historic cobblestone streets and artisan shops.",
                     estimated_cost=10.0,
                     booking_url=a_links[0].url if a_links else get_attraction_booking_url(attract_2, dest),
                     tags=["Artisan", "Architecture", "Walk"],
                     image_url=img_2,
-                    source_name=f"Lonely Planet Travel Guide: {dest}",
-                    source_url=f"https://www.google.com/search?q={urllib.parse.quote(dest)}+lonely+planet",
-                    source_snippet=f"Curated neighborhood recommendations, historic quarters, and walking routes in {dest}.",
+                    source_name=f"{attract_2} Official Archive",
+                    source_url=p2.get("url") or f"https://en.wikipedia.org/wiki/{urllib.parse.quote(attract_2.replace(' ', '_'))}",
+                    source_snippet=p2.get("snippet") or f"Curated neighborhood recommendations, historic quarters, and walking routes in {dest}.",
                     booking_links=a_links
                 ),
                 evening=ActivityItem(
@@ -423,27 +485,27 @@ Output strictly valid JSON only. No markdown formatting.
                     booking_url=e_links[0].url if e_links else get_viator_url(f"{dest} evening tour", dest),
                     tags=["Sunset", "Relaxation", "Skyline"],
                     image_url=sunset_img,
-                    source_name=f"Google Travel Verified Guide: {dest}",
-                    source_url=f"https://www.google.com/travel/things-to-do?dest_src=ut&dest_mid={urllib.parse.quote(dest)}",
+                    source_name=f"{dest} Official Tourism Guide",
+                    source_url=f"https://en.wikipedia.org/wiki/{urllib.parse.quote(dest.replace(' ', '_'))}",
                     source_snippet=f"Top panoramic viewpoints and golden hour vantage points reviewed by travelers in {dest}.",
                     booking_links=e_links
                 ),
                 lunch_recommendation=DiningRecommendation(
                     place=f"Trattoria & Bistro {dest}",
-                    dish="Chef's Signature Regional Platter & Local Wine",
-                    vibe="Charming outdoor courtyard with authentic regional specialties",
+                    dish="Chef's Signature Regional Platter & Local Specialties",
+                    vibe="Charming dining spot with authentic regional flavors and fresh local ingredients",
                     image_url=food_img_1,
-                    source_name="Michelin & Local Culinary Guide",
-                    source_url=f"https://www.google.com/search?q={urllib.parse.quote(dest)}+best+restaurants",
+                    source_name=f"TripAdvisor Verified Dining: {dest}",
+                    source_url=f"https://www.tripadvisor.com/Search?q={urllib.parse.quote_plus(dest + ' authentic lunch restaurants')}",
                     source_snippet=f"Acclaimed midday dining featuring regional specialties and local ingredients in {dest}."
                 ),
                 dinner_recommendation=DiningRecommendation(
                     place=f"The Heritage Table {dest}",
                     dish="Fresh Local Catch & Artisan Tasting Menu",
-                    vibe="Intimate candlelit dining showcasing authentic heritage recipes",
+                    vibe="Intimate evening dining showcasing authentic heritage recipes",
                     image_url=food_img_2,
-                    source_name="Eater & Food Guide",
-                    source_url=f"https://www.google.com/search?q={urllib.parse.quote(dest)}+eater+food+guide",
+                    source_name=f"TripAdvisor Evening Gastronomy: {dest}",
+                    source_url=f"https://www.tripadvisor.com/Search?q={urllib.parse.quote_plus(dest + ' traditional dinner restaurants')}",
                     source_snippet=f"Celebrated evening dining spotlight with authentic regional flavors."
                 ),
                 transit_tips=f"Pick up the local 24/48-hour public transit smartcard for unlimited metro, tram, and bus rides in {dest}.",
@@ -463,3 +525,144 @@ Output strictly valid JSON only. No markdown formatting.
             ))
 
         return itinerary
+
+    @classmethod
+    def build_local_mobility(
+        cls, 
+        prefs: TripPreferences, 
+        gemini_data: Optional[Dict[str, Any]] = None
+    ) -> LocalMobilityInfo:
+        dest = prefs.destination
+        dest_lower = dest.lower()
+        curr = prefs.budget_currency or "INR"
+
+        # 1. Check Gemini generative synthesis first
+        if gemini_data and gemini_data.get("local_mobility"):
+            raw_mob = gemini_data["local_mobility"]
+            modes = []
+            for m in raw_mob.get("transit_modes", []):
+                modes.append(LocalTransitMode(
+                    name=m.get("name") or f"Local Transit in {dest}",
+                    category=m.get("category") or "City Mobility",
+                    description=m.get("description") or "Convenient local transit option.",
+                    recommended_pass_or_app=m.get("recommended_pass_or_app") or "Local Transit Card / App",
+                    estimated_cost=m.get("estimated_cost") or "Standard local fare",
+                    official_link=m.get("official_link")
+                ))
+
+            excursions = []
+            for e in raw_mob.get("regional_excursions", []):
+                raw_hl = e.get("highlights") or "Iconic regional landmarks and scenic vistas"
+                hl_str = " • ".join(str(x) for x in raw_hl) if isinstance(raw_hl, list) else str(raw_hl)
+                excursions.append(RegionalExcursion(
+                    destination_name=e.get("destination_name") or f"Excursion from {dest}",
+                    distance_and_duration=e.get("distance_and_duration") or "Day trip (~1-2 hours)",
+                    transit_mode=e.get("transit_mode") or "Regional rail or private AC cab",
+                    highlights=hl_str,
+                    booking_or_info_url=e.get("booking_or_info_url")
+                ))
+
+            tips = raw_mob.get("insider_tips", [])
+            return LocalMobilityInfo(
+                overview=raw_mob.get("overview") or f"Comprehensive guide to moving within {dest} and exploring surrounding cities/regions.",
+                transit_modes=modes,
+                regional_excursions=excursions,
+                insider_tips=tips if isinstance(tips, list) else [str(tips)]
+            )
+
+        # 2. Check destination knowledge base
+        from app.services.destination_knowledge import get_destination_data
+        dest_data = get_destination_data(dest)
+        if dest_data and dest_data.get("local_mobility"):
+            raw_mob = dest_data["local_mobility"]
+            modes = [LocalTransitMode(**m) for m in raw_mob.get("transit_modes", [])]
+            excursions = [RegionalExcursion(**e) for e in raw_mob.get("regional_excursions", [])]
+            return LocalMobilityInfo(
+                overview=raw_mob.get("overview", f"Mobility guide for {dest}."),
+                transit_modes=modes,
+                regional_excursions=excursions,
+                insider_tips=raw_mob.get("insider_tips", [])
+            )
+
+        # 3. Intelligent region-tailored default
+        is_india = is_indian_locale("", dest)
+        if is_india:
+            return LocalMobilityInfo(
+                overview=f"Getting around {dest} is fast and convenient using app-based AC cabs, local city transit networks, and auto-rickshaws for heritage lanes.",
+                transit_modes=[
+                    LocalTransitMode(
+                        name="Ola Cabs & Uber Premier",
+                        category="On-Demand AC Cabs",
+                        description=f"Direct air-conditioned ride-hailing for all city transfers, hotel pickups, and monument visits across {dest}.",
+                        recommended_pass_or_app="Ola App / Uber App",
+                        estimated_cost="₹150 - ₹450 per ride",
+                        official_link="https://www.uber.com/in/en/ride/"
+                    ),
+                    LocalTransitMode(
+                        name=f"{dest} City Bus & Public Transit",
+                        category="City Rapid Public Transit",
+                        description=f"Air-conditioned city buses connecting main transit terminals, railway junctions, and heritage hubs.",
+                        recommended_pass_or_app="City Transit Smart Card / Chalo App",
+                        estimated_cost="₹15 - ₹50 per trip",
+                        official_link="https://www.chalo.com/"
+                    ),
+                    LocalTransitMode(
+                        name="Pre-Paid Auto-Rickshaw & E-Rickshaws",
+                        category="Last-Mile Heritage Alleys",
+                        description="Ideal for navigating vibrant heritage bazaars and historic temple lanes where full-sized cabs cannot enter.",
+                        recommended_pass_or_app="Uber Auto / Fixed Agreed Fare",
+                        estimated_cost="₹30 - ₹100 per ride",
+                        official_link="https://www.uber.com/in/en/ride/"
+                    )
+                ],
+                regional_excursions=[
+                    RegionalExcursion(
+                        destination_name=f"Historic Regional Heritage Circuit around {dest}",
+                        distance_and_duration="40-80 km • 1 to 2 hours drive",
+                        transit_mode="Private AC Day Cab or Superfast Regional Express",
+                        highlights="Ancient temples, scenic riverfronts, and traditional artisan craft villages",
+                        booking_or_info_url="https://www.makemytrip.com/cabs/"
+                    )
+                ],
+                insider_tips=[
+                    "Book airport and late-evening pickups through Uber or Ola for transparent digital fares without haggling.",
+                    "Hiring a private AC cab for a full 8-hour / 80km package (~₹1,800 - ₹2,600) gives you complete flexibility across sights.",
+                    "Keep small change (₹10, ₹20, ₹50 notes) or UPI digital payments active for auto-rickshaws and street vendors."
+                ]
+            )
+        else:
+            return LocalMobilityInfo(
+                overview=f"Navigating {dest} is efficient via integrated urban rail, rapid metro, city buses, and official metered cabs.",
+                transit_modes=[
+                    LocalTransitMode(
+                        name=f"{dest} Central Metro & Subway Network",
+                        category="Urban Underground Rail",
+                        description=f"High-frequency metro connecting key sights, shopping corridors, and museum hubs in {dest}.",
+                        recommended_pass_or_app="Multi-Day Visitor Transit Pass",
+                        estimated_cost=f"~{curr} 800 - 1,500 / day",
+                        official_link="https://www.google.com/travel/"
+                    ),
+                    LocalTransitMode(
+                        name="Licensed City Taxis & Ride-Hailing",
+                        category="App-Based Cabs",
+                        description="Safe, metered point-to-point transfers available 24/7 with cashless mobile checkout.",
+                        recommended_pass_or_app="Uber / FreeNow / Local Taxi App",
+                        estimated_cost=f"~{curr} 1,200 - 2,800 per ride",
+                        official_link="https://www.uber.com/"
+                    )
+                ],
+                regional_excursions=[
+                    RegionalExcursion(
+                        destination_name=f"Countryside & Heritage Day Trip from {dest}",
+                        distance_and_duration="50-120 km • 45m - 1h 30m via Regional Rail",
+                        transit_mode="High-Speed Express Train or Guided Tour Coach",
+                        highlights="Historic medieval villages, dramatic scenic vistas, and regional culinary trails",
+                        booking_or_info_url="https://www.getyourguide.com/"
+                    )
+                ],
+                insider_tips=[
+                    "Purchase an unlimited multi-day visitor transit pass at the airport terminal to save up to 40% on daily transport.",
+                    "Avoid traveling on central commuter lines during morning rush hour (8:00 AM - 9:30 AM).",
+                    "Use Google Maps or Citymapper for real-time live platform numbers, departure delays, and car transfer positions."
+                ]
+            )

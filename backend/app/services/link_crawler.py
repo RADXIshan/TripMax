@@ -4,6 +4,12 @@ from typing import List, Dict, Any, Optional
 import asyncio
 from app.models.trip import BookingLink
 from app.services.search_service import search_service
+from app.services.geo_intelligence import (
+    resolve_country, 
+    is_cross_country, 
+    can_have_direct_intercity_trains,
+    get_rail_region
+)
 
 # Comprehensive IATA airport code registry for accurate live flight links
 AIRPORT_IATA_MAP: Dict[str, str] = {
@@ -82,8 +88,8 @@ class LinkCrawler:
     Intelligent Web Crawler & Deep Linking Engine.
     Discovers authentic, working, region-relevant booking links:
     - For Hotels: Hotel official direct portals, Google Hotels live rates, MakeMyTrip, Agoda, Booking.com.
-    - For Trains: IRCTC Official, ConfirmTkt, MakeMyTrip Trains, SmartEX Shinkansen, Trainline.
-    - For Flights: Airline Official Direct, Google Flights matrix, MakeMyTrip, EaseMyTrip, Skyscanner.
+    - For Trains: IRCTC Official, ConfirmTkt, MakeMyTrip Trains, SmartEX Shinkansen, Trainline (ONLY for domestic or connected European routes).
+    - For Flights: Airline Official Direct, Google Flights matrix, MakeMyTrip, EaseMyTrip, Skyscanner, Kayak.
     """
 
     _cache: Dict[str, Any] = {}
@@ -92,14 +98,45 @@ class LinkCrawler:
     KNOWN_HOTEL_OFFICIALS: Dict[str, str] = {
         "mayfair lagoon": "https://www.mayfairhotels.com/lagoon-bhubaneswar/",
         "mayfair heritage": "https://www.mayfairhotels.com/heritage-puri/",
+        "mayfair": "https://www.mayfairhotels.com/",
         "welcomhotel bhubaneswar": "https://www.itchotels.com/in/en/welcomhotelbhubaneswar",
+        "welcomhotel": "https://www.itchotels.com/in/en/welcomhotel",
+        "itc hotels": "https://www.itchotels.com/",
+        "itc": "https://www.itchotels.com/",
         "trident bhubaneswar": "https://www.tridenthotels.com/hotels-in-bhubaneswar",
+        "trident": "https://www.tridenthotels.com/",
+        "oberoi": "https://www.oberoihotels.com/",
         "vivanta bhubaneswar": "https://www.vivantahotels.com/en-in/vivanta-bhubaneswar-dn-square/",
+        "vivanta": "https://www.vivantahotels.com/",
+        "taj": "https://www.tajhotels.com/",
+        "ginger": "https://www.gingerhotels.com/",
+        "lemon tree": "https://www.lemontreehotels.com/",
+        "radisson": "https://www.radissonhotels.com/",
         "cotton house": "https://www.marriott.com/en-us/hotels/bcnak-cotton-house-hotel-autograph-collection/overview/",
         "mercer hotel": "https://www.mercerbarcelona.com/en",
         "majestic hotel": "https://www.hotelmajestic.es/en",
         "mandapa": "https://www.ritzcarlton.com/en/hotels/indonesia/mandapa",
-        "alila villas": "https://www.alilahotels.com/uluwatu"
+        "alila villas": "https://www.alilahotels.com/uluwatu",
+        "marriott": "https://www.marriott.com/",
+        "hyatt": "https://www.hyatt.com/",
+        "hilton": "https://www.hilton.com/",
+        "accor": "https://all.accor.com/",
+        "novotel": "https://novotel.accor.com/",
+        "ibis": "https://ibis.accor.com/",
+        "four seasons": "https://www.fourseasons.com/",
+        "ritz carlton": "https://www.ritzcarlton.com/",
+        "ritz-carlton": "https://www.ritzcarlton.com/",
+        "mandarin oriental": "https://www.mandarinoriental.com/",
+        "peninsula": "https://www.peninsula.com/",
+        "shangri-la": "https://www.shangri-la.com/",
+        "intercontinental": "https://www.ihg.com/intercontinental/hotels/us/en/reservation",
+        "ihg": "https://www.ihg.com/",
+        "sofitel": "https://sofitel.accor.com/",
+        "aman": "https://www.aman.com/",
+        "belmond": "https://www.belmond.com/",
+        "st. regis": "https://st-regis.marriott.com/",
+        "st regis": "https://st-regis.marriott.com/",
+        "w hotels": "https://w-hotels.marriott.com/"
     }
 
     # Verified official portals for airlines
@@ -110,12 +147,30 @@ class LinkCrawler:
         "akasa": "https://www.akasaair.com/",
         "spicejet": "https://www.spicejet.com/",
         "japan airlines": "https://www.jal.co.jp/en/",
+        "jal": "https://www.jal.co.jp/en/",
         "ana": "https://www.ana.co.jp/en/us/",
+        "all nippon": "https://www.ana.co.jp/en/us/",
         "iberia": "https://www.iberia.com/",
         "air france": "https://www.airfrance.com/",
         "british airways": "https://www.britishairways.com/",
+        "lufthansa": "https://www.lufthansa.com/",
+        "swiss": "https://www.swiss.com/",
+        "ita airways": "https://www.ita-airways.com/",
+        "klm": "https://www.klm.com/",
         "emirates": "https://www.emirates.com/",
-        "singapore airlines": "https://www.singaporeair.com/"
+        "etihad": "https://www.etihad.com/",
+        "qatar": "https://www.qatarairways.com/",
+        "singapore airlines": "https://www.singaporeair.com/",
+        "cathay": "https://www.cathaypacific.com/",
+        "united": "https://www.united.com/",
+        "delta": "https://www.delta.com/",
+        "american airlines": "https://www.aa.com/",
+        "virgin atlantic": "https://www.virginatlantic.com/",
+        "qantas": "https://www.qantas.com/",
+        "ryanair": "https://www.ryanair.com/",
+        "easyjet": "https://www.easyjet.com/",
+        "vueling": "https://www.vueling.com/",
+        "wizz air": "https://wizzair.com/"
     }
 
     @classmethod
@@ -129,7 +184,8 @@ class LinkCrawler:
         currency: str = "INR"
     ) -> Dict[str, Any]:
         """
-        Crawls and compiles authentic direct official links and top-rated booking platforms
+        Crawls and compiles authentic direct official links and top-rated booking platforms.
+        Guarantees zero search engine links: all URLs point to actual hotel or aggregator booking portals.
         """
         cache_key = f"hotel_{hotel_name.lower().strip()}_{destination.lower().strip()}"
         if cache_key in cls._cache:
@@ -142,7 +198,7 @@ class LinkCrawler:
 
         # 1. Determine Official Website
         official_url = None
-        official_brand = "Official Direct Website"
+        official_brand = f"{hotel_name.split()[0]} Official Direct"
 
         # Check known dictionary first
         hotel_lower = hotel_name.lower()
@@ -156,52 +212,58 @@ class LinkCrawler:
         # If not known, probe live search engine to find the true hotel official page
         if not official_url:
             try:
-                search_q = f"{hotel_name} {destination} official website booking"
+                search_q = f"{hotel_name} {destination} official website"
                 results = await search_service.search(search_q, max_results=3)
                 for r in results:
                     u = r.get("url", "")
                     # Ignore common third-party aggregator domains to find the actual hotel domain
-                    if not any(agg in u for agg in ["booking.com", "tripadvisor", "agoda", "expedia", "hotels.com", "trivago", "makemytrip", "goibibo"]):
+                    if not any(agg in u.lower() for agg in ["booking.com", "tripadvisor", "agoda", "expedia", "hotels.com", "trivago", "makemytrip", "goibibo", "google.com", "bing.com"]):
                         official_url = u
                         official_brand = f"{hotel_name.split()[0]} Official Direct"
                         break
             except Exception:
                 pass
 
-        if not official_url:
-            official_url = f"https://www.google.com/search?q={urllib.parse.quote_plus(f'{hotel_name} {destination} official website')}"
-
         # 2. Build multi-platform comparison list tailored to region
         links: List[BookingLink] = []
 
-        # (A) Official Direct
-        links.append(BookingLink(
-            provider=official_brand,
-            label="Official Hotel Direct",
-            url=official_url,
-            price_hint="Direct Best Rate & Perks"
-        ))
+        # (A) Official Direct (if verified)
+        if official_url and not any(search_engine in official_url for search_engine in ["google.com/search", "bing.com"]):
+            links.append(BookingLink(
+                provider=official_brand,
+                label=f"{hotel_name.split()[0]} Official Direct",
+                url=official_url,
+                price_hint="Direct Member Rate & Perks"
+            ))
 
-        # (B) Google Hotels Live Rates
+        # (B) Google Hotels Live Rates (always a direct travel search)
         google_hotels_q = f"{hotel_name} {destination}"
         if checkin and checkout:
             google_hotels_q += f" from {checkin} to {checkout}"
         google_hotels_url = f"https://www.google.com/travel/search?q={urllib.parse.quote_plus(google_hotels_q)}"
         links.append(BookingLink(
             provider="Google Hotels",
-            label="Google Hotels",
+            label="Google Hotels Live Rates",
             url=google_hotels_url,
-            price_hint="Live Price Comparison"
+            price_hint="Live Price Comparison & Rooms"
         ))
 
-        # (C) Regional OTA (MakeMyTrip for India / Asia)
+        # (C) Regional OTA (MakeMyTrip & Goibibo for India / Asia)
         if is_india:
             mmt_url = f"https://www.makemytrip.com/hotels/hotel-listing/?city={urllib.parse.quote_plus(destination)}&searchText={encoded_hotel}"
             links.append(BookingLink(
                 provider="MakeMyTrip",
                 label="MakeMyTrip Hotels",
                 url=mmt_url,
-                price_hint="Exclusive Member Discounts"
+                price_hint="Special App & Bank Discounts"
+            ))
+
+            goibibo_hotel_url = f"https://www.goibibo.com/hotels/hotels-in-{urllib.parse.quote_plus(destination.lower().strip())}/?searchText={encoded_hotel}"
+            links.append(BookingLink(
+                provider="Goibibo",
+                label="Goibibo Hotels (Best Deals)",
+                url=goibibo_hotel_url,
+                price_hint="Pay@Hotel & Secret Deals"
             ))
 
         # (D) Agoda
@@ -210,7 +272,7 @@ class LinkCrawler:
             provider="Agoda",
             label="Agoda",
             url=agoda_url,
-            price_hint="Secret Deals & Cash Back"
+            price_hint="Instant Confirmation & Member Price"
         ))
 
         # (E) Booking.com
@@ -224,7 +286,7 @@ class LinkCrawler:
             provider="Booking.com",
             label="Booking.com",
             url=booking_url,
-            price_hint="Free Cancellation & Reviews"
+            price_hint="Free Cancellation Options"
         ))
 
         # (F) TripAdvisor Reviews
@@ -233,12 +295,17 @@ class LinkCrawler:
             provider="Tripadvisor",
             label="TripAdvisor",
             url=tripadvisor_url,
-            price_hint="Verified Guest Photos"
+            price_hint="Verified Traveler Photos & Candid Reviews"
         ))
 
-        # Primary link is the Official Direct link
-        primary_provider = official_brand
-        primary_url = official_url
+        # Primary link selection:
+        # If official website is available, use it. Otherwise, use Google Hotels Live Rates.
+        if official_url and not any(search_engine in official_url for search_engine in ["google.com/search", "bing.com"]):
+            primary_provider = official_brand
+            primary_url = official_url
+        else:
+            primary_provider = "Google Hotels Live Rates"
+            primary_url = google_hotels_url
 
         res = {
             "primary_url": primary_url,
@@ -247,6 +314,26 @@ class LinkCrawler:
         }
         cls._cache[cache_key] = res
         return res
+
+    @classmethod
+    def resolve_rail_slug(cls, city: str) -> str:
+        clean = city.lower().strip()
+        slug_map = {
+            "bengaluru": "bangalore", "bangalore": "bangalore",
+            "bhubaneswar": "bhubaneswar", "new delhi": "delhi", "delhi": "delhi",
+            "mumbai": "mumbai", "bombay": "mumbai", "kolkata": "kolkata",
+            "calcutta": "kolkata", "howrah": "howrah", "chennai": "chennai",
+            "madras": "chennai", "hyderabad": "hyderabad", "secunderabad": "secunderabad",
+            "jaipur": "jaipur", "pune": "pune", "varanasi": "varanasi", "puri": "puri",
+            "cuttack": "cuttack", "ahmedabad": "ahmedabad", "amritsar": "amritsar",
+            "lucknow": "lucknow", "chandigarh": "chandigarh", "patna": "patna",
+            "kochi": "cochin", "cochin": "cochin", "ernakulam": "ernakulam",
+            "goa": "goa", "madgaon": "madgaon", "vizag": "visakhapatnam"
+        }
+        for k, v in slug_map.items():
+            if k in clean:
+                return v
+        return clean.split()[0]
 
     @classmethod
     async def crawl_train_links(
@@ -259,23 +346,36 @@ class LinkCrawler:
     ) -> Dict[str, Any]:
         """
         Crawls and compiles authentic train reservation portals for Indian, Japanese, or European routes.
+        Returns empty links if origin and destination are cross-country across oceans or non-rail connected borders.
         """
+        can_train, rail_type = can_have_direct_intercity_trains(origin, destination)
+        if not can_train:
+            return {
+                "primary_url": "",
+                "primary_provider": "Not Applicable",
+                "links": []
+            }
+
         cache_key = f"train_{train_name.lower()}_{origin.lower()}_{destination.lower()}"
         if cache_key in cls._cache:
             return cls._cache[cache_key]
 
-        is_india = is_indian_locale(origin, destination)
-        is_japan = any(k in f"{origin} {destination}".lower() for k in ["japan", "tokyo", "kyoto", "osaka"])
-        is_europe = any(k in f"{origin} {destination}".lower() for k in ["spain", "france", "italy", "germany", "swiss", "uk", "barcelona", "paris", "rome"])
+        country_dest = (resolve_country(destination) or "").lower()
+        country_orig = (resolve_country(origin) or "").lower()
+        is_india = (country_dest == "india" and country_orig == "india")
+        is_japan = (country_dest == "japan" and country_orig == "japan")
+        is_europe = (rail_type == "european_cross_border_rail" or country_dest in ["france", "italy", "spain", "germany", "switzerland", "united kingdom", "netherlands", "belgium", "austria"])
 
         links: List[BookingLink] = []
 
         if is_india:
-            # Indian Railway System
-            confirmtkt_url = f"https://www.confirmtkt.com/trains/{urllib.parse.quote_plus(origin.split()[0].lower())}-to-{urllib.parse.quote_plus(destination.split()[0].lower())}-train-tickets"
+            # Indian Railway System with calibrated station city slugs
+            orig_slug = cls.resolve_rail_slug(origin)
+            dest_slug = cls.resolve_rail_slug(destination)
+            confirmtkt_url = f"https://www.confirmtkt.com/trains/{orig_slug}-to-{dest_slug}-train-tickets"
             irctc_url = "https://www.irctc.co.in/nget/train-search"
-            mmt_trains = "https://www.makemytrip.com/railways/"
-            ixigo_url = f"https://www.ixigo.com/trains/{urllib.parse.quote_plus(origin.split()[0].lower())}-to-{urllib.parse.quote_plus(destination.split()[0].lower())}"
+            mmt_trains = f"https://www.makemytrip.com/railways/listing?srcCity={orig_slug}&dstCity={dest_slug}"
+            ixigo_url = f"https://www.ixigo.com/trains/{orig_slug}-to-{dest_slug}"
 
             # Check if live search gives an exact ConfirmTkt or IRCTC timetable link
             try:
@@ -306,6 +406,13 @@ class LinkCrawler:
                 label="MakeMyTrip Trains",
                 url=mmt_trains,
                 price_hint="Free Cancellation & Instant Refund"
+            ))
+            goibibo_trains = f"https://www.goibibo.com/trains/{orig_slug}-to-{dest_slug}-train-tickets/"
+            links.append(BookingLink(
+                provider="Goibibo Trains",
+                label="Goibibo Trains",
+                url=goibibo_trains,
+                price_hint="Live PNR & Zero Payment Charges"
             ))
             links.append(BookingLink(
                 provider="ixigo Trains",
@@ -410,11 +517,8 @@ class LinkCrawler:
         for k, url in cls.AIRLINE_OFFICIALS.items():
             if k in airline_lower:
                 airline_url = url
-                airline_brand = f"{airline.split()[0]} Direct"
+                airline_brand = f"{k.title()} Direct"
                 break
-
-        if not airline_url:
-            airline_url = f"https://www.google.com/search?q={urllib.parse.quote_plus(f'{airline} official flight booking from {origin} to {destination}')}"
 
         # 2. Google Flights Live Matrix
         google_flights_q = f"flights from {orig_iata} to {dest_iata}"
@@ -424,20 +528,21 @@ class LinkCrawler:
 
         links: List[BookingLink] = []
 
-        # (A) Airline Direct
-        links.append(BookingLink(
-            provider=airline_brand,
-            label=f"{airline.split()[0]} Official Direct",
-            url=airline_url,
-            price_hint="Zero Middleman Markups"
-        ))
+        # (A) Airline Direct (only if verified)
+        if airline_url:
+            links.append(BookingLink(
+                provider=airline_brand,
+                label=f"{airline_brand} Portal",
+                url=airline_url,
+                price_hint="Official Carrier Portal"
+            ))
 
         # (B) Google Flights Matrix
         links.append(BookingLink(
             provider="Google Flights",
             label="Google Flights",
             url=google_flights_url,
-            price_hint="Live Fares & Price Graph"
+            price_hint="Live Fares & Route Timetable"
         ))
 
         # (C) Regional Portals (MakeMyTrip & EaseMyTrip for India)
@@ -448,6 +553,14 @@ class LinkCrawler:
                 label="MakeMyTrip Flights",
                 url=mmt_flight_url,
                 price_hint="Instant Cashback & Seat Selection"
+            ))
+
+            goibibo_flight_url = f"https://www.goibibo.com/flights/air-{orig_iata}-{dest_iata}-{(depart_date or 'today').replace('-', '')}--1-0-0-E-D/"
+            links.append(BookingLink(
+                provider="Goibibo",
+                label="Goibibo Flights",
+                url=goibibo_flight_url,
+                price_hint="Instant Promo Codes"
             ))
 
             emt_flight_url = f"https://flight.easemytrip.com/FlightList/Index?srch={orig_iata}-{dest_iata}-{depart_date or 'today'}"
@@ -478,8 +591,12 @@ class LinkCrawler:
             price_hint="Hacker Fares"
         ))
 
-        primary_provider = airline_brand
-        primary_url = airline_url
+        if airline_url:
+            primary_provider = airline_brand
+            primary_url = airline_url
+        else:
+            primary_provider = "Google Flights"
+            primary_url = google_flights_url
 
         res = {
             "primary_url": primary_url,

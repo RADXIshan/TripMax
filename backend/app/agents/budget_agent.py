@@ -43,17 +43,26 @@ class BudgetAgent:
         chosen_flight_cost = flights[0].estimated_price if flights else (350.0 * rate)
         chosen_train_cost = trains[0].estimated_price if trains else (100.0 * rate)
         
-        # If user wants both or flights
-        if prefs.transport_preference == "train":
+        # If user wants both or flights, or if no trains exist for cross-country routes
+        if prefs.transport_preference == "train" and trains:
             transit_cost = chosen_train_cost
-        elif prefs.transport_preference == "flight":
+        elif prefs.transport_preference == "flight" or not trains:
             transit_cost = chosen_flight_cost
         else:
             transit_cost = chosen_flight_cost  # default main long haul
 
-        # Stay cost: average boutique or chosen stay
-        top_stay = stays[0] if stays else None
-        stay_cost = top_stay.total_price if top_stay else (150.0 * rate * days)
+        # Select stay that best matches user's budget and preference
+        target = prefs.budget_amount
+        selected_stay = None
+        if stays:
+            if prefs.stay_preference == "budget" or (target and target > 0 and (stays[0].total_price > target * 0.5)):
+                # Pick best value or budget-friendly stay that fits within lodging budget
+                budget_matches = [s for s in stays if target and s.total_price <= (target * 0.5)]
+                selected_stay = budget_matches[0] if budget_matches else stays[-1]
+            else:
+                selected_stay = stays[0]
+
+        stay_cost = selected_stay.total_price if selected_stay else (45.0 * rate * days)
 
         # Activities cost sum across days
         activities_cost = sum(
@@ -61,15 +70,30 @@ class BudgetAgent:
             for day in itinerary
         )
 
-        # Food & dining cost estimate (lunch + dinner + snacks)
-        food_daily_rate = 50.0 if curr == "USD" else (45.0 if curr == "EUR" else (4000.0 if curr == "INR" else 7500.0 if curr == "JPY" else 40.0))
+        # Realistic Food & dining cost estimate calibrated to party/budget tier
+        if curr == "INR":
+            # Real Indian dining cost: authentic local meals, street food & cafes
+            if target and target <= 30000:
+                food_daily_rate = 800.0  # ~₹800/day per person for delicious authentic local food
+            elif target and target <= 60000:
+                food_daily_rate = 1200.0 # ~₹1,200/day
+            else:
+                food_daily_rate = 2000.0 # ~₹2,000/day fine dining
+        elif curr == "JPY":
+            food_daily_rate = 4500.0
+        elif curr == "EUR":
+            food_daily_rate = 40.0
+        elif curr == "GBP":
+            food_daily_rate = 35.0
+        else: # USD
+            food_daily_rate = 45.0
+
         food_cost = food_daily_rate * days
 
-        # Local transit & buffer (cabs, metro, souvenirs, emergency)
-        buffer_cost = round((stay_cost + transit_cost) * 0.10, 0)
+        # Local transit & buffer (local cabs, metro, souvenirs, contingencies)
+        buffer_cost = round((stay_cost + transit_cost) * 0.08, 0)
 
         total_estimated = round(transit_cost + stay_cost + activities_cost + food_cost + buffer_cost, 0)
-        target = prefs.budget_amount
 
         # Determine budget status
         insights = []
@@ -104,11 +128,13 @@ class BudgetAgent:
             insights=insights
         )
 
+        transit_task_label = f"Book Flights / High-Speed Train tickets to {dest}" if trains else f"Book Commercial Flights to {dest}"
+
         # Actionable checklist
         checklist = [
             ChecklistItem(
                 id="check-1",
-                task=f"Book Flights / High-Speed Train tickets to {dest}",
+                task=transit_task_label,
                 category="Transit",
                 timeline="6 to 8 weeks before trip",
                 booking_url=flights[0].booking_url if flights else None,

@@ -1,7 +1,7 @@
 import re
 import urllib.parse
 from datetime import datetime, timedelta
-from typing import List, Optional
+from typing import List, Optional, Dict
 from app.models.trip import BookingLink
 from app.services.link_crawler import resolve_iata, is_indian_locale
 
@@ -53,23 +53,24 @@ def get_multi_flight_links(
 
     # 1. Airline Direct Official
     airline_name = airline.split('/')[0].strip() if airline else "Airline"
-    direct_search_q = f"{airline_name} official flight booking from {origin} to {destination}"
-    airline_direct_url = f"https://www.google.com/search?q={urllib.parse.quote_plus(direct_search_q)}"
-    if "indigo" in airline_name.lower():
-        airline_direct_url = "https://www.goindigo.in/"
-    elif "air india" in airline_name.lower():
-        airline_direct_url = "https://www.airindia.com/"
-    elif "akasa" in airline_name.lower():
-        airline_direct_url = "https://www.akasaair.com/"
-    elif "spicejet" in airline_name.lower():
-        airline_direct_url = "https://www.spicejet.com/"
+    airline_lower = airline.lower()
+    airline_direct_url = None
+    airline_label = f"{airline_name} Direct"
 
-    links.append(BookingLink(
-        provider="Airline Direct",
-        label=f"{airline_name} Direct",
-        url=airline_direct_url,
-        price_hint="Zero Third-Party Fees"
-    ))
+    from app.services.link_crawler import LinkCrawler
+    for k, url in LinkCrawler.AIRLINE_OFFICIALS.items():
+        if k in airline_lower:
+            airline_direct_url = url
+            airline_label = f"{k.title()} Direct"
+            break
+
+    if airline_direct_url:
+        links.append(BookingLink(
+            provider="Airline Direct",
+            label=airline_label,
+            url=airline_direct_url,
+            price_hint="Official Carrier Direct Booking"
+        ))
 
     # 2. Google Flights
     links.append(BookingLink(
@@ -88,6 +89,14 @@ def get_multi_flight_links(
             label="MakeMyTrip Flights",
             url=mmt_url,
             price_hint="Instant Seat Selection & Cashbacks"
+        ))
+
+        goibibo_flight_url = f"https://www.goibibo.com/flights/air-{orig_iata}-{dest_iata}-{mmt_date.replace('-', '')}--1-0-0-E-D/"
+        links.append(BookingLink(
+            provider="Goibibo",
+            label="Goibibo Flights",
+            url=goibibo_flight_url,
+            price_hint="Instant Promo Discounts"
         ))
 
         emt_url = f"https://flight.easemytrip.com/FlightList/Index?srch={orig_iata}-{dest_iata}-{mmt_date}"
@@ -159,42 +168,33 @@ def get_multi_stay_links(
 
     # 1. Official Hotel Direct Portal
     hotel_lower = hotel_name.lower()
-    official_url = f"https://www.google.com/search?q={urllib.parse.quote_plus(f'{hotel_name} {destination} official website booking')}"
+    from app.services.link_crawler import LinkCrawler
+    official_url = None
     official_label = f"{hotel_name.split()[0]} Official Direct"
 
-    if "mayfair lagoon" in hotel_lower:
-        official_url = "https://www.mayfairhotels.com/lagoon-bhubaneswar/"
-        official_label = "Mayfair Official Site"
-    elif "mayfair" in hotel_lower:
-        official_url = "https://www.mayfairhotels.com/"
-        official_label = "Mayfair Official Site"
-    elif "welcomhotel" in hotel_lower or "itc" in hotel_lower:
-        official_url = "https://www.itchotels.com/in/en/welcomhotelbhubaneswar"
-        official_label = "ITC Hotels Direct"
-    elif "trident" in hotel_lower or "oberoi" in hotel_lower:
-        official_url = "https://www.tridenthotels.com/hotels-in-bhubaneswar"
-        official_label = "Trident Oberoi Direct"
-    elif "vivanta" in hotel_lower or "taj" in hotel_lower:
-        official_url = "https://www.vivantahotels.com/en-in/vivanta-bhubaneswar-dn-square/"
-        official_label = "Taj Vivanta Direct"
-    elif "cotton house" in hotel_lower:
-        official_url = "https://www.marriott.com/en-us/hotels/bcnak-cotton-house-hotel-autograph-collection/overview/"
-        official_label = "Marriott Official Direct"
+    for k, url in LinkCrawler.KNOWN_HOTEL_OFFICIALS.items():
+        tokens = k.split()
+        if all(tok in hotel_lower for tok in tokens):
+            official_url = url
+            official_label = f"{hotel_name.split()[0]} Official Site"
+            break
 
-    links = [
-        BookingLink(
+    links: List[BookingLink] = []
+
+    if official_url:
+        links.append(BookingLink(
             provider="Official Hotel Direct",
             label=official_label,
             url=official_url,
             price_hint="Official Direct Rates & Member Perks"
-        ),
-        BookingLink(
-            provider="Google Hotels",
-            label="Google Hotels",
-            url=get_google_hotels_url(hotel_name, destination, checkin, checkout),
-            price_hint="Live Rates Across All Sellers"
-        )
-    ]
+        ))
+
+    links.append(BookingLink(
+        provider="Google Hotels",
+        label="Google Hotels",
+        url=get_google_hotels_url(hotel_name, destination, checkin, checkout),
+        price_hint="Live Rates Across All Sellers"
+    ))
 
     # Regional OTA (MakeMyTrip for India / Asia)
     if is_india:
@@ -203,7 +203,14 @@ def get_multi_stay_links(
             provider="MakeMyTrip",
             label="MakeMyTrip Hotels",
             url=mmt_hotel_url,
-            price_hint="Member Discounts & Coupons"
+            price_hint="Pay@Hotel & Live Deals"
+        ))
+        goibibo_hotel_url = f"https://www.goibibo.com/hotels/hotels-in-{urllib.parse.quote_plus(destination.lower().strip())}/?searchText={urllib.parse.quote_plus(hotel_name)}"
+        links.append(BookingLink(
+            provider="Goibibo",
+            label="Goibibo Hotels (Best Deals)",
+            url=goibibo_hotel_url,
+            price_hint="Pay@Hotel & Secret Rates"
         ))
 
     # Agoda
@@ -256,13 +263,21 @@ def get_multi_train_links(
     travel_date: str = "", 
     operator: str = ""
 ) -> List[BookingLink]:
-    is_india = is_indian_locale(origin, destination)
-    is_japan = any(k in f"{origin} {destination}".lower() for k in ["japan", "tokyo", "kyoto", "osaka"])
+    from app.services.geo_intelligence import can_have_direct_intercity_trains, resolve_country
+    can_train, rail_type = can_have_direct_intercity_trains(origin, destination)
+    if not can_train:
+        return []
+
+    c_orig = (resolve_country(origin) or "").lower()
+    c_dest = (resolve_country(destination) or "").lower()
+    is_india = (c_orig == "india" and c_dest == "india")
+    is_japan = (c_orig == "japan" and c_dest == "japan")
 
     if is_india:
         # Indian Railways Network
-        orig_city = origin.split()[0].lower()
-        dest_city = destination.split()[0].lower()
+        from app.services.link_crawler import LinkCrawler
+        orig_city = LinkCrawler.resolve_rail_slug(origin)
+        dest_city = LinkCrawler.resolve_rail_slug(destination)
         confirmtkt_url = f"https://www.confirmtkt.com/trains/{urllib.parse.quote_plus(orig_city)}-to-{urllib.parse.quote_plus(dest_city)}-train-tickets"
         irctc_url = "https://www.irctc.co.in/nget/train-search"
         mmt_trains_url = "https://www.makemytrip.com/railways/"
@@ -286,6 +301,12 @@ def get_multi_train_links(
                 label="MakeMyTrip Trains",
                 url=mmt_trains_url,
                 price_hint="Free Cancellation & Live Status"
+            ),
+            BookingLink(
+                provider="Goibibo Trains",
+                label="Goibibo Trains",
+                url=f"https://www.goibibo.com/trains/{urllib.parse.quote_plus(orig_city)}-to-{urllib.parse.quote_plus(dest_city)}-train-tickets/",
+                price_hint="Live PNR & Free Cancellation"
             ),
             BookingLink(
                 provider="ixigo Trains",
@@ -360,6 +381,32 @@ def get_klook_url(attraction: str, destination: str) -> str:
     query = f"{attraction} {destination}"
     return f"https://www.klook.com/search/result/?query={urllib.parse.quote_plus(query)}"
 
+TOURISM_PORTALS: Dict[str, str] = {
+    "bhubaneswar": "https://odishatourism.gov.in/",
+    "puri": "https://odishatourism.gov.in/",
+    "odisha": "https://odishatourism.gov.in/",
+    "india": "https://www.incredibleindia.org/",
+    "delhi": "https://delhitourism.gov.in/",
+    "jaipur": "https://www.tourism.rajasthan.gov.in/",
+    "kerala": "https://www.keralatourism.org/",
+    "tokyo": "https://www.gotokyo.org/en/",
+    "kyoto": "https://kyoto.travel/en/",
+    "japan": "https://www.japan.travel/en/",
+    "barcelona": "https://www.barcelonaturisme.com/",
+    "madrid": "https://www.esmadrid.com/en",
+    "spain": "https://www.spain.info/en/",
+    "paris": "https://parisjetaime.com/eng/",
+    "france": "https://www.france.fr/en/",
+    "rome": "https://www.turismoroma.it/en",
+    "italy": "https://www.italia.it/en",
+    "zurich": "https://www.zuerich.com/en",
+    "swiss": "https://www.myswitzerland.com/en/",
+    "switzerland": "https://www.myswitzerland.com/en/",
+    "london": "https://www.visitlondon.com/",
+    "bali": "https://www.indonesia.travel/gb/en/destinations/bali-nusa-tenggara/bali.html",
+    "dubai": "https://www.visitdubai.com/en/"
+}
+
 def get_multi_activity_links(
     attraction: str, 
     destination: str,
@@ -367,32 +414,44 @@ def get_multi_activity_links(
     currency: str = "INR"
 ) -> List[BookingLink]:
     cost_str = f"~{currency} {round(estimated_cost):,}" if estimated_cost and estimated_cost > 0 else "Free / Walk-in"
-    official_query = f"{attraction} {destination} official website entry tickets"
-    official_url = f"https://www.google.com/search?q={urllib.parse.quote_plus(official_query)}"
+    dest_lower = destination.lower()
+    
+    tourism_url = None
+    for k, u in TOURISM_PORTALS.items():
+        if k in dest_lower:
+            tourism_url = u
+            break
+    if not tourism_url:
+        tourism_url = "https://www.tripadvisor.com/"
 
-    return [
-        BookingLink(
-            provider="Official Heritage Site",
-            label="Official Portal",
-            url=official_url,
-            price_hint="Standard Govt / Trust Admission"
-        ),
+    links: List[BookingLink] = [
+        # (1) Primary: GetYourGuide Skip-the-Line & Entry Ticket
         BookingLink(
             provider="GetYourGuide",
-            label="GetYourGuide",
+            label="GetYourGuide Tickets",
             url=get_attraction_booking_url(attraction, destination),
-            price_hint=cost_str if estimated_cost and estimated_cost > 0 else "Skip-the-Line Priority"
+            price_hint=cost_str if estimated_cost and estimated_cost > 0 else "Skip-the-Line Priority Entry"
         ),
+        # (2) Viator (TripAdvisor Experiences)
         BookingLink(
             provider="Viator",
-            label="Viator (TripAdvisor)",
+            label="Viator Guided Tours",
             url=get_viator_url(attraction, destination),
-            price_hint="Top-Rated Guided Experiences"
+            price_hint="Verified Expert Guided Experiences"
         ),
+        # (3) Official Regional Tourism Board
+        BookingLink(
+            provider="Official Tourism Board",
+            label="Official Tourism Guide",
+            url=tourism_url,
+            price_hint="Official Visitor Regulations & Hours"
+        ),
+        # (4) Klook
         BookingLink(
             provider="Klook",
             label="Klook",
             url=get_klook_url(attraction, destination),
-            price_hint="Instant Mobile Entry E-Ticket"
+            price_hint="Instant Mobile E-Voucher"
         )
     ]
+    return links

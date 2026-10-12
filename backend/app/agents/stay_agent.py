@@ -89,6 +89,17 @@ class StayAgent:
                     verified_review_snippet=s.get("verified_review_snippet", "Verified guest: 'Spotless clean rooms, wonderful hospitality, and unbeatable central location.'"),
                     booking_links=links
                 ))
+
+            # Smart prioritization: rank stay fitting user's budget and preference first
+            target = prefs.budget_amount or 0
+            if prefs.stay_preference == "budget":
+                stays = sorted(stays, key=lambda s: s.price_per_night)
+            elif target > 0:
+                within_budget = [s for s in stays if s.total_price <= target * 0.45]
+                above_budget = [s for s in stays if s.total_price > target * 0.45]
+                if within_budget:
+                    stays = within_budget + above_budget
+
             return stays
 
         # 2. Check rich global destination database
@@ -132,6 +143,17 @@ class StayAgent:
                     verified_review_snippet=s["snippet"],
                     booking_links=links
                 ))
+
+            # Smart prioritization: rank stay fitting user's budget and preference first
+            target = prefs.budget_amount or 0
+            if prefs.stay_preference == "budget":
+                stays = sorted(stays, key=lambda s: s.price_per_night)
+            elif target > 0:
+                within_budget = [s for s in stays if s.total_price <= target * 0.45]
+                above_budget = [s for s in stays if s.total_price > target * 0.45]
+                if within_budget:
+                    stays = within_budget + above_budget
+
             return stays
 
         is_japan = any(k in dest_lower for k in ["japan", "kyoto", "tokyo", "osaka"])

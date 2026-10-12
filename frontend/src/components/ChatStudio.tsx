@@ -483,7 +483,7 @@ export const ChatStudio: React.FC<ChatStudioProps> = ({
               </div>
               <div className="w-full h-2 rounded-full bg-stone-800 overflow-hidden p-0.5 border border-stone-750">
                 <div
-                  className="h-full rounded-full bg-gradient-to-r from-amber-500 via-emerald-400 to-cyan-400 transition-all duration-300 ease-out shadow-xs"
+                  className="h-full rounded-full bg-linear-to-r from-amber-500 via-emerald-400 to-cyan-400 transition-all duration-300 ease-out shadow-xs"
                   style={{ width: `${progressPercent}%` }}
                 />
               </div>

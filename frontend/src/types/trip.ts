@@ -182,6 +182,30 @@ export interface ResearchSource {
   snippet: string;
 }
 
+export interface LocalTransitMode {
+  name: string;
+  category: string;
+  description: string;
+  recommended_pass_or_app: string;
+  estimated_cost: string;
+  official_link?: string;
+}
+
+export interface RegionalExcursion {
+  destination_name: string;
+  distance_and_duration: string;
+  transit_mode: string;
+  highlights: string;
+  booking_or_info_url?: string;
+}
+
+export interface LocalMobilityInfo {
+  overview: string;
+  transit_modes: LocalTransitMode[];
+  regional_excursions: RegionalExcursion[];
+  insider_tips: string[];
+}
+
 export interface TripPlan {
   id: string;
   destination: string;
@@ -196,6 +220,7 @@ export interface TripPlan {
   overview: string;
   best_time_to_visit: string;
   local_transport_pass_tip: string;
+  local_mobility?: LocalMobilityInfo;
   flights: FlightOption[];
   trains: TrainOption[];
   stays: StayOption[];

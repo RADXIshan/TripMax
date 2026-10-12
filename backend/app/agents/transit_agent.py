@@ -2,7 +2,7 @@ from typing import List, Tuple, Optional, Dict, Any
 import asyncio
 from app.models.trip import TripPreferences, FlightOption, TrainOption
 from app.services.destination_knowledge import get_destination_data
-from app.services.link_crawler import link_crawler
+from app.services.link_crawler import link_crawler, is_indian_locale
 from app.services.deep_links import (
     get_google_flights_url,
     get_skyscanner_url,
@@ -18,6 +18,74 @@ class TransitAgent:
     Evaluates real Flight and Train options between Origin and Destination.
     Provides direct deep booking links with exact travel dates and verified comparison trade-offs.
     """
+
+    @classmethod
+    def _calibrate_flight_fare(cls, raw_val: Any, currency: str, is_domestic: bool, budget: Optional[float] = None) -> float:
+        try:
+            p = float(raw_val or 0)
+        except Exception:
+            p = 0.0
+
+        if currency == "INR":
+            if is_domestic:
+                if p <= 0:
+                    p = 4200.0
+                elif p < 250:
+                    p = p * 83.0
+                p = max(min(p, 5800.0), 3400.0)
+                if budget and budget > 0 and budget < 35000:
+                    p = min(p, max(round(budget * 0.22), 3200.0))
+            else:
+                if p <= 0:
+                    p = 32000.0
+                elif p < 1500:
+                    p = p * 83.0
+            return round(p, 0)
+        else:
+            if is_domestic:
+                if p <= 0:
+                    p = 65.0
+                elif p > 500 and currency != "JPY":
+                    p = p / 83.0
+                p = max(min(p, 140.0), 45.0)
+            else:
+                if p <= 0:
+                    p = 450.0
+            return round(p, 0)
+
+    @classmethod
+    def _calibrate_train_fare(cls, raw_val: Any, currency: str, is_india: bool, budget: Optional[float] = None) -> float:
+        try:
+            p = float(raw_val or 0)
+        except Exception:
+            p = 0.0
+
+        if currency == "INR":
+            if is_india:
+                if p <= 0:
+                    p = 1250.0
+                elif p < 60:
+                    p = p * 83.0
+                p = max(min(p, 2200.0), 380.0)
+                if budget and budget > 0 and budget < 30000:
+                    p = min(p, 1250.0)
+            else:
+                if p <= 0:
+                    p = 3500.0
+                elif p < 100:
+                    p = p * 83.0
+            return round(p, 0)
+        else:
+            if is_india:
+                if p <= 0:
+                    p = 16.0
+                elif p > 200 and currency != "JPY":
+                    p = p / 83.0
+                p = max(min(p, 30.0), 8.0)
+            else:
+                if p <= 0:
+                    p = 55.0
+            return round(p, 0)
 
     @classmethod
     async def evaluate_transit(
@@ -45,22 +113,37 @@ class TransitAgent:
         dates_label = prefs.dates or f"{depart_date} – {return_date}"
         dest_lower = dest.lower()
 
+        from app.services.geo_intelligence import (
+            resolve_country, 
+            is_cross_country, 
+            can_have_direct_intercity_trains,
+            get_rail_region
+        )
+
+        can_train, rail_type = can_have_direct_intercity_trains(origin, dest)
+        cross_country = is_cross_country(origin, dest)
+        c_orig = (resolve_country(origin) or "").lower()
+        c_dest = (resolve_country(dest) or "").lower()
+
         google_flights_link = get_google_flights_url(origin, dest, depart_date, return_date)
         skyscanner_link = get_skyscanner_url(origin, dest, depart_date, return_date)
-        trainline_link = get_trainline_url(origin, dest, depart_date)
+        trainline_link = get_trainline_url(origin, dest, depart_date) if can_train else ""
         seat61_link = get_seat61_url(dest)
-        rail_official_link = get_irctc_or_rail_url(origin, dest, depart_date)
+        rail_official_link = get_irctc_or_rail_url(origin, dest, depart_date) if can_train else ""
 
         flights: List[FlightOption] = []
         trains: List[TrainOption] = []
 
+        is_domestic_in = (c_orig == "india" and c_dest == "india") or is_indian_locale(origin, dest)
+
         # 1. Check Gemini dynamic generative transit first
-        if gemini_data and gemini_data.get("flights") and gemini_data.get("trains"):
+        if gemini_data and gemini_data.get("flights"):
             for f in gemini_data["flights"][:2]:
                 airline = f.get("airline") or f.get("carrier") or "Flagship Regional Carrier"
                 f_num = f.get("flight_number") or f.get("flight_no") or "Direct Flight"
                 dur = f.get("duration") or "Direct Flight"
-                price = float(f.get("price") or f.get("estimated_price") or 380)
+                raw_price = f.get("price") or f.get("estimated_price")
+                final_f_price = cls._calibrate_flight_fare(raw_price, curr, is_domestic_in, prefs.budget_amount)
                 
                 raw_pros = f.get("pros")
                 if not raw_pros:
@@ -85,7 +168,7 @@ class TransitAgent:
                     arrival=f"{dest} Airport",
                     duration=dur,
                     stops=f.get("stops", "Non-stop"),
-                    estimated_price=round(price * rate if curr != "USD" and price < 5000 else price, 0),
+                    estimated_price=final_f_price,
                     currency=curr,
                     pros=f_pros,
                     cons=f_cons,
@@ -97,85 +180,94 @@ class TransitAgent:
                     image_url="https://images.unsplash.com/photo-1436491865332-7a61a109cc05?auto=format&fit=crop&w=1000&q=80"
                 ))
 
-            for t in gemini_data["trains"][:2]:
-                operator = t.get("operator") or t.get("rail_operator") or "High-Speed Rail Network"
-                t_name = t.get("train_type") or t.get("train_name") or "Express Rail"
-                route = t.get("route") or f"{origin} ➔ {dest}"
-                t_price = float(t.get("price") or t.get("estimated_price") or 65)
-                
-                raw_t_pros = t.get("pros")
-                if not raw_t_pros:
-                    t_pros = ["Downtown to downtown terminal", "Zero luggage fees"]
-                elif isinstance(raw_t_pros, list):
-                    t_pros = [str(x) for x in raw_t_pros]
-                else:
-                    t_pros = [p.strip() for p in str(raw_t_pros).split("\n") if p.strip()] or [str(raw_t_pros)]
+            if can_train and gemini_data.get("trains"):
+                for t in gemini_data["trains"][:2]:
+                    operator = t.get("operator") or t.get("rail_operator") or "High-Speed Rail Network"
+                    t_name = t.get("train_type") or t.get("train_name") or "Express Rail"
+                    route = t.get("route") or f"{origin} ➔ {dest}"
+                    raw_t_price = t.get("price") or t.get("estimated_price")
+                    final_t_price = cls._calibrate_train_fare(raw_t_price, curr, is_domestic_in, prefs.budget_amount)
+                    
+                    raw_t_pros = t.get("pros")
+                    if not raw_t_pros:
+                        t_pros = ["Downtown to downtown terminal", "Zero luggage fees"]
+                    elif isinstance(raw_t_pros, list):
+                        t_pros = [str(x) for x in raw_t_pros]
+                    else:
+                        t_pros = [p.strip() for p in str(raw_t_pros).split("\n") if p.strip()] or [str(raw_t_pros)]
 
-                trains.append(TrainOption(
-                    operator=operator,
-                    train_name=t_name,
-                    route=route,
-                    duration=t.get("duration", "High-Speed City Transit"),
-                    class_tier="Standard / First Class / AC Tier",
-                    estimated_price=round(t_price * rate if curr != "USD" and t_price < 2000 else t_price, 0),
-                    currency=curr,
-                    scenic_highlights=t.get("scenic_highlights", f"Fast city-to-city transit connecting {origin} and {dest} with zero baggage queues."),
-                    pros=t_pros,
-                    booking_url=rail_official_link,
-                    provider="Official Rail Network",
-                    source_name=f"{operator} Timetable",
-                    source_url=rail_official_link,
-                    dates=dates_label,
-                    image_url="https://images.unsplash.com/photo-1474487548417-781cb71495f3?auto=format&fit=crop&w=1000&q=80"
-                ))
-
-        # 2. Check rich global destination database if not already loaded
-        if not flights or not trains:
-            dest_data = get_destination_data(dest)
-            if dest_data and dest_data.get("flights") and dest_data.get("trains"):
-                flights = []
-                for f in dest_data["flights"]:
-                    flights.append(FlightOption(
-                        airline=f["airline"],
-                        flight_number=f["flight_number"],
-                        departure=f"{origin} International",
-                        arrival=f"{dest} Airport",
-                        duration="Direct Express",
-                        stops=f["stops"],
-                        estimated_price=round(f["price_usd"] * rate, 0),
-                        currency=curr,
-                        pros=f["pros"],
-                        cons=f["cons"],
-                        booking_url=google_flights_link,
-                        provider="Google Flights & Carrier Direct",
-                        source_name=f"{f['airline']} Official Booking",
-                        source_url=google_flights_link,
-                        dates=dates_label,
-                        image_url="https://images.unsplash.com/photo-1436491865332-7a61a109cc05?auto=format&fit=crop&w=1000&q=80"
-                    ))
-
-                trains = []
-                for t in dest_data["trains"]:
                     trains.append(TrainOption(
-                        operator=t["operator"],
-                        train_name=t["train_type"],
-                        route=t["route"],
-                        duration=t["duration"],
-                        class_tier="Standard / First Class",
-                        estimated_price=round(t["price_usd"] * rate, 0),
+                        operator=operator,
+                        train_name=t_name,
+                        route=route,
+                        duration=t.get("duration", "High-Speed City Transit"),
+                        class_tier="Standard / First Class / AC Tier",
+                        estimated_price=final_t_price,
                         currency=curr,
-                        scenic_highlights="Scenic route passing regional countryside, rivers, and historic towns with zero airport baggage checks",
-                        pros=t["pros"],
-                        booking_url=trainline_link,
-                        provider="Trainline / National Rail",
-                        source_name="Official Rail Timetable",
-                        source_url=trainline_link,
+                        scenic_highlights=t.get("scenic_highlights", f"Fast city-to-city transit connecting {origin} and {dest} with zero baggage queues."),
+                        pros=t_pros,
+                        booking_url=rail_official_link,
+                        provider="Official Rail Network",
+                        source_name=f"{operator} Timetable",
+                        source_url=rail_official_link,
                         dates=dates_label,
                         image_url="https://images.unsplash.com/photo-1474487548417-781cb71495f3?auto=format&fit=crop&w=1000&q=80"
                     ))
+            else:
+                trains = []
 
-        # If Gemini or destination database populated flights and trains, crawl and return
-        if flights and trains:
+        # 2. Check rich global destination database if not already loaded
+        if not flights or (can_train and not trains):
+            dest_data = get_destination_data(dest)
+            if dest_data and dest_data.get("flights"):
+                if not flights:
+                    flights = []
+                    for f in dest_data["flights"]:
+                        flights.append(FlightOption(
+                            airline=f["airline"],
+                            flight_number=f["flight_number"],
+                            departure=f"{origin} Airport",
+                            arrival=f"{dest} Airport",
+                            duration=f.get("duration", "Direct Express"),
+                            stops=f.get("stops", "Non-stop"),
+                            estimated_price=cls._calibrate_flight_fare(f.get("price_usd", 55), curr, is_domestic_in, prefs.budget_amount),
+                            currency=curr,
+                            pros=f["pros"],
+                            cons=f["cons"],
+                            booking_url=google_flights_link,
+                            provider="Google Flights & Carrier Direct",
+                            source_name=f"{f['airline']} Official Booking",
+                            source_url=google_flights_link,
+                            dates=dates_label,
+                            image_url="https://images.unsplash.com/photo-1436491865332-7a61a109cc05?auto=format&fit=crop&w=1000&q=80"
+                        ))
+
+                if can_train and dest_data.get("trains"):
+                    trains = []
+                    for t in dest_data["trains"]:
+                        cleaned_route = t["route"].replace("Origin Junction", origin).replace("Origin", origin).replace("Trunk Express Corridor", origin)
+                        trains.append(TrainOption(
+                            operator=t["operator"],
+                            train_name=t["train_type"],
+                            route=cleaned_route,
+                            duration=t["duration"],
+                            class_tier="Standard / First Class / AC Tier",
+                            estimated_price=cls._calibrate_train_fare(t.get("price_usd", 16), curr, is_domestic_in, prefs.budget_amount),
+                            currency=curr,
+                            scenic_highlights=f"Direct rail journey connecting {origin} to {dest} with zero airport baggage queues",
+                            pros=t["pros"],
+                            booking_url=rail_official_link,
+                            provider="Official Rail Network",
+                            source_name="Official Rail Timetable",
+                            source_url=rail_official_link,
+                            dates=dates_label,
+                            image_url="https://images.unsplash.com/photo-1474487548417-781cb71495f3?auto=format&fit=crop&w=1000&q=80"
+                        ))
+                else:
+                    trains = []
+
+        # If Gemini or destination database populated flights (and trains if rail is feasible), crawl and return
+        if flights and (trains or not can_train):
             for f in flights:
                 crawled_f = await link_crawler.crawl_flight_links(
                     airline=f.airline,
@@ -191,25 +283,27 @@ class TransitAgent:
                 f.source_name = f"{f.provider} Verified Schedule"
                 f.source_url = f.booking_url
 
-            for t in trains:
-                crawled_t = await link_crawler.crawl_train_links(
-                    train_name=t.train_name,
-                    operator=t.operator,
-                    origin=origin,
-                    destination=dest,
-                    travel_date=depart_date
-                )
-                t.booking_url = crawled_t.get("primary_url") or t.booking_url
-                t.provider = crawled_t.get("primary_provider") or t.provider
-                t.booking_links = crawled_t.get("links") or get_multi_train_links(origin, dest, depart_date, t.operator)
-                t.source_name = f"{t.provider} Official Reservation"
-                t.source_url = t.booking_url
+            if can_train and trains:
+                for t in trains:
+                    crawled_t = await link_crawler.crawl_train_links(
+                        train_name=t.train_name,
+                        operator=t.operator,
+                        origin=origin,
+                        destination=dest,
+                        travel_date=depart_date
+                    )
+                    t.booking_url = crawled_t.get("primary_url") or t.booking_url
+                    t.provider = crawled_t.get("primary_provider") or t.provider
+                    t.booking_links = crawled_t.get("links") or get_multi_train_links(origin, dest, depart_date, t.operator)
+                    t.source_name = f"{t.provider} Official Reservation"
+                    t.source_url = t.booking_url
+            else:
+                trains = []
 
             return flights, trains
 
         # 3. Otherwise, use region-tailored curated presets
-        from app.services.link_crawler import is_indian_locale
-        is_india = is_indian_locale(origin, dest)
+        is_india = (c_orig == "india" and c_dest == "india")
         is_japan = any(k in dest_lower for k in ["japan", "kyoto", "tokyo", "osaka"])
         is_italy = any(k in dest_lower for k in ["italy", "amalfi", "rome", "florence", "venice", "naples"])
         is_swiss = any(k in dest_lower for k in ["swiss", "switzerland", "zurich", "zermatt", "interlaken"])
@@ -803,6 +897,9 @@ class TransitAgent:
                 )
             ]
 
+        if not can_train:
+            trains = []
+
         # Crawl and evaluate authentic booking links and providers
         for f in flights:
             crawled_f = await link_crawler.crawl_flight_links(
@@ -819,18 +916,21 @@ class TransitAgent:
             f.source_name = f"{f.provider} Verified Schedule"
             f.source_url = f.booking_url
 
-        for t in trains:
-            crawled_t = await link_crawler.crawl_train_links(
-                train_name=t.train_name,
-                operator=t.operator,
-                origin=origin,
-                destination=dest,
-                travel_date=depart_date
-            )
-            t.booking_url = crawled_t.get("primary_url") or t.booking_url
-            t.provider = crawled_t.get("primary_provider") or t.provider
-            t.booking_links = crawled_t.get("links") or get_multi_train_links(origin, dest, depart_date, t.operator)
-            t.source_name = f"{t.provider} Official Reservation"
-            t.source_url = t.booking_url
+        if can_train and trains:
+            for t in trains:
+                crawled_t = await link_crawler.crawl_train_links(
+                    train_name=t.train_name,
+                    operator=t.operator,
+                    origin=origin,
+                    destination=dest,
+                    travel_date=depart_date
+                )
+                t.booking_url = crawled_t.get("primary_url") or t.booking_url
+                t.provider = crawled_t.get("primary_provider") or t.provider
+                t.booking_links = crawled_t.get("links") or get_multi_train_links(origin, dest, depart_date, t.operator)
+                t.source_name = f"{t.provider} Official Reservation"
+                t.source_url = t.booking_url
+        else:
+            trains = []
 
         return flights, trains

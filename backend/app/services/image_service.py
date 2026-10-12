@@ -162,7 +162,7 @@ class ImageService:
     def _get_sync_client(cls) -> httpx.Client:
         if cls._sync_client is None or cls._sync_client.is_closed:
             cls._sync_client = httpx.Client(
-                timeout=0.9,
+                timeout=3.5,
                 headers=cls.HEADERS,
                 follow_redirects=True,
                 limits=httpx.Limits(max_keepalive_connections=15, max_connections=30)
@@ -173,7 +173,7 @@ class ImageService:
     def _get_async_client(cls) -> httpx.AsyncClient:
         if cls._async_client is None or cls._async_client.is_closed:
             cls._async_client = httpx.AsyncClient(
-                timeout=0.9,
+                timeout=3.5,
                 headers=cls.HEADERS,
                 follow_redirects=True,
                 limits=httpx.Limits(max_keepalive_connections=20, max_connections=40)
@@ -273,65 +273,97 @@ class ImageService:
     def get_image_for_query(cls, query: str, category: str = "general", destination: str = "") -> str:
         """
         Fast resolution with in-memory lookup, region-aware fallbacks, and sync Wikipedia probe.
+        Guarantees query-relevant imagery (e.g. food gets food images, temples get temple images).
         """
-        cache_key = f"{query.lower().strip()}_{destination.lower().strip()}"
+        cache_key = f"{query.lower().strip()}_{category.lower()}_{destination.lower().strip()}"
         if cache_key in cls._cache:
             return cls._cache[cache_key]
 
-        # Instant check in landmark / city photography database
-        combined_text = f"{query} {destination}".lower()
+        cat_lower = category.lower()
+        q_lower = query.lower()
+
+        # 1. Check known specific landmark dictionary ONLY if landmark matches query directly
         for k, img_url in cls.FALLBACK_IMAGES.items():
-            if k in query.lower() or k in destination.lower():
+            if k in q_lower:
                 cls._cache[cache_key] = img_url
                 return img_url
 
-        # Check Wikipedia for landmark if short query
+        # 2. Check Wikipedia for authentic landmark or dish photo
         words = query.strip().split()
-        if len(words) <= 5:
+        if len(words) <= 6:
             wiki_img = cls._fetch_wikipedia_image_sync(query)
             if wiki_img:
                 cls._cache[cache_key] = wiki_img
                 return wiki_img
 
-        # Check region-based category fallbacks
-        cat_lower = category.lower()
-        if cls._is_india(combined_text):
-            img = cls.INDIA_CATEGORY_FALLBACKS.get(cat_lower) or cls.INDIA_CATEGORY_FALLBACKS["temple"]
-            cls._cache[cache_key] = img
-            return img
-        elif cls._is_east_asia(combined_text):
-            img = cls.EAST_ASIA_CATEGORY_FALLBACKS.get(cat_lower) or cls.EAST_ASIA_CATEGORY_FALLBACKS["temple"]
-            cls._cache[cache_key] = img
-            return img
-        elif cls._is_europe(combined_text):
-            img = cls.EUROPE_CATEGORY_FALLBACKS.get(cat_lower) or cls.EUROPE_CATEGORY_FALLBACKS["temple"]
+        # 3. Dedicated Category-Specific Fallbacks
+        combined_text = f"{query} {destination}".lower()
+        if cat_lower in ["food", "lunch", "dinner", "dining"]:
+            if cls._is_india(combined_text):
+                img = "https://images.unsplash.com/photo-1589301760014-d929f3979dbc?auto=format&fit=crop&w=1200&q=80"
+            elif cls._is_east_asia(combined_text):
+                img = "https://images.unsplash.com/photo-1569718212165-3a8278d5f624?auto=format&fit=crop&w=1200&q=80"
+            else:
+                img = "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=1200&q=80"
             cls._cache[cache_key] = img
             return img
 
-        # Generic category fallback
-        res = cls.GENERIC_CATEGORY_FALLBACKS.get(cat_lower, "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?auto=format&fit=crop&w=1200&q=80")
-        cls._cache[cache_key] = res
-        return res
+        if cat_lower in ["hotel", "stay", "resort", "luxury_hotel", "boutique_hotel", "heritage_hotel"]:
+            if "luxury" in q_lower or cat_lower == "luxury_hotel":
+                img = "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=1200&q=80"
+            elif "boutique" in q_lower or cat_lower == "boutique_hotel":
+                img = "https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?auto=format&fit=crop&w=1200&q=80"
+            elif "heritage" in q_lower or cat_lower == "heritage_hotel":
+                img = "https://images.unsplash.com/photo-1590073242678-70ee3fc28e8e?auto=format&fit=crop&w=1200&q=80"
+            else:
+                img = "https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=1200&q=80"
+            cls._cache[cache_key] = img
+            return img
+
+        if cat_lower in ["sunset", "evening", "viewpoint"]:
+            img = "https://images.unsplash.com/photo-1506461883276-594a12b11cf3?auto=format&fit=crop&w=1200&q=80"
+            cls._cache[cache_key] = img
+            return img
+
+        if cat_lower in ["museum", "gallery"]:
+            img = "https://images.unsplash.com/photo-1587474260584-136574528ed5?auto=format&fit=crop&w=1200&q=80"
+            cls._cache[cache_key] = img
+            return img
+
+        # 4. Region-based architectural fallback
+        if cls._is_india(combined_text):
+            img = cls.INDIA_CATEGORY_FALLBACKS.get(cat_lower, cls.INDIA_CATEGORY_FALLBACKS["temple"])
+        elif cls._is_east_asia(combined_text):
+            img = cls.EAST_ASIA_CATEGORY_FALLBACKS.get(cat_lower, cls.EAST_ASIA_CATEGORY_FALLBACKS["temple"])
+        elif cls._is_europe(combined_text):
+            img = cls.EUROPE_CATEGORY_FALLBACKS.get(cat_lower, cls.EUROPE_CATEGORY_FALLBACKS["temple"])
+        else:
+            img = cls.GENERIC_CATEGORY_FALLBACKS.get(cat_lower, "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?auto=format&fit=crop&w=1200&q=80")
+
+        cls._cache[cache_key] = img
+        return img
 
     @classmethod
     async def get_image_for_query_async(cls, query: str, category: str = "general", destination: str = "") -> str:
         """
-        Asynchronous resolution running concurrently across all items in under 0.8s.
+        Asynchronous resolution running concurrently across items.
         """
-        cache_key = f"{query.lower().strip()}_{destination.lower().strip()}"
+        cache_key = f"{query.lower().strip()}_{category.lower()}_{destination.lower().strip()}"
         if cache_key in cls._cache:
             return cls._cache[cache_key]
 
-        # Instant check in landmark / city photography database
-        combined_text = f"{query} {destination}".lower()
+        cat_lower = category.lower()
+        q_lower = query.lower()
+
+        # 1. Direct landmark match in query
         for k, img_url in cls.FALLBACK_IMAGES.items():
-            if k in query.lower() or (k in destination.lower() and len(query.split()) > 3):
+            if k in q_lower:
                 cls._cache[cache_key] = img_url
                 return img_url
 
-        # Probe Wikipedia asynchronously
+        # 2. Probe Wikipedia asynchronously
         words = query.strip().split()
-        if len(words) <= 5:
+        if len(words) <= 6:
             wiki_img = await cls._fetch_wikipedia_image_async(query)
             if wiki_img:
                 cls._cache[cache_key] = wiki_img
@@ -344,23 +376,50 @@ class ImageService:
                     cls._cache[cache_key] = wiki_img2
                     return wiki_img2
 
-        # Region-aware photographic fallback
-        cat_lower = category.lower()
-        if cls._is_india(combined_text):
-            img = cls.INDIA_CATEGORY_FALLBACKS.get(cat_lower) or cls.INDIA_CATEGORY_FALLBACKS["temple"]
-            cls._cache[cache_key] = img
-            return img
-        elif cls._is_east_asia(combined_text):
-            img = cls.EAST_ASIA_CATEGORY_FALLBACKS.get(cat_lower) or cls.EAST_ASIA_CATEGORY_FALLBACKS["temple"]
-            cls._cache[cache_key] = img
-            return img
-        elif cls._is_europe(combined_text):
-            img = cls.EUROPE_CATEGORY_FALLBACKS.get(cat_lower) or cls.EUROPE_CATEGORY_FALLBACKS["temple"]
+        # 3. Category-specific imagery
+        combined_text = f"{query} {destination}".lower()
+        if cat_lower in ["food", "lunch", "dinner", "dining"]:
+            if cls._is_india(combined_text):
+                img = "https://images.unsplash.com/photo-1589301760014-d929f3979dbc?auto=format&fit=crop&w=1200&q=80"
+            elif cls._is_east_asia(combined_text):
+                img = "https://images.unsplash.com/photo-1569718212165-3a8278d5f624?auto=format&fit=crop&w=1200&q=80"
+            else:
+                img = "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=1200&q=80"
             cls._cache[cache_key] = img
             return img
 
-        res = cls.GENERIC_CATEGORY_FALLBACKS.get(cat_lower, "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?auto=format&fit=crop&w=1200&q=80")
-        cls._cache[cache_key] = res
-        return res
+        if cat_lower in ["hotel", "stay", "resort", "luxury_hotel", "boutique_hotel", "heritage_hotel"]:
+            if "luxury" in q_lower or cat_lower == "luxury_hotel":
+                img = "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=1200&q=80"
+            elif "boutique" in q_lower or cat_lower == "boutique_hotel":
+                img = "https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?auto=format&fit=crop&w=1200&q=80"
+            elif "heritage" in q_lower or cat_lower == "heritage_hotel":
+                img = "https://images.unsplash.com/photo-1590073242678-70ee3fc28e8e?auto=format&fit=crop&w=1200&q=80"
+            else:
+                img = "https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=1200&q=80"
+            cls._cache[cache_key] = img
+            return img
+
+        if cat_lower in ["sunset", "evening", "viewpoint"]:
+            img = "https://images.unsplash.com/photo-1506461883276-594a12b11cf3?auto=format&fit=crop&w=1200&q=80"
+            cls._cache[cache_key] = img
+            return img
+
+        if cat_lower in ["museum", "gallery"]:
+            img = "https://images.unsplash.com/photo-1587474260584-136574528ed5?auto=format&fit=crop&w=1200&q=80"
+            cls._cache[cache_key] = img
+            return img
+
+        if cls._is_india(combined_text):
+            img = cls.INDIA_CATEGORY_FALLBACKS.get(cat_lower, cls.INDIA_CATEGORY_FALLBACKS["temple"])
+        elif cls._is_east_asia(combined_text):
+            img = cls.EAST_ASIA_CATEGORY_FALLBACKS.get(cat_lower, cls.EAST_ASIA_CATEGORY_FALLBACKS["temple"])
+        elif cls._is_europe(combined_text):
+            img = cls.EUROPE_CATEGORY_FALLBACKS.get(cat_lower, cls.EUROPE_CATEGORY_FALLBACKS["temple"])
+        else:
+            img = cls.GENERIC_CATEGORY_FALLBACKS.get(cat_lower, "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?auto=format&fit=crop&w=1200&q=80")
+
+        cls._cache[cache_key] = img
+        return img
 
 image_service = ImageService()

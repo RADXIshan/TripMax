@@ -1127,8 +1127,8 @@ class ItineraryAgent:
                 booking_url=a_links[0].url if a_links else get_attraction_booking_url(a_title, dest),
                 tags=["Hidden Gems", "Shopping", "Artisan"],
                 image_url=a_img,
-                source_name=f"Lonely Planet Travel Guide: {dest}",
-                source_url=f"https://www.google.com/search?q={dest_enc}+lonely+planet+guide",
+                source_name=f"Wikitravel Historic Guide: {dest}",
+                source_url=f"https://wikitravel.org/en/{urllib.parse.quote_plus(dest.replace(' ', '_'))}",
                 source_snippet=f"Curated artisan quarters, local crafts, and pedestrian walking recommendations in {dest}.",
                 booking_links=a_links
             ),
@@ -1142,8 +1142,8 @@ class ItineraryAgent:
                 booking_url=e_links[0].url if e_links else get_viator_url(e_title, dest),
                 tags=["Sunset", "Relaxation", "Skyline"],
                 image_url=e_img,
-                source_name=f"Google Travel & Tourism Archive: {dest}",
-                source_url=f"https://www.google.com/travel/things-to-do?dest_src=ut&dest_mid={dest_enc}",
+                source_name=f"TripAdvisor Verified Attractions: {dest}",
+                source_url=f"https://www.tripadvisor.com/Search?q={dest_enc}+attractions",
                 source_snippet=f"Top panoramic viewpoints and golden hour vantage points reviewed by travelers in {dest}.",
                 booking_links=e_links
             ),
@@ -1152,8 +1152,8 @@ class ItineraryAgent:
                 dish=f"Authentic {dest} Signature Tasting Platter",
                 vibe="Charming local courtyard eatery",
                 image_url=food_img_1,
-                source_name="Michelin & Local Culinary Guide",
-                source_url=f"https://www.google.com/search?q={dest_enc}+best+restaurants+food+guide",
+                source_name="TripAdvisor Dining Guide",
+                source_url=f"https://www.tripadvisor.com/Search?q={dest_enc}+restaurants",
                 source_snippet=f"Acclaimed midday dining featuring regional specialties and local ingredients in {dest}."
             ),
             dinner_recommendation=DiningRecommendation(
@@ -1161,8 +1161,8 @@ class ItineraryAgent:
                 dish=f"Fresh Regional Specialty & Artisan Wine",
                 vibe="Intimate candlelit dining showcasing authentic regional heritage",
                 image_url=food_img_2,
-                source_name="Eater & Food Travel Archive",
-                source_url=f"https://www.google.com/search?q={dest_enc}+eater+38+dining+guide",
+                source_name="TripAdvisor Food Travel Archive",
+                source_url=f"https://www.tripadvisor.com/Search?q={dest_enc}+best+places+to+eat",
                 source_snippet=f"Celebrated evening dining spotlight with authentic regional flavors and fine wine pairings."
             ),
             transit_tips=f"Get the local 24-48hr public transit pass for unlimited metro, bus, and light rail rides in {dest}.",
@@ -1174,9 +1174,9 @@ class ItineraryAgent:
                     snippet=f"Comprehensive transit routes, neighborhoods, customs, and security advice for {dest}."
                 ),
                 ResearchSource(
-                    title=f"Google Travel Verified Guide: {dest}",
-                    url=f"https://www.google.com/search?q={dest_enc}+tourism+official+guide",
-                    snippet=f"Verified travel intelligence, ticketing passes, and regional highlights in {dest}."
+                    title=f"Wikipedia Cultural Heritage: {dest}",
+                    url=f"https://en.wikipedia.org/wiki/{urllib.parse.quote_plus(dest.replace(' ', '_'))}",
+                    snippet=f"Verified cultural heritage, historical architecture, and regional highlights in {dest}."
                 )
             ]
         )

@@ -230,7 +230,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           user ? (
             <div className="flex items-center justify-between gap-2 p-2 rounded-xl bg-stone-850/80 border border-stone-800">
               <div className="flex items-center gap-2.5 min-w-0">
-                <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-amber-600 to-amber-500 text-white font-bold text-xs flex items-center justify-center shrink-0 shadow-xs">
+                <div className="w-8 h-8 rounded-full bg-linear-to-tr from-amber-600 to-amber-500 text-white font-bold text-xs flex items-center justify-center shrink-0 shadow-xs">
                   {user.username.charAt(0).toUpperCase()}
                 </div>
                 <div className="min-w-0 truncate">
@@ -287,7 +287,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <>
                 <div
                   title={`${user.username} (${user.email})`}
-                  className="w-8 h-8 rounded-full bg-gradient-to-tr from-amber-600 to-amber-500 text-white font-bold text-xs flex items-center justify-center shadow-xs"
+                  className="w-8 h-8 rounded-full bg-linear-to-tr from-amber-600 to-amber-500 text-white font-bold text-xs flex items-center justify-center shadow-xs"
                 >
                   {user.username.charAt(0).toUpperCase()}
                 </div>
