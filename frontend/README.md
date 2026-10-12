@@ -1,69 +1,49 @@
-# React + TypeScript + Vite
+# 💻 TripMax Frontend Application
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Modern React 19 + TypeScript + Tailwind CSS v4 single-page application and interactive travel studio for TripMax.
 
-Currently, two official plugins are available:
+For full project documentation, architecture diagrams, and system overview, please see the [Root README](../README.md).
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+---
 
-## Expanding the ESLint configuration
+## ⚡ Quick Start
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+### 1. Requirements
+- Node.js 18+
+- npm (or pnpm/yarn)
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+### 2. Install Dependencies
+```bash
+npm install
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
-
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+### 3. Environment Configuration
+Create a `.env` file in this directory:
+```ini
+VITE_API_URL=http://127.0.0.1:8000
 ```
+
+### 4. Run Development Server
+```bash
+npm run dev
+```
+Accessible at `http://localhost:5173`. Requests to `/api/*` are automatically reverse-proxied to `http://127.0.0.1:8000`.
+
+### 5. Build for Production
+```bash
+npm run build
+```
+Build output is saved to the `dist/` directory.
+
+---
+
+## 🎨 Key Features & Components (`src/components/`)
+- `ChatStudio.tsx`: Interactive conversational discovery with suggested replies, quick buttons, and custom input.
+- `ItineraryTab.tsx`: Day-by-day morning, afternoon, evening cards, high-res photography, transit tips, and lunch/dinner recommendations.
+- `TransitTab.tsx`: Side-by-side flight vs rail cards with deep booking URLs and regional mobility guide.
+- `StaysTab.tsx`: Verified hotels (rating >= 9.0/10) with room rates, reviews, amenities, and direct booking links.
+- `BudgetTab.tsx`: Interactive categorical financial breakdown with 10-currency converter.
+- `BookingChecklistTab.tsx`: Milestone-based pre-trip checklist (4 weeks, 2 weeks, 3 days out) and categorized packing list.
+- `SavedTripsTab.tsx`: Cloud-synchronized trip gallery for authenticated users.
+- `ExportModal.tsx`: Generates formatted Word (`.docx`) and vector PDF files.
+- `CurrencyDropdown.tsx`: Real-time exchange rate conversions across 10 global currencies.

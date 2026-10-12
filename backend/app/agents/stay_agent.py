@@ -5,6 +5,11 @@ from app.services.deep_links import get_booking_com_url, get_airbnb_url, get_goo
 from app.services.destination_knowledge import get_destination_data
 from app.services.image_service import image_service
 from app.services.link_crawler import link_crawler
+from app.services.pricing_intelligence import (
+    convert_currency,
+    resolve_hotel_nightly_price,
+    format_stay_badge
+)
 
 class StayAgent:
     """
@@ -21,18 +26,10 @@ class StayAgent:
     ) -> List[StayOption]:
         dest = prefs.destination or "Destination"
         days = max(prefs.duration_days or 5, 1)
-        curr = prefs.budget_currency
+        curr = prefs.budget_currency or "INR"
         
-        # Scaling factor based on currency
-        rate = 1.0
-        if curr == "EUR":
-            rate = 0.92
-        elif curr == "GBP":
-            rate = 0.78
-        elif curr == "INR":
-            rate = 83.0
-        elif curr == "JPY":
-            rate = 150.0
+        # Scaling factor based on currency relative to USD
+        rate = convert_currency(1.0, "USD", curr)
 
         checkin = prefs.start_date or "2026-11-10"
         checkout = prefs.end_date or "2026-11-17"
@@ -59,8 +56,16 @@ class StayAgent:
             stays = []
             for idx, s in enumerate(raw_stays):
                 name = s.get("name") or s.get("hotel_name") or s.get("title") or f"Boutique Hotel {dest}"
-                price = float(s.get("price_per_night") or s.get("price") or 160)
+                raw_price = float(s.get("price_per_night") or s.get("price") or 160)
                 rating = float(s.get("rating") or 4.9)
+                hotel_type = s.get("type", "Curated Boutique Hotel")
+
+                # Resolve true scraped or verified benchmark rate
+                price, price_source = await resolve_hotel_nightly_price(
+                    name, dest, curr, raw_price=raw_price, hotel_type=hotel_type, rating=rating
+                )
+                formatted_badge = format_stay_badge(s.get("badge"), price, curr)
+
                 img = imgs[idx] if idx < len(imgs) and isinstance(imgs[idx], str) else image_service.get_image_for_query(name, category="hotel", destination=dest)
                 crawled = await link_crawler.crawl_hotel_links(name, dest, checkin, checkout, price, curr)
                 links = crawled.get("links") or get_multi_stay_links(name, dest, checkin, checkout, price, curr)
@@ -70,7 +75,7 @@ class StayAgent:
                 stays.append(StayOption(
                     id=f"stay-dyn-{idx+1}",
                     name=name,
-                    type=s.get("type", "Curated Boutique Hotel"),
+                    type=hotel_type,
                     neighborhood=s.get("neighborhood", f"Central {dest}"),
                     rating=min(max(rating, 4.5), 5.0),
                     review_count=int(s.get("review_count", 450 + idx * 120)),
@@ -81,9 +86,9 @@ class StayAgent:
                     why_recommended=s.get("why_recommended", f"Highly rated hotel in {dest} with verified guest reviews."),
                     booking_url=primary_url,
                     provider=primary_provider,
-                    badge=s.get("badge", f"🌟 Top Rated ({rating}/5)"),
+                    badge=formatted_badge,
                     image_url=img,
-                    source_name=f"{primary_provider} & Verified Inventory",
+                    source_name=f"{price_source} & {primary_provider}",
                     source_url=primary_url,
                     dates=dates_label,
                     verified_review_snippet=s.get("verified_review_snippet", "Verified guest: 'Spotless clean rooms, wonderful hospitality, and unbeatable central location.'"),
@@ -114,7 +119,12 @@ class StayAgent:
 
             stays = []
             for idx, s in enumerate(raw_stays):
-                price = round(s["base_usd"] * rate, 0)
+                raw_converted = convert_currency(s["base_usd"], "USD", curr)
+                price, price_source = await resolve_hotel_nightly_price(
+                    s["name"], dest, curr, raw_price=raw_converted, hotel_type=s.get("type"), rating=s.get("rating")
+                )
+                formatted_badge = format_stay_badge(s.get("badge"), price, curr)
+
                 img = imgs[idx] if idx < len(imgs) and isinstance(imgs[idx], str) else image_service.get_image_for_query(s["name"], category="hotel", destination=dest)
                 crawled = await link_crawler.crawl_hotel_links(s["name"], dest, checkin, checkout, price, curr)
                 links = crawled.get("links") or get_multi_stay_links(s["name"], dest, checkin, checkout, price, curr)
@@ -128,16 +138,16 @@ class StayAgent:
                     neighborhood=s["neighborhood"],
                     rating=s["rating"],
                     review_count=s["review_count"],
-                    price_per_night=price,
-                    total_price=price * days,
+                    price_per_night=round(price, 0),
+                    total_price=round(price * days, 0),
                     currency=curr,
                     key_amenities=s["key_amenities"],
                     why_recommended=s["why"],
                     booking_url=primary_url,
                     provider=primary_provider,
-                    badge=s["badge"],
+                    badge=formatted_badge,
                     image_url=img,
-                    source_name=f"{primary_provider} & Verified Inventory",
+                    source_name=f"{price_source} & {primary_provider}",
                     source_url=primary_url,
                     dates=dates_label,
                     verified_review_snippet=s["snippet"],
@@ -615,6 +625,15 @@ class StayAgent:
             return await WebSearchSynthesizer.build_dynamic_stays(prefs, gemini_data)
 
         for s in stays:
-            s.booking_links = get_multi_stay_links(s.name, dest, checkin, checkout)
+            resolved_price, price_src = await resolve_hotel_nightly_price(
+                s.name, dest, curr, raw_price=s.price_per_night, hotel_type=s.type, rating=s.rating
+            )
+            s.price_per_night = round(resolved_price, 0)
+            s.total_price = round(resolved_price * days, 0)
+            s.currency = curr
+            s.badge = format_stay_badge(s.badge, s.price_per_night, curr)
+            s.source_name = f"{price_src} & {s.provider}"
+            crawled = await link_crawler.crawl_hotel_links(s.name, dest, checkin, checkout, s.price_per_night, curr)
+            s.booking_links = crawled.get("links") or get_multi_stay_links(s.name, dest, checkin, checkout, s.price_per_night, curr)
 
         return stays

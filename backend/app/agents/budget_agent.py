@@ -9,6 +9,7 @@ from app.models.trip import (
     StayOption, 
     ItineraryDay
 )
+from app.services.pricing_intelligence import convert_currency
 
 class BudgetAgent:
     """
@@ -27,17 +28,9 @@ class BudgetAgent:
     ) -> Tuple[BudgetBreakdown, List[ChecklistItem], List[PackingItem]]:
         dest = prefs.destination or "Destination"
         days = prefs.duration_days or 5
-        curr = prefs.budget_currency
+        curr = prefs.budget_currency or "INR"
 
-        rate = 1.0
-        if curr == "EUR":
-            rate = 0.92
-        elif curr == "GBP":
-            rate = 0.78
-        elif curr == "INR":
-            rate = 84.0
-        elif curr == "JPY":
-            rate = 152.0
+        rate = convert_currency(1.0, "USD", curr)
 
         # Estimate transit cost: average of selected flight/train
         chosen_flight_cost = flights[0].estimated_price if flights else (350.0 * rate)

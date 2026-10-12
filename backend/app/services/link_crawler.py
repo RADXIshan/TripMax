@@ -136,7 +136,20 @@ class LinkCrawler:
         "belmond": "https://www.belmond.com/",
         "st. regis": "https://st-regis.marriott.com/",
         "st regis": "https://st-regis.marriott.com/",
-        "w hotels": "https://w-hotels.marriott.com/"
+        "w hotels": "https://w-hotels.marriott.com/",
+        "celestine kyoto": "https://www.celestinehotels.com/kyoto-gion/",
+        "sowaka": "https://sowaka.com/en/",
+        "suiran": "https://www.suihotels.com/suiran-kyoto/en/",
+        "pocket hotel": "https://pocket-hotel.jp/en/",
+        "madame rêve": "https://madamereve.com/en/",
+        "madame reve": "https://madamereve.com/en/",
+        "relais christine": "https://relais-christine.com/en/",
+        "crillon": "https://www.rosewoodhotels.com/en/hotel-de-crillon",
+        "citizenm": "https://www.citizenm.com/",
+        "pasitea": "https://www.hotelpasitea.it/",
+        "santa caterina": "https://www.hotelsantacaterina.it/",
+        "residenza luce": "https://www.residenzaluce.it/",
+        "omnia": "https://www.the-omnia.com/"
     }
 
     # Verified official portals for airlines
@@ -187,7 +200,7 @@ class LinkCrawler:
         Crawls and compiles authentic direct official links and top-rated booking platforms.
         Guarantees zero search engine links: all URLs point to actual hotel or aggregator booking portals.
         """
-        cache_key = f"hotel_{hotel_name.lower().strip()}_{destination.lower().strip()}"
+        cache_key = f"hotel_{hotel_name.lower().strip()}_{destination.lower().strip()}_{currency}_{round(price_per_night or 0)}"
         if cache_key in cls._cache:
             return cls._cache[cache_key]
 
@@ -195,6 +208,8 @@ class LinkCrawler:
         encoded_target = urllib.parse.quote_plus(target_query)
         encoded_hotel = urllib.parse.quote_plus(hotel_name)
         is_india = is_indian_locale("", destination)
+
+        price_tag = f" (~{currency} {price_per_night:,.0f}/nt)" if price_per_night and price_per_night > 0 else ""
 
         # 1. Determine Official Website
         official_url = None
@@ -233,7 +248,7 @@ class LinkCrawler:
                 provider=official_brand,
                 label=f"{hotel_name.split()[0]} Official Direct",
                 url=official_url,
-                price_hint="Direct Member Rate & Perks"
+                price_hint=f"Official Member Rate{price_tag}"
             ))
 
         # (B) Google Hotels Live Rates (always a direct travel search)
@@ -245,7 +260,7 @@ class LinkCrawler:
             provider="Google Hotels",
             label="Google Hotels Live Rates",
             url=google_hotels_url,
-            price_hint="Live Price Comparison & Rooms"
+            price_hint=f"Live Price Comparison{price_tag}"
         ))
 
         # (C) Regional OTA (MakeMyTrip & Goibibo for India / Asia)
@@ -265,7 +280,7 @@ class LinkCrawler:
                 provider="MakeMyTrip",
                 label="MakeMyTrip Hotels",
                 url=mmt_url,
-                price_hint="Special App & Bank Discounts"
+                price_hint=f"Special Discounts{price_tag}"
             ))
 
             goibibo_dates_param = f"&ci={d_in_ymd}&co={d_out_ymd}" if d_in_ymd and d_out_ymd else ""
@@ -274,7 +289,7 @@ class LinkCrawler:
                 provider="Goibibo",
                 label="Goibibo Hotels (Best Deals)",
                 url=goibibo_hotel_url,
-                price_hint="Pay@Hotel & Secret Deals"
+                price_hint=f"Pay@Hotel Deals{price_tag}"
             ))
 
         # (D) Agoda
@@ -284,7 +299,7 @@ class LinkCrawler:
             provider="Agoda",
             label="Agoda",
             url=agoda_url,
-            price_hint="Instant Confirmation & Member Price"
+            price_hint=f"Member Price{price_tag}"
         ))
 
         # (E) Booking.com
@@ -298,7 +313,7 @@ class LinkCrawler:
             provider="Booking.com",
             label="Booking.com",
             url=booking_url,
-            price_hint="Free Cancellation Options"
+            price_hint=f"Free Cancellation Options{price_tag}"
         ))
 
         # (F) TripAdvisor Reviews

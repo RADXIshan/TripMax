@@ -18,7 +18,13 @@ from app.services.deep_links import (
     get_viator_url
 )
 from app.services.link_crawler import link_crawler, is_indian_locale
-from app.services.pricing_intelligence import resolve_attraction_cost, calculate_daily_budget
+from app.services.pricing_intelligence import (
+    resolve_attraction_cost, 
+    calculate_daily_budget,
+    resolve_hotel_nightly_price,
+    format_stay_badge,
+    convert_currency
+)
 from app.models.trip import (
     TripPreferences,
     StayOption,
@@ -88,17 +94,17 @@ class WebSearchSynthesizer:
             f"realistic price in {curr}, pros (array of strings), and cons (array of strings). Never use placeholders like 'Origin Hub Airport'."
         )
 
-        target_nightly = max(round((budget * 0.40) / days), 1000 if curr == "INR" else 40)
         stays_budget_instruction = (
-            f"1. 'stays': Exactly 4 REAL, highly-rated hotels in {dest} strictly calibrated to user's total budget of {curr} {budget:,.0f} "
-            f"for {days} nights (Target nightly budget is ~{curr} {target_nightly:,.0f}/night):\n"
-            f"   - Option 1 (Recommended Comfort / Boutique): Price ~{curr} {target_nightly:,.0f}/night\n"
-            f"   - Option 2 (Authentic Heritage / Local Charm): Price ~{curr} {round(target_nightly * 1.25):,.0f}/night\n"
-            f"   - Option 3 (Best Value / Budget Saver on MakeMyTrip & Goibibo): Price ~{curr} {round(target_nightly * 0.65):,.0f}/night\n"
-            f"   - Option 4 (Luxury 5-Star Upgrade): Price ~{curr} {round(target_nightly * 2.2):,.0f}/night\n"
+            f"1. 'stays': Exactly 4 REAL, highly-rated, currently operating hotels in {dest} representing 4 distinct tiers:\n"
+            f"   - Option 1 (Recommended Boutique / Curated Comfort): Real 4-star boutique hotel in {dest}. Realistic market price_per_night in {curr}.\n"
+            f"   - Option 2 (Authentic Heritage / Local Cultural Charm): Historic villa, ryokan, or heritage stay in {dest}. Realistic market price_per_night in {curr}.\n"
+            f"   - Option 3 (Smart Value / Budget Saver): Clean, modern 3-star or top-rated value hotel in {dest}. Realistic market price_per_night in {curr}.\n"
+            f"   - Option 4 (Luxury 5-Star Upgrade): Renowned 5-star flagship palace or luxury resort in {dest}. Realistic market price_per_night in {curr}.\n"
+            f"   CRITICAL PRICING RULE: Provide ACCURATE, REALISTIC current market room rates per night in {curr} for each specific hotel based on its true hotel class. "
+            f"   DO NOT invent fake prices or force them to match an artificial budget formula. "
             f"   Include real hotel name, neighborhood, rating (4.5 to 4.9), review_count, realistic price_per_night in {curr}, "
-            f"why_recommended, badge (e.g. '🌟 Top Rated Comfort', '🏷️ Best Value on Goibibo', '🏮 Heritage Charm', '💎 5-Star Luxury'), "
-            f"verified_review_snippet, and key_amenities (list of 5)."
+            f"   why_recommended, badge (e.g. '🌟 Top Rated Boutique', '🏮 Authentic Heritage', '🏷️ Best Value Saver', '💎 5-Star Luxury'), "
+            f"   verified_review_snippet, and key_amenities (array of 5 strings)."
         )
 
         prompt = f"""
@@ -183,8 +189,16 @@ CRITICAL ACCURACY RULES:
             raw_stays = gemini_data["stays"]
             for idx, s in enumerate(raw_stays[:4]):
                 name = s.get("name") or s.get("hotel_name") or s.get("title") or f"Boutique Hotel {dest}"
-                price = float(s.get("price_per_night") or s.get("price") or 160)
+                raw_price = float(s.get("price_per_night") or s.get("price") or 160)
                 rating = float(s.get("rating") or 4.9)
+                hotel_type = s.get("type", "Curated Boutique Hotel")
+
+                # Resolve true scraped/benchmarked market rate
+                price, price_src = await resolve_hotel_nightly_price(
+                    name, dest, curr, raw_price=raw_price, hotel_type=hotel_type, rating=rating
+                )
+                formatted_badge = format_stay_badge(s.get("badge"), price, curr)
+
                 # Fetch authentic Wikipedia photo of hotel or city
                 img = image_service.get_image_for_query(name, category="hotel", destination=dest)
                 
@@ -197,7 +211,7 @@ CRITICAL ACCURACY RULES:
                 stays.append(StayOption(
                     id=f"stay-dyn-{idx+1}",
                     name=name,
-                    type=s.get("type", "Curated Boutique Hotel"),
+                    type=hotel_type,
                     neighborhood=s.get("neighborhood", f"Central {dest}"),
                     rating=min(max(rating, 4.5), 5.0),
                     review_count=int(s.get("review_count", 450 + idx * 120)),
@@ -208,9 +222,9 @@ CRITICAL ACCURACY RULES:
                     why_recommended=s.get("why_recommended", f"Highly rated hotel in {dest} with verified guest reviews."),
                     booking_url=primary_url,
                     provider=primary_prov,
-                    badge=s.get("badge", f"🌟 Top Rated ({rating}/5)"),
+                    badge=formatted_badge,
                     image_url=img,
-                    source_name=f"{primary_prov} & Google Hotels Live Rates",
+                    source_name=f"{price_src} & {primary_prov}",
                     source_url=primary_url,
                     dates=dates_label,
                     verified_review_snippet=s.get("verified_review_snippet", "Verified guest: 'Spotless clean rooms, wonderful hospitality, and unbeatable central location.'"),
@@ -219,30 +233,31 @@ CRITICAL ACCURACY RULES:
             return stays
 
         # Live Web Search Synthesis if Gemini was unavailable
-        # Query search engine for real top hotels
         hotel_results = await search_service.search(f"best luxury boutique hotels to stay in {dest} 2026", max_results=4)
         found_names = []
         for hr in hotel_results:
             title = hr.get("title", "")
-            # Extract potential hotel name
             m = re.search(r'(?:Hotel|Resort|Inn|Palace|House|Lodge|Chalet)\s+([A-Za-z\s]+)', title)
             if m:
                 found_names.append(f"{m.group(0).strip()}")
         
-        budget_total = prefs.budget_amount or (25000.0 if curr == "INR" else 1200.0)
-        target_nightly = max(round((budget_total * 0.38) / days), 1800.0 if curr == "INR" else 75.0)
         default_hotel_tiers = [
-            ("The Grand Heritage Hotel", "Boutique Design & Heritage", f"Historic Arts Quarter, {dest}", target_nightly, "🌟 Top Rated Comfort"),
-            ("The Artisan Villa & Suites", "Authentic Cultural Villa", f"Old Town Central, {dest}", round(target_nightly * 1.3), "🏮 Authentic Local Haven"),
-            ("The Royal Palace & Spa", "5-Star Ultra Luxury Palace", f"Premier Waterfront / Skyline Avenue, {dest}", round(target_nightly * 2.2), "💎 5-Star Luxury Upgrade"),
-            ("Citizen Smart City Concept", "Central Modern Smart Concept", f"Central Station / Metro Edges, {dest}", round(target_nightly * 0.65), "🏷️ Best Value Saver")
+            ("The Grand Heritage Hotel", "Boutique Design & Heritage", f"Historic Arts Quarter, {dest}", "🌟 Top Rated Boutique"),
+            ("The Artisan Villa & Suites", "Authentic Cultural Villa", f"Old Town Central, {dest}", "🏮 Authentic Heritage"),
+            ("The Royal Palace & Spa", "5-Star Ultra Luxury Palace", f"Premier Waterfront / Skyline Avenue, {dest}", "💎 5-Star Luxury"),
+            ("Citizen Smart City Concept", "Central Modern Smart Concept", f"Central Station / Metro Edges, {dest}", "🏷️ Best Value Saver")
         ]
 
         for idx, tier in enumerate(default_hotel_tiers):
             hotel_name = found_names[idx] if idx < len(found_names) else f"{tier[0]} {dest}"
+            price, price_src = await resolve_hotel_nightly_price(
+                hotel_name, dest, curr, raw_price=None, hotel_type=tier[1], rating=4.88
+            )
+            formatted_badge = format_stay_badge(tier[3], price, curr)
+
             img = image_service.get_image_for_query(hotel_name, category="hotel", destination=dest)
-            crawled = await link_crawler.crawl_hotel_links(hotel_name, dest, checkin, checkout, tier[3], curr)
-            links = crawled.get("links") or get_multi_stay_links(hotel_name, dest, checkin, checkout, tier[3], curr)
+            crawled = await link_crawler.crawl_hotel_links(hotel_name, dest, checkin, checkout, price, curr)
+            links = crawled.get("links") or get_multi_stay_links(hotel_name, dest, checkin, checkout, price, curr)
             primary_url = crawled.get("primary_url") or (links[0].url if links else "")
             primary_prov = crawled.get("primary_provider") or "Official Direct & Verified"
 
@@ -253,16 +268,16 @@ CRITICAL ACCURACY RULES:
                 neighborhood=tier[2],
                 rating=round(4.88 + (idx * 0.03) % 0.1, 2),
                 review_count=520 + idx * 240,
-                price_per_night=round(tier[3], 0),
-                total_price=round(tier[3] * days, 0),
+                price_per_night=round(price, 0),
+                total_price=round(price * days, 0),
                 currency=curr,
                 key_amenities=["Artisan Breakfast Included", "Panoramic Rooftop Skyline Lounge", "High-Speed Fiber Wi-Fi", "Dedicated Concierge Service"],
                 why_recommended=f"Ranked among top accommodations in {dest}. Walking distance to iconic sights with outstanding verified guest scores.",
                 booking_url=primary_url,
                 provider=primary_prov,
-                badge=tier[4],
+                badge=formatted_badge,
                 image_url=img,
-                source_name=f"{primary_prov} & Google Hotels Live Rates",
+                source_name=f"{price_src} & {primary_prov}",
                 source_url=primary_url,
                 dates=dates_label,
                 verified_review_snippet="Verified guest: 'Spectacular service, comfortable beds, and central location that saved us hours of travel.'",

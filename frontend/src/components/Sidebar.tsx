@@ -61,12 +61,29 @@ export const Sidebar: React.FC<SidebarProps> = ({
       {/* Top Portion */}
       <div className="flex flex-col min-h-0 flex-1 overflow-y-auto">
         {/* Brand Bar */}
-        <div className="h-14 px-3.5 flex items-center justify-between border-b border-stone-800 shrink-0">
-          <div className="flex items-center gap-2.5 overflow-hidden">
-            <div className="w-8 h-8 rounded-xl bg-stone-800 border border-stone-700 flex items-center justify-center text-stone-200 shrink-0 shadow-2xs">
+        {collapsed ? (
+          <div className="py-2.5 flex flex-col items-center gap-2 border-b border-stone-800 shrink-0">
+            <div
+              className="w-8 h-8 rounded-xl bg-stone-800 border border-stone-700 flex items-center justify-center text-stone-200 shrink-0 shadow-2xs"
+              title="TripMax"
+            >
               <Compass className="w-4 h-4" />
             </div>
-            {!collapsed && (
+
+            <button
+              onClick={onToggleCollapsed}
+              className="p-1.5 rounded-lg text-stone-400 hover:text-stone-200 hover:bg-stone-800 cursor-pointer border-[1.5px] border-transparent hover:border-stone-700 transition-all"
+              title="Expand sidebar"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
+        ) : (
+          <div className="h-14 px-3.5 flex items-center justify-between border-b border-stone-800 shrink-0">
+            <div className="flex items-center gap-2.5 overflow-hidden">
+              <div className="w-8 h-8 rounded-xl bg-stone-800 border border-stone-700 flex items-center justify-center text-stone-200 shrink-0 shadow-2xs">
+                <Compass className="w-4 h-4" />
+              </div>
               <div className="truncate">
                 <span className="font-bold text-sm tracking-tight text-stone-100 block">
                   TripMax
@@ -75,17 +92,17 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   AI Travel Planner
                 </span>
               </div>
-            )}
-          </div>
+            </div>
 
-          <button
-            onClick={onToggleCollapsed}
-            className="p-1 rounded-lg text-stone-400 hover:text-stone-200 hover:bg-stone-800 cursor-pointer border-[1.5px] border-transparent hover:border-stone-700 transition-all"
-            title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-          >
-            {collapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
-          </button>
-        </div>
+            <button
+              onClick={onToggleCollapsed}
+              className="p-1 rounded-lg text-stone-400 hover:text-stone-200 hover:bg-stone-800 cursor-pointer border-[1.5px] border-transparent hover:border-stone-700 transition-all"
+              title="Collapse sidebar"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+          </div>
+        )}
 
         {/* Primary Action Button: New Trip (Placed naturally at top) */}
         <div className="p-2.5 shrink-0">
