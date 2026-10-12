@@ -295,10 +295,15 @@ export const TransitTab: React.FC<TransitTabProps> = ({ plan }) => {
                   {/* Pricing and Primary Deep Booking Link */}
                   <div className="flex items-center justify-between pt-3 border-t border-stone-800">
                     <div>
-                      <span className="text-[10px] text-stone-400 block">Roundtrip estimate</span>
-                      <span className="text-base font-bold text-stone-100">
-                        {f.currency} {f.estimated_price.toLocaleString()}
-                      </span>
+                      <span className="text-[10px] text-stone-400 block font-medium">Roundtrip Total (Per Person)</span>
+                      <div className="flex items-baseline gap-1.5">
+                        <span className="text-base font-bold text-stone-100">
+                          {f.currency} {f.estimated_price.toLocaleString()}
+                        </span>
+                        <span className="text-[11px] text-stone-400">
+                          (~{f.currency} {Math.round(f.estimated_price / 2).toLocaleString()} one-way)
+                        </span>
+                      </div>
                     </div>
 
                     <a
@@ -440,7 +445,7 @@ export const TransitTab: React.FC<TransitTabProps> = ({ plan }) => {
                   {/* Pricing and Deep Booking Link */}
                   <div className="flex items-center justify-between pt-3 border-t border-stone-800">
                     <div>
-                      <span className="text-[10px] text-stone-400 block">Fare estimate</span>
+                      <span className="text-[10px] text-stone-400 block font-medium">Ticket Fare (Direct Express)</span>
                       <span className="text-base font-bold text-stone-100">
                         {t.currency} {t.estimated_price.toLocaleString()}
                       </span>

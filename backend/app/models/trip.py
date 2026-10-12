@@ -121,6 +121,16 @@ class LocalTransitMode(BaseModel):
     estimated_cost: str
     official_link: Optional[str] = None
 
+    @field_validator("estimated_cost", mode="before")
+    @classmethod
+    def _validate_estimated_cost(cls, v: Any) -> str:
+        if v is None:
+            return "Standard local fare"
+        if isinstance(v, (int, float)):
+            return f"₹{int(v)}" if v >= 10 else f"₹{v}"
+        return str(v).strip()
+
+
 class RegionalExcursion(BaseModel):
     destination_name: str
     distance_and_duration: str

@@ -1,10 +1,15 @@
+import React from 'react';
 import { 
   FolderArchive, 
   ArrowRight, 
   Trash2, 
   Plus, 
   MapPin,
-  Clock
+  Clock,
+  LogIn,
+  AlertCircle,
+  Sparkles,
+  Bookmark
 } from 'lucide-react';
 import type { TripPlan } from '../types/trip';
 
@@ -24,19 +29,27 @@ export interface SavedTripRecord {
 interface SavedTripsTabProps {
   savedTrips: SavedTripRecord[];
   currentTripId: string | null;
+  currentPlan?: TripPlan | null;
+  isLoggedIn: boolean;
+  onOpenAuth?: () => void;
   onSelectTrip: (plan: TripPlan) => void;
   onDeleteTrip: (id: string) => void;
   onNewTrip: () => void;
   onLoadPreset: (destination: string) => void;
+  onSaveCurrentTrip?: () => void;
 }
 
 export const SavedTripsTab: React.FC<SavedTripsTabProps> = ({
   savedTrips,
   currentTripId,
+  currentPlan,
+  isLoggedIn,
+  onOpenAuth,
   onSelectTrip,
   onDeleteTrip,
   onNewTrip,
-  onLoadPreset
+  onLoadPreset,
+  onSaveCurrentTrip,
 }) => {
   return (
     <div className="space-y-6">
@@ -52,20 +65,93 @@ export const SavedTripsTab: React.FC<SavedTripsTabProps> = ({
                 All Trips & Journey Archive
               </h3>
               <p className="text-xs text-stone-400">
-                Browse and switch between all itineraries created till now ({savedTrips.length} saved)
+                {isLoggedIn 
+                  ? `Browse and switch between all itineraries saved to your cloud account (${savedTrips.length} saved)`
+                  : 'Trips are only saved to All Trips when you are logged in'}
               </p>
             </div>
           </div>
         </div>
 
-        <button
-          onClick={onNewTrip}
-          className="px-4 py-2 rounded-xl bg-stone-100 hover:bg-white text-stone-900 text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer self-start sm:self-auto shadow-xs hover:shadow"
-        >
-          <Plus className="w-3.5 h-3.5 text-stone-900" />
-          <span>Plan New Journey</span>
-        </button>
+        <div className="flex items-center gap-2 self-start sm:self-auto">
+          {!isLoggedIn && onOpenAuth && (
+            <button
+              onClick={onOpenAuth}
+              className="px-3.5 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-stone-950 text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-xs hover:shadow"
+            >
+              <LogIn className="w-3.5 h-3.5" />
+              <span>Sign In / Create Account</span>
+            </button>
+          )}
+
+          <button
+            onClick={onNewTrip}
+            className="px-4 py-2 rounded-xl bg-stone-100 hover:bg-white text-stone-900 text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer shadow-xs hover:shadow"
+          >
+            <Plus className="w-3.5 h-3.5 text-stone-900" />
+            <span>Plan New Journey</span>
+          </button>
+        </div>
       </div>
+
+      {/* Guest Mode Warning & Active Session Trip Notice */}
+      {!isLoggedIn && (
+        <div className="p-4 rounded-2xl bg-amber-950/20 border border-amber-800/40 space-y-3">
+          <div className="flex items-start gap-3">
+            <AlertCircle className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
+            <div className="space-y-1">
+              <h4 className="text-xs font-bold text-amber-200">
+                Guest Mode • Trips Not Saved to Archive
+              </h4>
+              <p className="text-[11px] text-amber-200/80 leading-relaxed">
+                You are currently browsing as a guest. Generated trips are active across your Discovery Chat, Itinerary, Transit, Stays, and Budget tabs, but will <strong>not be saved</strong> to All Trips until you sign in or create an account.
+              </p>
+            </div>
+          </div>
+
+          {/* If there's an active unsaved trip right now */}
+          {currentPlan && (
+            <div className="mt-2 p-3.5 rounded-xl bg-stone-900/90 border border-stone-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-2.5">
+                <div className="w-7 h-7 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 shrink-0">
+                  <Sparkles className="w-3.5 h-3.5" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold text-stone-100">
+                      Active Trip: {currentPlan.destination}
+                    </span>
+                    <span className="text-[10px] px-2 py-0.2 rounded-full bg-amber-950/60 text-amber-300 border border-amber-800/50">
+                      Unsaved Session
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-stone-400">
+                    {currentPlan.duration_days} Days • {currentPlan.budget.currency} {currentPlan.budget.total_estimated.toLocaleString()} budget
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 self-end sm:self-auto">
+                <button
+                  onClick={() => onSelectTrip(currentPlan)}
+                  className="px-3 py-1.5 rounded-lg border border-stone-700 hover:bg-stone-800 text-stone-200 text-xs font-medium cursor-pointer transition-colors"
+                >
+                  View in Tabs
+                </button>
+                {onSaveCurrentTrip && (
+                  <button
+                    onClick={onSaveCurrentTrip}
+                    className="px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-stone-950 text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-colors shadow-xs"
+                  >
+                    <Bookmark className="w-3.5 h-3.5" />
+                    <span>Create Account to Save</span>
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Grid of Saved Trips */}
       {savedTrips.length > 0 ? (
@@ -152,12 +238,22 @@ export const SavedTripsTab: React.FC<SavedTripsTabProps> = ({
             <FolderArchive className="w-6 h-6" />
           </div>
           <h4 className="text-base font-bold text-stone-100">
-            No Trips Saved Yet
+            {isLoggedIn ? 'No Trips Saved Yet' : 'No Saved Trips (Guest Mode)'}
           </h4>
-          <p className="text-xs text-stone-400">
-            Any itinerary you generate or explore will automatically be archived here for easy reference.
+          <p className="text-xs text-stone-400 leading-relaxed">
+            {isLoggedIn 
+              ? 'Any itinerary you generate or plan will automatically be archived here in your personal cloud collection.'
+              : 'Sign in or create an account to save trips into your cloud archive. While browsing as guest, your trips are only displayed in the discovery chat and active workspace tabs.'}
           </p>
           <div className="pt-2 flex flex-wrap justify-center gap-2">
+            {!isLoggedIn && onOpenAuth && (
+              <button
+                onClick={onOpenAuth}
+                className="text-xs px-3.5 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-stone-950 font-bold cursor-pointer transition-all shadow-xs hover:shadow"
+              >
+                Sign In / Create Account
+              </button>
+            )}
             <button
               onClick={() => onLoadPreset('Kyoto')}
               className="text-xs px-3 py-1.5 rounded-xl border border-stone-750 hover:bg-stone-800 text-stone-300 cursor-pointer"

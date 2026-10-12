@@ -733,7 +733,7 @@ GLOBAL_DESTINATIONS: Dict[str, Dict[str, Any]] = {
                 "dest_airport": "Bhubaneswar Biju Patnaik Int'l (BBI)",
                 "duration": "2h 15m",
                 "stops": "Non-Stop Direct",
-                "price_usd": 48,
+                "price_usd": 135,
                 "departure_time": "08:15 AM",
                 "arrival_time": "10:30 AM",
                 "carbon_footprint": "118 kg CO2 (Fuel-Efficient A321neo)",
@@ -748,7 +748,7 @@ GLOBAL_DESTINATIONS: Dict[str, Dict[str, Any]] = {
                 "dest_airport": "Bhubaneswar Biju Patnaik Int'l (BBI)",
                 "duration": "2h 20m",
                 "stops": "Non-Stop Direct",
-                "price_usd": 55,
+                "price_usd": 152,
                 "departure_time": "11:00 AM",
                 "arrival_time": "01:20 PM",
                 "carbon_footprint": "125 kg CO2",
@@ -863,6 +863,7 @@ GLOBAL_DESTINATIONS: Dict[str, Dict[str, Any]] = {
                 "lunch": {
                     "place": "Dalma Restaurant (Unit 4 Heritage Stalls)",
                     "dish": "Authentic Odia Thali: Dalma, Potala Rasa, Machha Besara & Ghee Rice",
+                    "wiki_query": "Dalma (dish)",
                     "vibe": "Beloved traditional dining institution serving home-cooked authentic Odia classics",
                     "source_name": "TripAdvisor Bhubaneswar Culinary Guide",
                     "source_url": "https://www.tripadvisor.in/Search?q=Dalma+Restaurant+Bhubaneswar",
@@ -897,6 +898,7 @@ GLOBAL_DESTINATIONS: Dict[str, Dict[str, Any]] = {
                 "dinner": {
                     "place": "Kanika at Mayfair Lagoon",
                     "dish": "Chhena Poda (Caramelized Cottage Cheese Dessert) & Bamboo Steamed Mutton / Mustard Fish",
+                    "wiki_query": "Chhena poda",
                     "vibe": "Elegantly appointed royal Odia fine dining with traditional brass tableware",
                     "source_name": "Mayfair Hotels Fine Dining Archive",
                     "source_url": "https://www.mayfairhotels.com/",
@@ -924,6 +926,7 @@ GLOBAL_DESTINATIONS: Dict[str, Dict[str, Any]] = {
                 "lunch": {
                     "place": "Pahala Sweet Haven (Old NH16 Village)",
                     "dish": "Warm Spongy Pahala Rasagola & Fresh Baked Chhena Jhili",
+                    "wiki_query": "Rasgulla",
                     "vibe": "Iconic highway sweet cluster preparing GI-tagged Rasagolas in bubbling brass cauldrons",
                     "source_name": "Odisha Culinary GI Registry",
                     "source_url": "https://odishatourism.gov.in/",
@@ -958,6 +961,7 @@ GLOBAL_DESTINATIONS: Dict[str, Dict[str, Any]] = {
                 "dinner": {
                     "place": "Nimantran Restaurant (Odisha Tourism Showcase)",
                     "dish": "Santula (Spiced Vegetable Stew), Badi Chura, and Mati Handi Mutton",
+                    "wiki_query": "Dahi vada",
                     "vibe": "Official flagship culinary showcase managed by Odisha Tourism Development Corp",
                     "source_name": "OTDC Nimantran Portal",
                     "source_url": "https://odishatourism.gov.in/",
@@ -985,6 +989,7 @@ GLOBAL_DESTINATIONS: Dict[str, Dict[str, Any]] = {
                 "lunch": {
                     "place": "Wildgrass Restaurant (Puri Coastal Heritage Garden)",
                     "dish": "Chingudi Malai Curry (Jumbo Prawns in Coconut Milk) & Coastal Fried Fish",
+                    "wiki_query": "Prawn malai curry",
                     "vibe": "Shaded garden oasis serving freshly caught Bay of Bengal seafood with fragrant Gobindobhog rice",
                     "source_name": "Lonely Planet Odisha Dining Guide",
                     "source_url": "https://www.lonelyplanet.com/india/odisha",
@@ -1019,6 +1024,7 @@ GLOBAL_DESTINATIONS: Dict[str, Dict[str, Any]] = {
                 "dinner": {
                     "place": "Tea Pot Restaurant at Mayfair Heritage Puri",
                     "dish": "Royal Crab Curry, Steamed Basmati Rice & Khira Mohana",
+                    "wiki_query": "Khaja",
                     "vibe": "Colonial seaside luxury with waves crashing just beyond the palm trees",
                     "source_name": "Mayfair Heritage Ocean Dining",
                     "source_url": "https://www.mayfairhotels.com/",
@@ -1046,6 +1052,7 @@ GLOBAL_DESTINATIONS: Dict[str, Dict[str, Any]] = {
                 "lunch": {
                     "place": "Odiyan Ethnic Dining",
                     "dish": "Mudhi Mansa (Spiced Mutton with Puffed Rice) & Badi Chura",
+                    "wiki_query": "Dahibara aloo dum",
                     "vibe": "Charming village-themed restaurant celebrating interior Baripada and coastal recipes",
                     "source_name": "Odisha Culinary Heritage Guild",
                     "source_url": "https://odishatourism.gov.in/",
@@ -1080,6 +1087,7 @@ GLOBAL_DESTINATIONS: Dict[str, Dict[str, Any]] = {
                 "dinner": {
                     "place": "Zaika Continental & Regional Tandoor",
                     "dish": "Charcoal Smoked Kebabs, Dal Makhani & Warm Chhena Gaja",
+                    "wiki_query": "Chhena gaja",
                     "vibe": "Elegant dining terrace with live Indian classical instrumental sitar music",
                     "source_name": "Bhubaneswar Fine Dining Circle",
                     "source_url": "https://odishatourism.gov.in/",
@@ -1107,6 +1115,7 @@ GLOBAL_DESTINATIONS: Dict[str, Dict[str, Any]] = {
                 "lunch": {
                     "place": "Mangalajodi Ecotourism Dining Pavilion",
                     "dish": "Fresh Chilika Prawn & Crab Thali with Steamed Basmati & Tomato Khatta",
+                    "wiki_query": "Chilika Lake",
                     "vibe": "Eco-friendly wooden pavilion overlooking the sparkling Chilika lagoon marshes",
                     "source_name": "Chilika Development Authority (CDA)",
                     "source_url": "https://www.chilika.com/",
@@ -1141,6 +1150,7 @@ GLOBAL_DESTINATIONS: Dict[str, Dict[str, Any]] = {
                 "dinner": {
                     "place": "Tea Pot Restaurant at Mayfair Lagoon",
                     "dish": "Grand Farewell Royal Odia Buffet & Fresh Chhena Poda with Malpua",
+                    "wiki_query": "Malpua",
                     "vibe": "Sumptuous poolside buffet celebrating regional and royal recipes in a tranquil tropical setting",
                     "source_name": "Mayfair Lagoon Gastronomy",
                     "source_url": "https://www.mayfairhotels.com/",

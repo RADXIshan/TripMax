@@ -19,6 +19,7 @@ import { BookingChecklistTab } from './components/BookingChecklistTab';
 import { SavedTripsTab, type SavedTripRecord } from './components/SavedTripsTab';
 import { LiveSearchModal } from './components/LiveSearchModal';
 import { ResetTripModal } from './components/ResetTripModal';
+import { ExportModal } from './components/ExportModal';
 import { SUPPORTED_CURRENCIES } from './components/CurrencyDropdown';
 
 const API_BASE = "";
@@ -79,11 +80,14 @@ export const App = () => {
   const [isGeneratingPlan, setIsGeneratingPlan] = useState(false);
   const [isLiveSearchOpen, setIsLiveSearchOpen] = useState(false);
   const [isResetModalOpen, setIsResetModalOpen] = useState(false);
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [currency, setCurrency] = useState('INR');
 
   const [savedTrips, setSavedTrips] = useState<SavedTripRecord[]>(() => {
     try {
+      const savedToken = localStorage.getItem('tripmax_token');
+      if (!savedToken) return [];
       const stored = localStorage.getItem('tripmax_saved_trips');
       return stored ? JSON.parse(stored) : [];
     } catch {
@@ -158,10 +162,11 @@ export const App = () => {
     setUser(newUser);
     await fetchUserTrips(newToken);
 
-    if (pendingPlanToSave) {
-      await savePlanToHistory(pendingPlanToSave);
+    const tripToSave = pendingPlanToSave || plan;
+    if (tripToSave) {
+      await savePlanToHistory(tripToSave, newToken);
       confetti({ particleCount: 50, spread: 70, origin: { y: 0.6 } });
-      setToastMessage(`✓ "${pendingPlanToSave.destination}" saved to your account!`);
+      setToastMessage(`✓ "${tripToSave.destination}" saved to your account!`);
       setPendingPlanToSave(null);
     } else {
       setToastMessage(`Welcome back, ${newUser.username}!`);
@@ -175,6 +180,7 @@ export const App = () => {
   const handleLogout = () => {
     localStorage.removeItem('tripmax_token');
     localStorage.removeItem('tripmax_user');
+    localStorage.removeItem('tripmax_saved_trips');
     setToken(null);
     setUser(null);
     setPlan(null);
@@ -185,7 +191,13 @@ export const App = () => {
     setTimeout(() => setToastMessage(null), 2500);
   };
 
-  const savePlanToHistory = async (newPlan: TripPlan) => {
+  const savePlanToHistory = async (newPlan: TripPlan, explicitToken?: string) => {
+    const activeToken = explicitToken || token || localStorage.getItem('tripmax_token');
+    // Guest trips are never saved to All Trips until user is logged in
+    if (!activeToken) {
+      return;
+    }
+
     const record: SavedTripRecord = {
       id: newPlan.id,
       destination: newPlan.destination,
@@ -213,13 +225,13 @@ export const App = () => {
       return updated;
     });
 
-    if (token) {
+    if (activeToken) {
       try {
         const res = await fetch(`${API_BASE}/api/trips`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
+            'Authorization': `Bearer ${activeToken}`
           },
           body: JSON.stringify({ plan: newPlan })
         });
@@ -360,7 +372,9 @@ export const App = () => {
       if (res.ok) {
         const data: TripPlan = await res.json();
         setPlan(data);
-        savePlanToHistory(data);
+        if (token && user) {
+          savePlanToHistory(data);
+        }
         setCurrentView('itinerary');
 
         try {
@@ -376,7 +390,9 @@ export const App = () => {
           {
             id: `done-${Date.now()}`,
             role: 'assistant',
-            content: `Your complete, day-by-day travel architecture for ${data.destination} has been generated and saved to your trips archive!\n\nUse the sidebar to explore your Itinerary, compare Flights vs Trains, view Stays, and inspect your Budget Blueprint. Ask me anytime if you wish to adjust any detail.`,
+            content: (token && user)
+              ? `Your complete, day-by-day travel architecture for ${data.destination} has been generated and saved to your cloud trips archive!\n\nUse the sidebar to explore your Itinerary, compare Flights vs Trains, view Stays, and inspect your Budget Blueprint. Ask me anytime if you wish to adjust any detail.`
+              : `Your complete, day-by-day travel architecture for ${data.destination} has been generated!\n\nNote: You are currently browsing as a guest. Your trip is live across all tabs (Itinerary, Transit, Stays, Budget), but will not be saved to your All Trips archive until you create an account.\n\nAsk me anytime if you wish to adjust any detail.`,
             agent_name: "Orchestrator",
             stage: "plan_ready"
           }
@@ -426,7 +442,9 @@ export const App = () => {
       if (res.ok) {
         const data: TripPlan = await res.json();
         setPlan(data);
-        savePlanToHistory(data);
+        if (token && user) {
+          savePlanToHistory(data);
+        }
         setCurrentView('itinerary');
         setPreferences({
           destination: data.destination,
@@ -616,44 +634,7 @@ export const App = () => {
 
   const handleExportPlan = () => {
     if (!plan) return;
-    const content = `# TripMax Travel Plan: ${plan.destination}
-Origin: ${plan.origin}
-Duration: ${plan.duration_days} Days
-Dates: ${plan.dates}
-Projected Budget: ${plan.budget.currency} ${plan.budget.total_estimated}
-
-## Overview
-${plan.overview}
-
-## Transit Options
-### Flights
-${plan.flights.map((f) => `• ${f.airline} (${f.departure} to ${f.arrival}): ${f.currency} ${f.estimated_price} [Book: ${f.booking_url}]`).join('\n')}
-
-### Trains
-${plan.trains.map((t) => `• ${t.train_name} (${t.operator}): ${t.currency} ${t.estimated_price} [Book: ${t.booking_url}]`).join('\n')}
-
-## Curated Stays
-${plan.stays.map((s) => `• ${s.name} (${s.neighborhood}): ${s.currency} ${s.price_per_night}/night [Book: ${s.booking_url}]`).join('\n')}
-
-## Day-by-Day Schedule
-${plan.itinerary.map((d) => `### Day ${d.day}: ${d.title}
-• Morning: ${d.morning.title} (${d.morning.location})
-• Afternoon: ${d.afternoon.title} (${d.afternoon.location})
-• Evening: ${d.evening.title} (${d.evening.location})
-• Lunch: ${d.lunch_recommendation.place} (Dish: ${d.lunch_recommendation.dish})
-• Dinner: ${d.dinner_recommendation.place} (Dish: ${d.dinner_recommendation.dish})
-• Transit Tip: ${d.transit_tips}
-`).join('\n')}
-`;
-
-    const blob = new Blob([content], { type: 'text/markdown' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `TripMax-${plan.destination.replace(/[^a-zA-Z0-9]/g, '_')}-Plan.md`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
+    setIsExportModalOpen(true);
   };
 
   if (isAuthChecking) {
@@ -777,6 +758,13 @@ ${plan.itinerary.map((d) => `### Day ${d.day}: ${d.title}
               <SavedTripsTab
                 savedTrips={savedTrips}
                 currentTripId={plan?.id || null}
+                currentPlan={plan}
+                isLoggedIn={!!user && !!token}
+                onOpenAuth={() => {
+                  setAuthSubtitleHint('Sign in or create an account to view and sync your All Trips cloud archive.');
+                  setIsAuthOpen(true);
+                }}
+                onSaveCurrentTrip={() => handleSaveTrip(plan || undefined)}
                 onSelectTrip={handleSelectTrip}
                 onDeleteTrip={handleDeleteTrip}
                 onNewTrip={promptResetTrip}
@@ -839,9 +827,21 @@ ${plan.itinerary.map((d) => `### Day ${d.day}: ${d.title}
       <ResetTripModal
         isOpen={isResetModalOpen}
         destinationName={plan?.destination || preferences.destination}
+        isLoggedIn={!!user && !!token}
         onClose={() => setIsResetModalOpen(false)}
         onDeleteAndReset={handleDeleteAndReset}
         onSaveAndReset={handleSaveAndReset}
+        onAuthToSave={() => {
+          setIsResetModalOpen(false);
+          handleSaveTrip();
+        }}
+      />
+
+      {/* Export Trip Modal */}
+      <ExportModal
+        isOpen={isExportModalOpen}
+        plan={plan}
+        onClose={() => setIsExportModalOpen(false)}
       />
 
       {/* Auth Modal Overlay */}

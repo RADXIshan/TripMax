@@ -80,7 +80,7 @@ export const Header: React.FC<HeaderProps> = ({
           {plan && (
             <button
               onClick={onExport}
-              title="Export Trip Plan"
+              title="Export Trip Plan (PDF or Word Document)"
               className="p-2 rounded-lg text-stone-600 hover:bg-stone-100 transition-colors cursor-pointer"
             >
               <Download className="w-4 h-4" />

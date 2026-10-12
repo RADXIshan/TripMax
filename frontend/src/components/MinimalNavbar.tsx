@@ -103,7 +103,7 @@ export const MinimalNavbar: React.FC<MinimalNavbarProps> = ({
         {plan && (
           <button
             onClick={onExport}
-            title="Export Trip Plan as Markdown"
+            title="Export Trip Plan (PDF or Word Document)"
             className="p-1.5 rounded-lg text-stone-400 hover:bg-stone-800 hover:text-stone-200 transition-colors cursor-pointer"
           >
             <Download className="w-4 h-4" />

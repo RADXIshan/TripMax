@@ -2,7 +2,7 @@ from typing import List, Tuple, Optional, Dict, Any
 import asyncio
 from app.models.trip import TripPreferences, FlightOption, TrainOption
 from app.services.destination_knowledge import get_destination_data
-from app.services.link_crawler import link_crawler, is_indian_locale
+from app.services.link_crawler import link_crawler, is_indian_locale, resolve_iata
 from app.services.deep_links import (
     get_google_flights_url,
     get_skyscanner_url,
@@ -29,28 +29,31 @@ class TransitAgent:
         if currency == "INR":
             if is_domestic:
                 if p <= 0:
-                    p = 4200.0
-                elif p < 250:
+                    p = 10800.0
+                elif p < 400:
                     p = p * 83.0
-                p = max(min(p, 5800.0), 3400.0)
-                if budget and budget > 0 and budget < 35000:
-                    p = min(p, max(round(budget * 0.22), 3200.0))
+                # Realistic domestic roundtrip fare range: ₹7,500 to ₹16,500
+                p = max(min(p, 16500.0), 7500.0)
             else:
                 if p <= 0:
-                    p = 32000.0
+                    p = 56000.0
                 elif p < 1500:
                     p = p * 83.0
+                p = max(min(p, 95000.0), 28000.0)
             return round(p, 0)
         else:
             if is_domestic:
                 if p <= 0:
-                    p = 65.0
+                    p = 145.0
                 elif p > 500 and currency != "JPY":
                     p = p / 83.0
-                p = max(min(p, 140.0), 45.0)
+                p = max(min(p, 260.0), 95.0)
             else:
                 if p <= 0:
-                    p = 450.0
+                    p = 720.0
+                elif p > 4000 and currency != "JPY":
+                    p = p / 83.0
+                p = max(min(p, 1300.0), 350.0)
             return round(p, 0)
 
     @classmethod
@@ -63,28 +66,26 @@ class TransitAgent:
         if currency == "INR":
             if is_india:
                 if p <= 0:
-                    p = 1250.0
-                elif p < 60:
+                    p = 1850.0
+                elif p < 80:
                     p = p * 83.0
-                p = max(min(p, 2200.0), 380.0)
-                if budget and budget > 0 and budget < 30000:
-                    p = min(p, 1250.0)
+                p = max(min(p, 3600.0), 950.0)
             else:
                 if p <= 0:
-                    p = 3500.0
-                elif p < 100:
+                    p = 4500.0
+                elif p < 120:
                     p = p * 83.0
             return round(p, 0)
         else:
             if is_india:
                 if p <= 0:
-                    p = 16.0
+                    p = 24.0
                 elif p > 200 and currency != "JPY":
                     p = p / 83.0
-                p = max(min(p, 30.0), 8.0)
+                p = max(min(p, 45.0), 12.0)
             else:
                 if p <= 0:
-                    p = 55.0
+                    p = 65.0
             return round(p, 0)
 
     @classmethod
@@ -222,15 +223,19 @@ class TransitAgent:
             if dest_data and dest_data.get("flights"):
                 if not flights:
                     flights = []
+                    orig_code = resolve_iata(origin)
+                    dest_code = resolve_iata(dest)
+                    orig_label = f"{origin} ({orig_code})" if orig_code else f"{origin} Airport"
+                    dest_label = f"{dest} ({dest_code})" if dest_code else f"{dest} Airport"
                     for f in dest_data["flights"]:
                         flights.append(FlightOption(
                             airline=f["airline"],
                             flight_number=f["flight_number"],
-                            departure=f"{origin} Airport",
-                            arrival=f"{dest} Airport",
+                            departure=orig_label,
+                            arrival=dest_label,
                             duration=f.get("duration", "Direct Express"),
                             stops=f.get("stops", "Non-stop"),
-                            estimated_price=cls._calibrate_flight_fare(f.get("price_usd", 55), curr, is_domestic_in, prefs.budget_amount),
+                            estimated_price=cls._calibrate_flight_fare(f.get("price_usd", 135), curr, is_domestic_in, prefs.budget_amount),
                             currency=curr,
                             pros=f["pros"],
                             cons=f["cons"],
