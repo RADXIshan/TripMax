@@ -1,6 +1,5 @@
 import React from 'react';
 import { 
-  Compass, 
   Download, 
   ChevronRight,
   Loader2,
@@ -16,9 +15,8 @@ interface MinimalNavbarProps {
   currency: string;
   onCurrencyChange: (c: string) => void;
   onExport: () => void;
-  onLoadSample: () => void;
   onSaveTrip?: () => void;
-  isLoading: boolean;
+  isLoading?: boolean;
   isGeneratingPlan: boolean;
 }
 
@@ -28,9 +26,7 @@ export const MinimalNavbar: React.FC<MinimalNavbarProps> = ({
   currency,
   onCurrencyChange,
   onExport,
-  onLoadSample,
   onSaveTrip,
-  isLoading,
   isGeneratingPlan
 }) => {
   const viewTitles: Record<NavView, string> = {
@@ -77,17 +73,6 @@ export const MinimalNavbar: React.FC<MinimalNavbarProps> = ({
           onCurrencyChange={onCurrencyChange}
           align="right"
         />
-
-        {!plan && (
-          <button
-            onClick={onLoadSample}
-            disabled={isLoading || isGeneratingPlan}
-            className="text-xs px-2.5 py-1 rounded-lg border border-stone-700 hover:bg-stone-800 text-stone-300 transition-colors flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
-          >
-            <Compass className="w-3.5 h-3.5 text-stone-400" />
-            <span>Sample Trip</span>
-          </button>
-        )}
 
         {plan && onSaveTrip && (
           <button

@@ -430,50 +430,6 @@ export const App = () => {
     }
   };
 
-  const loadSamplePlan = async () => {
-    setIsLoading(true);
-    try {
-      const authHeaders: Record<string, string> = {
-        ...(token ? { 'Authorization': `Bearer ${token}` } : {})
-      };
-      const res = await fetch(`${API_BASE}/api/plan/sample`, {
-        headers: authHeaders
-      });
-      if (res.ok) {
-        const data: TripPlan = await res.json();
-        setPlan(data);
-        if (token && user) {
-          savePlanToHistory(data);
-        }
-        setCurrentView('itinerary');
-        setPreferences({
-          destination: data.destination,
-          origin: data.origin,
-          duration_days: data.duration_days,
-          budget_amount: data.budget.target_budget || 220000,
-          budget_currency: data.budget.currency || 'INR',
-          interests: ['culture & history', 'food', 'photography & viewpoints'],
-          travel_pace: 'balanced',
-          party_type: 'Couple / Romantic'
-        });
-        setMessages((prev) => [
-          ...prev,
-          {
-            id: `sample-${Date.now()}`,
-            role: 'assistant',
-            content: `Loaded sample 5-day curated journey for ${data.destination}! You can inspect the itinerary on the dashboard or tell me any adjustments you would like to make.`,
-            agent_name: "Discovery Agent",
-            stage: "plan_ready"
-          }
-        ]);
-      }
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   const handleNewTrip = () => {
     setPlan(null);
     setCurrentView('chat');
@@ -681,7 +637,6 @@ export const App = () => {
           currency={currency}
           onCurrencyChange={handleCurrencyChange}
           onExport={handleExportPlan}
-          onLoadSample={loadSamplePlan}
           onSaveTrip={handleSaveTrip}
           isLoading={isLoading}
           isGeneratingPlan={isGeneratingPlan}
@@ -768,7 +723,6 @@ export const App = () => {
                 onSelectTrip={handleSelectTrip}
                 onDeleteTrip={handleDeleteTrip}
                 onNewTrip={promptResetTrip}
-                onLoadPreset={() => loadSamplePlan()}
               />
             </div>
           )}
@@ -792,7 +746,7 @@ export const App = () => {
                     No Trip Generated Yet
                   </h3>
                   <p className="text-xs text-stone-400 leading-relaxed">
-                    Begin chatting in the Discovery Studio to define your trip, or load our instant sample preview.
+                    Begin chatting in the Discovery Studio to define and architect your trip.
                   </p>
                   <div className="flex items-center justify-center gap-2 pt-2">
                     <button
@@ -801,12 +755,6 @@ export const App = () => {
                     >
                       <MessageSquare className="w-3.5 h-3.5" />
                       <span>Open Discovery Studio</span>
-                    </button>
-                    <button
-                      onClick={loadSamplePlan}
-                      className="px-4 py-2 rounded-xl border border-stone-700 hover:bg-stone-800 text-stone-300 text-xs font-semibold cursor-pointer"
-                    >
-                      Load Sample Preview
                     </button>
                   </div>
                 </div>

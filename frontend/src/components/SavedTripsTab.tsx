@@ -35,7 +35,6 @@ interface SavedTripsTabProps {
   onSelectTrip: (plan: TripPlan) => void;
   onDeleteTrip: (id: string) => void;
   onNewTrip: () => void;
-  onLoadPreset: (destination: string) => void;
   onSaveCurrentTrip?: () => void;
 }
 
@@ -48,7 +47,6 @@ export const SavedTripsTab: React.FC<SavedTripsTabProps> = ({
   onSelectTrip,
   onDeleteTrip,
   onNewTrip,
-  onLoadPreset,
   onSaveCurrentTrip,
 }) => {
   return (
@@ -254,12 +252,6 @@ export const SavedTripsTab: React.FC<SavedTripsTabProps> = ({
                 Sign In / Create Account
               </button>
             )}
-            <button
-              onClick={() => onLoadPreset('Kyoto')}
-              className="text-xs px-3 py-1.5 rounded-xl border border-stone-750 hover:bg-stone-800 text-stone-300 cursor-pointer"
-            >
-              Load Kyoto Sample
-            </button>
             <button
               onClick={onNewTrip}
               className="text-xs px-3.5 py-1.5 rounded-xl bg-stone-100 hover:bg-white text-stone-900 font-semibold cursor-pointer transition-all shadow-xs hover:shadow"

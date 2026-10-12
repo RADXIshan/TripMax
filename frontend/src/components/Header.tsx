@@ -11,8 +11,8 @@ interface HeaderProps {
   onCurrencyChange: (c: string) => void;
   onOpenLiveSearch?: () => void;
   onExport: () => void;
-  onLoadSample: () => void;
-  isLoading: boolean;
+  onLoadSample?: () => void;
+  isLoading?: boolean;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -20,8 +20,6 @@ export const Header: React.FC<HeaderProps> = ({
   currency,
   onCurrencyChange,
   onExport,
-  onLoadSample,
-  isLoading
 }) => {
   return (
     <header className="border-b border-stone-200 bg-white sticky top-0 z-30 transition-colors">
@@ -57,18 +55,6 @@ export const Header: React.FC<HeaderProps> = ({
 
         {/* Actions */}
         <div className="flex items-center gap-2">
-          {/* Quick Sample Button */}
-          {!plan && (
-            <button
-              onClick={onLoadSample}
-              disabled={isLoading}
-              className="text-xs px-3 py-1.5 rounded-lg border border-stone-300 hover:bg-stone-100 text-stone-700 transition-colors flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
-            >
-              <Compass className="w-3.5 h-3.5 text-stone-500" />
-              <span>Sample Trip</span>
-            </button>
-          )}
-
           {/* Currency Dropdown */}
           <CurrencyDropdown
             currency={currency}

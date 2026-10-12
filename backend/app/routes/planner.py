@@ -81,26 +81,3 @@ async def refine_trip(
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@router.get("/sample")
-async def get_sample_plan():
-    """Generates a sample curated trip plan for instant preview"""
-    sample_prefs = TripPreferences(
-        destination="Tokyo & Kyoto, Japan",
-        origin="New Delhi (DEL)",
-        dates="Nov 10 – Nov 17, 2026",
-        start_date="2026-11-10",
-        end_date="2026-11-17",
-        travel_month="November 2026",
-        season="Autumn",
-        duration_days=7,
-        budget_amount=220000.0,
-        budget_currency="INR",
-        party_type="Couple / Romantic",
-        travel_pace="balanced",
-        transport_preference="both",
-        stay_preference="Boutique & Authentic Stays",
-        dining_preference="Local Culinary Tastings & Street Food",
-        interests=["culture & history", "food", "photography & viewpoints"]
-    )
-    plan = await orchestrator.generate_trip_plan(sample_prefs)
-    return plan

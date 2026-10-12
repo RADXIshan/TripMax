@@ -391,7 +391,6 @@ TripMax/
 | :--- | :--- | :--- |
 | `POST` | `/api/plan/generate` | Triggers the full multi-agent pipeline to generate an end-to-end `TripPlan`. Automatically links to the authenticated user's account. |
 | `POST` | `/api/plan/refine` | Refines an existing plan based on a natural language instruction (e.g., *"Make it cheaper"* or *"Add more food spots"*). |
-| `GET` | `/api/plan/sample` | Returns a pre-built sample plan (Tokyo & Kyoto) for instant testing. |
 
 ### 4. Cloud Trips Persistence (`/api/trips`)
 | Method | Endpoint | Description | Auth Required |
