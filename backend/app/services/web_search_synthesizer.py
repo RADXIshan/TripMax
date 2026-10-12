@@ -18,6 +18,7 @@ from app.services.deep_links import (
     get_viator_url
 )
 from app.services.link_crawler import link_crawler, is_indian_locale
+from app.services.pricing_intelligence import resolve_attraction_cost, calculate_daily_budget
 from app.models.trip import (
     TripPreferences,
     StayOption,
@@ -332,7 +333,7 @@ CRITICAL ACCURACY RULES:
                         location=m.get("location", f"Central {dest}"),
                         duration=m.get("duration", "2.5 hours"),
                         description=m.get("description", f"Explore this premier highlight in {dest}."),
-                        estimated_cost=float(m.get("estimated_cost", 15)),
+                        estimated_cost=resolve_attraction_cost(m_title, dest, curr),
                         booking_url=m_links[0].url if m_links else get_attraction_booking_url(m_title, dest),
                         tags=m.get("tags", ["Must See", "Iconic", "Culture"]),
                         image_url=m_img,
@@ -347,7 +348,7 @@ CRITICAL ACCURACY RULES:
                         location=a.get("location", f"Historic Quarter, {dest}"),
                         duration=a.get("duration", "2.5 hours"),
                         description=a.get("description", f"Discover charming neighborhoods and local treasures in {dest}."),
-                        estimated_cost=float(a.get("estimated_cost", 10)),
+                        estimated_cost=resolve_attraction_cost(a_title, dest, curr),
                         booking_url=a_links[0].url if a_links else get_attraction_booking_url(a_title, dest),
                         tags=a.get("tags", ["Artisan", "Heritage", "Walk"]),
                         image_url=a_img,
@@ -362,7 +363,7 @@ CRITICAL ACCURACY RULES:
                         location=e.get("location", f"Skyline Lookout / Waterfront, {dest}"),
                         duration=e.get("duration", "2 hours"),
                         description=e.get("description", f"Watch golden hour light bathe {dest}, followed by relaxed evening strolls."),
-                        estimated_cost=float(e.get("estimated_cost", 0)),
+                        estimated_cost=resolve_attraction_cost(e_title, dest, curr),
                         booking_url=e_links[0].url if e_links else get_viator_url(e_title, dest),
                         tags=e.get("tags", ["Golden Hour", "Sunset", "Atmosphere"]),
                         image_url=e_img,
@@ -390,7 +391,7 @@ CRITICAL ACCURACY RULES:
                         source_snippet=f"Authentic culinary hotspot showcasing local culinary heritage in {dest}."
                     ),
                     transit_tips=raw_d.get("transit_tips", f"Use the local metro or municipal transit smartcard for quick transfers in {dest}."),
-                    daily_budget_estimate=round(75.0, 0),
+                    daily_budget_estimate=calculate_daily_budget(dest, curr),
                     sources=[
                         ResearchSource(
                             title=f"Wikitravel Comprehensive Guide: {dest}",
@@ -521,7 +522,7 @@ CRITICAL ACCURACY RULES:
                     location=f"Central {dest}",
                     duration="2.5 hours",
                     description=f"Explore {attract_1}, one of the most celebrated highlights in {dest}, with early entry to beat queues.",
-                    estimated_cost=15.0,
+                    estimated_cost=resolve_attraction_cost(attract_1, dest, curr),
                     booking_url=m_links[0].url if m_links else get_attraction_booking_url(attract_1, dest),
                     tags=["Must See", "Iconic", "Culture"],
                     image_url=img_1,
@@ -536,7 +537,7 @@ CRITICAL ACCURACY RULES:
                     location=f"Historic Quarter, {dest}",
                     duration="2.5 hours",
                     description=f"Visit {attract_2}, followed by strolling historic cobblestone streets and artisan shops.",
-                    estimated_cost=10.0,
+                    estimated_cost=resolve_attraction_cost(attract_2, dest, curr),
                     booking_url=a_links[0].url if a_links else get_attraction_booking_url(attract_2, dest),
                     tags=["Artisan", "Architecture", "Walk"],
                     image_url=img_2,
@@ -551,7 +552,7 @@ CRITICAL ACCURACY RULES:
                     location=f"Skyline Terrace / Waterfront, {dest}",
                     duration="2 hours",
                     description=f"Watch the sunset illuminate {dest}'s coastline and skyline, followed by relaxed drinks and evening ambiance.",
-                    estimated_cost=0.0,
+                    estimated_cost=resolve_attraction_cost(f"{dest} Sunset Vantage", dest, curr),
                     booking_url=e_links[0].url if e_links else get_viator_url(f"{dest} evening tour", dest),
                     tags=["Sunset", "Relaxation", "Skyline"],
                     image_url=sunset_img,
@@ -579,7 +580,7 @@ CRITICAL ACCURACY RULES:
                     source_snippet=f"Celebrated evening dining spotlight with authentic regional flavors."
                 ),
                 transit_tips=f"Pick up the local public transit pass or use registered ride-hailing for convenient city exploration in {dest}.",
-                daily_budget_estimate=70.0,
+                daily_budget_estimate=calculate_daily_budget(dest, curr),
                 sources=[
                     ResearchSource(
                         title=f"Wikitravel Comprehensive Destination Guide: {dest}",

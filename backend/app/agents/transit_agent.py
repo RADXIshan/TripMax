@@ -135,6 +135,12 @@ class TransitAgent:
         flights: List[FlightOption] = []
         trains: List[TrainOption] = []
 
+        is_rt = bool(return_date and return_date.strip())
+        from app.services.pricing_intelligence import calculate_route_flight_fares
+        route_budget_fare, route_full_fare, route_carrier_b, route_carrier_f = calculate_route_flight_fares(
+            origin, dest, curr, is_roundtrip=is_rt
+        )
+
         is_domestic_in = (c_orig == "india" and c_dest == "india") or is_indian_locale(origin, dest)
 
         # 1. Check Gemini dynamic generative transit first
@@ -143,8 +149,15 @@ class TransitAgent:
                 airline = f.get("airline") or f.get("carrier") or "Flagship Regional Carrier"
                 f_num = f.get("flight_number") or f.get("flight_no") or "Direct Flight"
                 dur = f.get("duration") or "Direct Flight"
-                raw_price = f.get("price") or f.get("estimated_price")
-                final_f_price = cls._calibrate_flight_fare(raw_price, curr, is_domestic_in, prefs.budget_amount)
+                raw_price = f.get("estimated_price") or f.get("price") or 0.0
+                try:
+                    raw_price = float(raw_price)
+                except (ValueError, TypeError):
+                    raw_price = 0.0
+                expected_fare = route_budget_fare if len(flights) == 0 else route_full_fare
+                final_f_price = cls._calibrate_flight_fare(raw_price or expected_fare, curr, is_domestic_in, prefs.budget_amount)
+                if not raw_price or raw_price <= 0 or abs(final_f_price - expected_fare) > (expected_fare * 0.5):
+                    final_f_price = expected_fare
                 
                 raw_pros = f.get("pros")
                 if not raw_pros:
@@ -227,7 +240,8 @@ class TransitAgent:
                     dest_code = resolve_iata(dest)
                     orig_label = f"{origin} ({orig_code})" if orig_code else f"{origin} Airport"
                     dest_label = f"{dest} ({dest_code})" if dest_code else f"{dest} Airport"
-                    for f in dest_data["flights"]:
+                    for idx_f, f in enumerate(dest_data["flights"][:2]):
+                        assigned_fare = route_full_fare if idx_f == 0 else route_budget_fare
                         flights.append(FlightOption(
                             airline=f["airline"],
                             flight_number=f["flight_number"],
@@ -235,7 +249,7 @@ class TransitAgent:
                             arrival=dest_label,
                             duration=f.get("duration", "Direct Express"),
                             stops=f.get("stops", "Non-stop"),
-                            estimated_price=cls._calibrate_flight_fare(f.get("price_usd", 135), curr, is_domestic_in, prefs.budget_amount),
+                            estimated_price=assigned_fare,
                             currency=curr,
                             pros=f["pros"],
                             cons=f["cons"],
@@ -317,13 +331,13 @@ class TransitAgent:
         if is_india:
             flights = [
                 FlightOption(
-                    airline="IndiGo Airlines (6E)",
+                    airline=route_carrier_b,
                     flight_number="6E 521 / 6E 6032 Direct Non-Stop",
                     departure=f"{origin} Airport",
                     arrival=f"{dest} Airport",
                     duration="2 hours 10 mins (Non-stop)",
                     stops="Non-stop",
-                    estimated_price=round(5400 if curr == "INR" else 65 * rate, 0),
+                    estimated_price=route_budget_fare,
                     currency=curr,
                     pros=[
                         "Over 88% on-time departure guarantee across Indian skies",
@@ -339,13 +353,13 @@ class TransitAgent:
                     image_url="https://images.unsplash.com/photo-1436491865332-7a61a109cc05?auto=format&fit=crop&w=1000&q=80"
                 ),
                 FlightOption(
-                    airline="Air India / Akasa Air",
+                    airline=route_carrier_f,
                     flight_number="AI 784 / QP 1308 Express",
                     departure=f"{origin} Main Terminal",
                     arrival=f"{dest} Terminal 1",
                     duration="2 hours 25 mins",
                     stops="Non-stop",
-                    estimated_price=round(4800 if curr == "INR" else 58 * rate, 0),
+                    estimated_price=route_full_fare,
                     currency=curr,
                     pros=[
                         "Complimentary hot meals and beverages served onboard (Air India)",
@@ -829,7 +843,7 @@ class TransitAgent:
                     arrival=f"{dest} International Airport",
                     duration="Direct / Shortest Transit",
                     stops="Non-stop / 1 Fast Connection",
-                    estimated_price=round(480 * rate, 0),
+                    estimated_price=route_full_fare,
                     currency=curr,
                     pros=["Highest reliability and punctuality rating", "Full meal service and 2 checked bags included", "Flexible rebooking policy"],
                     cons=["Higher fare than ultra-budget carriers"],
@@ -847,7 +861,7 @@ class TransitAgent:
                     arrival=f"{dest} Airport",
                     duration="1 Layover",
                     stops="1 Stop",
-                    estimated_price=round(320 * rate, 0),
+                    estimated_price=route_budget_fare,
                     currency=curr,
                     pros=["Saves up to 35% on fare while maintaining comfortable transit", "Frequent departures"],
                     cons=["Luggage fees may apply depending on fare class"],

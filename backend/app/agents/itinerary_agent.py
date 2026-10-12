@@ -5,6 +5,7 @@ from app.models.trip import TripPreferences, ItineraryDay, ActivityItem, DiningR
 from app.services.deep_links import get_attraction_booking_url, get_viator_url, get_multi_activity_links
 from app.services.destination_knowledge import get_destination_data
 from app.services.image_service import image_service
+from app.services.pricing_intelligence import resolve_attraction_cost, calculate_daily_budget
 
 class ItineraryAgent:
     """
@@ -32,9 +33,9 @@ class ItineraryAgent:
         food_img_1 = image_service.get_image_for_query(l.get("wiki_query") or l["dish"], category="food", destination=dest)
         food_img_2 = image_service.get_image_for_query(din.get("wiki_query") or din["dish"], category="food", destination=dest)
 
-        m_cost = round(m["cost"] * rate, 1)
-        a_cost = round(a["cost"] * rate, 1)
-        e_cost = round(e["cost"] * rate, 1)
+        m_cost = resolve_attraction_cost(m_title, dest, curr)
+        a_cost = resolve_attraction_cost(a_title, dest, curr)
+        e_cost = resolve_attraction_cost(e_title, dest, curr)
 
         m_links = get_multi_activity_links(m_title, dest, m_cost, curr)
         a_links = get_multi_activity_links(a_title, dest, a_cost, curr)
@@ -109,14 +110,13 @@ class ItineraryAgent:
                 source_snippet=din["source_snippet"]
             ),
             transit_tips=t["transit_tips"],
-            daily_budget_estimate=round(85 * rate, 0),
+            daily_budget_estimate=calculate_daily_budget(dest, curr),
             sources=[
                 ResearchSource(title=m["source_name"], url=m["source_url"], snippet=m["source_snippet"]),
                 ResearchSource(title=l["source_name"], url=l["source_url"], snippet=l["source_snippet"])
             ]
         )
 
-    @classmethod
     @classmethod
     async def generate_day_by_day(
         cls, 
