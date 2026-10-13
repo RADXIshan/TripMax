@@ -276,7 +276,7 @@ export const AutoBookingModal: React.FC<AutoBookingModalProps> = ({
                       src={result.screenshot}
                       alt="Cart Screenshot"
                       className={`w-full object-cover transition-all cursor-pointer ${
-                        isScreenshotExpanded ? 'max-h-[500px] object-contain' : 'max-h-56'
+                        isScreenshotExpanded ? 'max-h-125 object-contain' : 'max-h-56'
                       }`}
                       onClick={() => setIsScreenshotExpanded(!isScreenshotExpanded)}
                     />

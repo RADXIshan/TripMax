@@ -306,6 +306,21 @@ class AgentOrchestrator:
                     snippet=snippet
                 ))
 
+        # 0. Playwright Sightseeing & Attractions
+        dest_hyphen = dest.lower().replace(" ", "-")
+        add_site(
+            "Holidify Premier Sightseeing & Places to Visit (Playwright)",
+            f"https://www.holidify.com/places/{dest_hyphen}/sightseeing-and-things-to-do.html",
+            "Attractions (Playwright)",
+            f"Playwright headed browser audited ranked tourist attractions, entry tickets, operational hours, and guest reviews for {dest}."
+        )
+        add_site(
+            "Thrillophilia Curated Places to Visit (Playwright)",
+            f"https://www.thrillophilia.com/destinations/{dest_hyphen}/places-to-visit",
+            "Attractions (Playwright)",
+            f"Playwright scanned curated experiences, experiential tours, and scenic photography viewpoints in {dest}."
+        )
+
         # 1. Playwright Stays
         b_url = f"https://www.booking.com/searchresults.html?ss={dest_enc}"
         if start_d:

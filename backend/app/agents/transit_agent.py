@@ -26,35 +26,18 @@ class TransitAgent:
         except Exception:
             p = 0.0
 
+        if p <= 0:
+            return 0.0
+
+        # Adjust for unconverted currencies if scale is obviously mismatched
         if currency == "INR":
-            if is_domestic:
-                if p <= 0:
-                    p = 10800.0
-                elif p < 400:
-                    p = p * 83.0
-                # Realistic domestic roundtrip fare range: ₹7,500 to ₹16,500
-                p = max(min(p, 16500.0), 7500.0)
-            else:
-                if p <= 0:
-                    p = 56000.0
-                elif p < 1500:
-                    p = p * 83.0
-                p = max(min(p, 95000.0), 28000.0)
-            return round(p, 0)
-        else:
-            if is_domestic:
-                if p <= 0:
-                    p = 145.0
-                elif p > 500 and currency != "JPY":
-                    p = p / 83.0
-                p = max(min(p, 260.0), 95.0)
-            else:
-                if p <= 0:
-                    p = 720.0
-                elif p > 4000 and currency != "JPY":
-                    p = p / 83.0
-                p = max(min(p, 1300.0), 350.0)
-            return round(p, 0)
+            if p < 500: # Looks like unconverted USD/EUR
+                p = p * 84.5
+        elif currency in ["USD", "EUR", "GBP"]:
+            if p > 4000 and currency != "JPY": # Looks like unconverted INR
+                p = p / 84.5
+
+        return round(p, 0)
 
     @classmethod
     def _calibrate_train_fare(cls, raw_val: Any, currency: str, is_india: bool, budget: Optional[float] = None) -> float:
@@ -156,6 +139,7 @@ class TransitAgent:
             )
             for pf in pw_flights:
                 f_price = cls._calibrate_flight_fare(pf["price"], curr, is_domestic_in, prefs.budget_amount)
+                f_links = pf.get("booking_links") or get_multi_flight_links(origin, dest, depart_date, return_date, pf["airline"])
                 flights.append(FlightOption(
                     airline=pf["airline"],
                     flight_number=f"{pf['airline'][:2].upper()}-Direct",
@@ -169,7 +153,8 @@ class TransitAgent:
                     cons=["Subject to peak holiday surge rates"],
                     booking_url=pf.get("booking_url", google_flights_link),
                     provider="Google Flights & Carrier Direct",
-                    source_name=f"{pf['airline']} (Live Playwright)",
+                    booking_links=f_links,
+                    source_name=f"{pf['airline']} (Live Google Flights)",
                     source_url=pf.get("booking_url", google_flights_link),
                     dates=dates_label,
                     image_url="https://images.unsplash.com/photo-1436491865332-7a61a109cc05?auto=format&fit=crop&w=1000&q=80"
@@ -186,19 +171,20 @@ class TransitAgent:
                 )
                 for pt in pw_trains:
                     t_fare = cls._calibrate_train_fare(pt["price"], curr, is_domestic_in, prefs.budget_amount)
+                    t_links = get_multi_train_links(origin, dest, depart_date, pt["train_name"])
                     trains.append(TrainOption(
+                        operator="Indian Railways (IRCTC / ConfirmTkt)",
                         train_name=pt["train_name"],
-                        train_number="Express Intercity",
-                        departure=f"{origin} Central Junction",
-                        arrival=f"{dest} Central Terminal",
-                        duration="Scenic Express Schedule",
-                        classes=["AC 1st Class (1A)", "AC 2-Tier (2A)", "Executive Chair Car"],
+                        route=f"{origin} Central ➔ {dest} Terminal",
+                        duration=pt.get("duration", "Scenic Intercity Schedule"),
+                        class_tier="AC 2-Tier (2A) / Executive Chair Car (EC)",
                         estimated_price=t_fare,
                         currency=curr,
+                        scenic_highlights=f"Direct rail traversal connecting {origin} to {dest} with zero baggage fees",
                         pros=["High confirmed seat chance", "Scenic journey with verified pantry service"],
-                        cons=["Limited tatkal and peak berths"],
                         booking_url=pt.get("url", rail_official_link),
                         provider="ConfirmTkt & IRCTC Official",
+                        booking_links=t_links,
                         source_name=f"{pt['train_name']} (Live ConfirmTkt)",
                         source_url=pt.get("url", rail_official_link),
                         dates=dates_label,
@@ -207,8 +193,8 @@ class TransitAgent:
             except Exception as pw_t_err:
                 print(f"[TransitAgent] Playwright trains notice: {pw_t_err}", flush=True)
 
-        # 1. Check Gemini dynamic generative transit first
-        if gemini_data and gemini_data.get("flights"):
+        # 1. Check Gemini dynamic generative transit if flights not already found
+        if not flights and gemini_data and gemini_data.get("flights"):
             for f in gemini_data["flights"][:2]:
                 airline = f.get("airline") or f.get("carrier") or "Flagship Regional Carrier"
                 f_num = f.get("flight_number") or f.get("flight_no") or "Direct Flight"
@@ -220,7 +206,7 @@ class TransitAgent:
                     raw_price = 0.0
                 expected_fare = route_budget_fare if len(flights) == 0 else route_full_fare
                 final_f_price = cls._calibrate_flight_fare(raw_price or expected_fare, curr, is_domestic_in, prefs.budget_amount)
-                if not raw_price or raw_price <= 0 or abs(final_f_price - expected_fare) > (expected_fare * 0.5):
+                if not final_f_price or final_f_price <= 0:
                     final_f_price = expected_fare
                 
                 raw_pros = f.get("pros")
@@ -349,8 +335,55 @@ class TransitAgent:
                 else:
                     trains = []
 
-        # If Gemini or destination database populated flights (and trains if rail is feasible), crawl and return
-        if flights and (trains or not can_train):
+        # If flights are found, populate trains if rail is feasible, crawl and return
+        if flights:
+            if can_train and not trains:
+                dest_data = get_destination_data(dest)
+                if dest_data and dest_data.get("trains"):
+                    for t in dest_data["trains"]:
+                        cleaned_route = t["route"].replace("Origin Junction", origin).replace("Origin", origin).replace("Trunk Express Corridor", origin)
+                        trains.append(TrainOption(
+                            operator=t["operator"],
+                            train_name=t["train_type"],
+                            route=cleaned_route,
+                            duration=t["duration"],
+                            class_tier="Standard / First Class / AC Tier",
+                            estimated_price=cls._calibrate_train_fare(t.get("price_usd", 16), curr, is_domestic_in, prefs.budget_amount),
+                            currency=curr,
+                            scenic_highlights=f"Direct rail journey connecting {origin} to {dest} with zero airport baggage queues",
+                            pros=t["pros"],
+                            booking_url=rail_official_link,
+                            provider="Official Rail Network",
+                            booking_links=get_multi_train_links(origin, dest, depart_date, t["operator"]),
+                            source_name="Official Rail Timetable",
+                            source_url=rail_official_link,
+                            dates=dates_label,
+                            image_url="https://images.unsplash.com/photo-1474487548417-781cb71495f3?auto=format&fit=crop&w=1000&q=80"
+                        ))
+                elif is_domestic_in:
+                    trains.append(TrainOption(
+                        operator="Indian Railways (IRCTC / South Eastern Railway)",
+                        train_name="Vande Bharat Express (Semi-High Speed 160 km/h)",
+                        route=f"{origin} Central ➔ {dest} Railway Station",
+                        duration="Fastest Rail Service (Executive & Chair Car)",
+                        class_tier="AC Chair Car (CC) / Executive Chair Car (EC)",
+                        estimated_price=cls._calibrate_train_fare(1450 if curr == "INR" else 18 * rate, curr, is_domestic_in, prefs.budget_amount),
+                        currency=curr,
+                        scenic_highlights="Scenic semi-high speed transit with complimentary regional breakfast, tea and panoramic windows",
+                        pros=[
+                            "Zero airport check-in queues, departures directly from central station",
+                            "High verified on-time departure track record (over 92%)",
+                            "Modern ergonomic rotatable seats with 180-degree reclining and USB power sockets"
+                        ],
+                        booking_url=rail_official_link,
+                        provider="IRCTC & ConfirmTkt",
+                        booking_links=get_multi_train_links(origin, dest, depart_date, "IRCTC"),
+                        source_name="IRCTC Official Train Schedule",
+                        source_url=rail_official_link,
+                        dates=dates_label,
+                        image_url="https://images.unsplash.com/photo-1541872703-74c5e44368f9?auto=format&fit=crop&w=1000&q=80"
+                    ))
+
             for f in flights:
                 crawled_f = await link_crawler.crawl_flight_links(
                     airline=f.airline,

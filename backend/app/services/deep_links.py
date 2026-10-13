@@ -111,6 +111,19 @@ def get_multi_flight_links(
         price_hint="Instant Seat Selection & Cashbacks"
     ))
 
+    # EaseMyTrip (Zero Convenience Fee)
+    if return_date:
+        emt_url = f"https://flight.easemytrip.com/FlightList/Index?srch={orig_iata}-{dest_iata}-{dep_ddmmyyyy}&r={dest_iata}-{orig_iata}-{ret_ddmmyyyy}&tripType=2"
+    else:
+        emt_url = f"https://flight.easemytrip.com/FlightList/Index?srch={orig_iata}-{dest_iata}-{dep_ddmmyyyy}"
+
+    links.append(BookingLink(
+        provider="EaseMyTrip",
+        label="EaseMyTrip (Zero Conv Fee)",
+        url=emt_url,
+        price_hint="Zero Convenience Fee Guarantee"
+    ))
+
     # Skyscanner Flights
     links.append(BookingLink(
         provider="Skyscanner",

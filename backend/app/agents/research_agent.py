@@ -66,7 +66,7 @@ class ResearchAgent:
         if len(sources) < 6:
             interests_str = " ".join(prefs.interests) if prefs.interests else "culture food scenic"
             queries = [
-                f"{dest} top attractions travel guide wikitravel",
+                f"{dest} top attractions places to visit holidify tripadvisor",
                 f"best places to stay hotels {dest}",
                 f"must eat traditional dishes {dest}"
             ]
@@ -102,22 +102,23 @@ class ResearchAgent:
 
         # 4. Fallback if offline/rate-limited
         if len(sources) < 3:
+            dest_hyphen = dest.lower().replace(' ', '-')
             dest_slug = dest.replace(' ', '_')
             sources.extend([
                 ResearchSource(
-                    title=f"Wikipedia Cultural & Architectural Archive: {dest}",
-                    url=f"https://en.wikipedia.org/wiki/{dest_slug}",
-                    snippet=f"Authoritative history, prominent monuments, museums, and architectural landmarks in {dest}."
-                ),
-                ResearchSource(
-                    title=f"Wikitravel Comprehensive Destination Guide: {dest}",
-                    url=f"https://wikitravel.org/en/{dest_slug}",
-                    snippet=f"District maps, cultural etiquette, transit hubs, and authentic neighborhood highlights for {dest}."
+                    title=f"Holidify Premier Sightseeing & Places to Visit: {dest}",
+                    url=f"https://www.holidify.com/places/{dest_hyphen}/sightseeing-and-things-to-do.html",
+                    snippet=f"Ranked tourist attractions, entry tickets, monuments, and authentic experiences in {dest}."
                 ),
                 ResearchSource(
                     title=f"TripAdvisor Verified Attractions & Gastronomy: {dest}",
                     url=f"https://www.tripadvisor.com/Search?q={urllib.parse.quote_plus(dest)}",
                     snippet=f"Traveler-vetted heritage landmarks, top-rated local dining bistros, and authentic street food experiences in {dest}."
+                ),
+                ResearchSource(
+                    title=f"Wikipedia Cultural & Architectural Archive: {dest}",
+                    url=f"https://en.wikipedia.org/wiki/{dest_slug}",
+                    snippet=f"Authoritative history, prominent monuments, museums, and architectural landmarks in {dest}."
                 )
             ])
 

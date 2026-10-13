@@ -1,3 +1,4 @@
+import asyncio
 import re
 from typing import Tuple, Optional, Dict, Any
 
@@ -257,26 +258,29 @@ def calculate_route_flight_fares(
         short_pairs = {
             ("BOM", "GOI"), ("GOI", "BOM"), ("DEL", "JAI"), ("JAI", "DEL"),
             ("BLR", "MAA"), ("MAA", "BLR"), ("BLR", "COK"), ("COK", "BLR"),
-            ("HYD", "BLR"), ("BLR", "HYD"), ("BOM", "PNQ"), ("PNQ", "BOM")
+            ("HYD", "BLR"), ("BLR", "HYD"), ("BOM", "PNQ"), ("PNQ", "BOM"),
+            ("DEL", "IXC"), ("IXC", "DEL"), ("DEL", "ATQ"), ("ATQ", "DEL"),
+            ("BOM", "AMD"), ("AMD", "BOM"), ("CCU", "BBI"), ("BBI", "CCU")
         }
         long_pairs = {
             ("BLR", "SXR"), ("SXR", "BLR"), ("DEL", "TRV"), ("TRV", "DEL"),
             ("DEL", "COK"), ("COK", "DEL"), ("CCU", "GOI"), ("GOI", "CCU"),
-            ("GAU", "BOM"), ("BOM", "GAU"), ("DEL", "IXL"), ("IXL", "DEL")
+            ("GAU", "BOM"), ("BOM", "GAU"), ("DEL", "IXL"), ("IXL", "DEL"),
+            ("BOM", "SXR"), ("SXR", "BOM"), ("BLR", "IXL"), ("IXL", "BLR")
         }
 
         pair = (orig_iata, dest_iata)
         if pair in short_pairs:
-            one_way_budget = 3900.0
-            one_way_full = 4500.0
+            one_way_budget = 3600.0
+            one_way_full = 4400.0
         elif pair in long_pairs:
-            one_way_budget = 8200.0
-            one_way_full = 9400.0
-        else: # Standard trunk route (e.g. BLR-GOI, DEL-GOI, BOM-DEL, BLR-DEL, CCU-DEL)
-            one_way_budget = 5400.0
-            one_way_full = 6200.0
+            one_way_budget = 7600.0
+            one_way_full = 9200.0
+        else: # Standard trunk & intercity route (e.g. BLR-GOI, DEL-GOI, BOM-DEL, BLR-DEL, CCU-DEL, BBI-GOI, BBI-DEL)
+            one_way_budget = 5200.0
+            one_way_full = 6400.0
 
-        multiplier = 2.0 if is_roundtrip else 1.0
+        multiplier = 1.9 if is_roundtrip else 1.0  # ~5% roundtrip discount
         budget_inr = round(one_way_budget * multiplier, 0)
         full_inr = round(one_way_full * multiplier, 0)
 
@@ -293,24 +297,27 @@ def calculate_route_flight_fares(
     # 2. India to International
     if orig_in_india or dest_in_india:
         dest_token = destination.lower()
-        if "dubai" in dest_token or "uae" in dest_token or "dxb" in dest_token:
-            rt_budget, rt_full = 24500.0, 32000.0
-            c_b, c_f = "IndiGo / Flydubai", "Emirates Flagship"
-        elif any(k in dest_token for k in ["bali", "thailand", "bangkok", "singapore", "malaysia", "dps", "bkk", "sin"]):
-            rt_budget, rt_full = 32000.0, 44000.0
-            c_b, c_f = "VietJet / Batik Air", "Singapore Airlines"
-        elif any(k in dest_token for k in ["paris", "france", "barcelona", "spain", "rome", "italy", "cdg", "bcn", "fco"]):
-            rt_budget, rt_full = 58000.0, 74000.0
-            c_b, c_f = "Gulf Air / Saudia", "Air France / Air India"
-        elif any(k in dest_token for k in ["london", "uk", "lhr"]):
-            rt_budget, rt_full = 56000.0, 72000.0
-            c_b, c_f = "Kuwait Airways / Virgin", "British Airways / Air India"
-        elif any(k in dest_token for k in ["tokyo", "japan", "hnd", "nrt", "kix"]):
-            rt_budget, rt_full = 54000.0, 76000.0
-            c_b, c_f = "VietJet / Malaysia Airlines", "ANA / Japan Airlines"
-        elif any(k in dest_token for k in ["new york", "usa", "jfk", "ewr"]):
-            rt_budget, rt_full = 86000.0, 118000.0
-            c_b, c_f = "Kuwait Airways / Saudia", "Air India Direct / Emirates"
+        if any(k in dest_token for k in ["dubai", "uae", "dxb", "abu dhabi", "sharjah", "doha", "qatar"]):
+            rt_budget, rt_full = 23000.0, 31000.0
+            c_b, c_f = "IndiGo / Air India Express", "Emirates / Qatar Airways"
+        elif any(k in dest_token for k in ["bali", "thailand", "bangkok", "singapore", "malaysia", "phuket", "vietnam", "dps", "bkk", "sin"]):
+            rt_budget, rt_full = 28000.0, 42000.0
+            c_b, c_f = "VietJet / Batik Air / IndiGo", "Singapore Airlines / Thai Airways"
+        elif any(k in dest_token for k in ["paris", "france", "barcelona", "spain", "rome", "italy", "amsterdam", "germany", "frankfurt", "switzerland", "zurich", "cdg", "bcn", "fco"]):
+            rt_budget, rt_full = 54000.0, 72000.0
+            c_b, c_f = "Gulf Air / Saudia / Kuwait Airways", "Air France / Lufthansa / Air India"
+        elif any(k in dest_token for k in ["london", "uk", "edinburgh", "manchester", "lhr"]):
+            rt_budget, rt_full = 52000.0, 70000.0
+            c_b, c_f = "Virgin Atlantic / Air India", "British Airways / Emirates"
+        elif any(k in dest_token for k in ["tokyo", "japan", "kyoto", "osaka", "hnd", "nrt", "kix"]):
+            rt_budget, rt_full = 52000.0, 74000.0
+            c_b, c_f = "VietJet / Malaysia Airlines", "ANA / Japan Airlines / Singapore Airlines"
+        elif any(k in dest_token for k in ["sydney", "melbourne", "australia"]):
+            rt_budget, rt_full = 62000.0, 84000.0
+            c_b, c_f = "Malaysia Airlines / Scoot", "Singapore Airlines / Qantas"
+        elif any(k in dest_token for k in ["new york", "usa", "san francisco", "chicago", "jfk", "ewr", "sfo"]):
+            rt_budget, rt_full = 82000.0, 114000.0
+            c_b, c_f = "Kuwait Airways / Saudia", "Air India Direct / Emirates / Qatar"
         else:
             rt_budget, rt_full = 45000.0, 62000.0
             c_b, c_f = "International Regional Carrier", "Star Alliance Flagship"
@@ -324,16 +331,16 @@ def calculate_route_flight_fares(
         )
 
     # 3. Western / International Routes
-    if any(k in c_orig for k in ["united states", "usa", "us"]) and any(k in c_dest for k in ["france", "spain", "italy", "united kingdom", "germany"]):
-        rt_budget, rt_full = 640.0, 880.0
-        c_b, c_f = "Norse Atlantic / Icelandair", "Delta / British Airways"
-    elif any(k in c_orig for k in ["united kingdom", "france", "spain", "italy", "germany"]) and any(k in c_dest for k in ["france", "spain", "italy", "spain", "germany"]):
+    if any(k in c_orig for k in ["united states", "usa", "us"]) and any(k in c_dest for k in ["france", "spain", "italy", "united kingdom", "germany", "switzerland"]):
+        rt_budget, rt_full = 580.0, 840.0
+        c_b, c_f = "Norse Atlantic / Icelandair", "Delta / British Airways / United"
+    elif any(k in c_orig for k in ["united kingdom", "france", "spain", "italy", "germany"]) and any(k in c_dest for k in ["france", "spain", "italy", "spain", "germany", "switzerland", "netherlands"]):
         # Intra-Europe
-        rt_budget, rt_full = 110.0, 180.0
-        c_b, c_f = "Ryanair / EasyJet", "British Airways / Air France"
+        rt_budget, rt_full = 95.0, 160.0
+        c_b, c_f = "Ryanair / EasyJet", "British Airways / Air France / Lufthansa"
     else:
         # Default global
-        rt_budget, rt_full = 450.0, 680.0
+        rt_budget, rt_full = 420.0, 640.0
         c_b, c_f = "Regional Value Carrier", "Flagship Global Carrier"
 
     mult = 1.0 if is_roundtrip else 0.55

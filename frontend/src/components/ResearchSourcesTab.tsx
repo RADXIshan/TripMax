@@ -10,7 +10,8 @@ import {
   Train, 
   Search,
   Clock,
-  Ticket
+  Ticket,
+  MapPin
 } from 'lucide-react';
 import type { ResearchSource, VisitedSite } from '../types/trip';
 
@@ -45,7 +46,7 @@ export const ResearchSourcesTab: React.FC<ResearchSourcesTabProps> = ({
     visitedSites.forEach((vs, idx) => {
       const isPlaywright = vs.category.toLowerCase().includes('playwright') || 
         vs.name.toLowerCase().includes('playwright') ||
-        ['booking.com', 'makemytrip', 'agoda', 'skyscanner', 'confirmtkt', 'ixigo', 'trainline'].some(d => vs.url.toLowerCase().includes(d));
+        ['booking.com', 'makemytrip', 'agoda', 'skyscanner', 'confirmtkt', 'ixigo', 'trainline', 'holidify', 'thrillophilia'].some(d => vs.url.toLowerCase().includes(d));
 
       const isFirecrawl = vs.category.toLowerCase().includes('firecrawl') || 
         vs.name.toLowerCase().includes('firecrawl');
@@ -121,6 +122,9 @@ export const ResearchSourcesTab: React.FC<ResearchSourcesTabProps> = ({
     }
     if (c.includes('passes') || u.includes('getyourguide') || u.includes('viator') || u.includes('klook')) {
       return <Ticket className="w-3.5 h-3.5 text-emerald-400" />;
+    }
+    if (c.includes('attraction') || u.includes('holidify') || u.includes('thrillophilia')) {
+      return <MapPin className="w-3.5 h-3.5 text-amber-400" />;
     }
     return <Globe className="w-3.5 h-3.5 text-stone-400" />;
   };
@@ -258,7 +262,7 @@ export const ResearchSourcesTab: React.FC<ResearchSourcesTabProps> = ({
         </div>
 
         {/* Search input */}
-        <div className="relative min-w-[220px]">
+        <div className="relative min-w-55">
           <Search className="w-3.5 h-3.5 text-stone-500 absolute left-3 top-1/2 -translate-y-1/2" />
           <input
             type="text"
