@@ -1,16 +1,17 @@
-# ✈️ TripMax — Autonomous Multi-Agent AI Travel Architect
+# ✈️ TripMax — Autonomous Multi-Agent AI Travel Operating System
 
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.142+-009688?style=flat-square&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
 [![Python 3.12](https://img.shields.io/badge/Python-3.12+-3776AB?style=flat-square&logo=python&logoColor=white)](https://python.org)
 [![React 19](https://img.shields.io/badge/React-19.1+-61DAFB?style=flat-square&logo=react&logoColor=black)](https://react.dev)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.8+-3178C6?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org)
+[![Playwright](https://img.shields.io/badge/Playwright-Headed_Agent-45BA4B?style=flat-square&logo=playwright&logoColor=white)](https://playwright.dev)
 [![Tailwind CSS v4](https://img.shields.io/badge/Tailwind_CSS-v4.3+-38B2AC?style=flat-square&logo=tailwind-css&logoColor=white)](https://tailwindcss.com)
 [![Vite](https://img.shields.io/badge/Vite-7.1+-646CFF?style=flat-square&logo=vite&logoColor=white)](https://vitejs.dev)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Neon_Serverless-4169E1?style=flat-square&logo=postgresql&logoColor=white)](https://neon.tech)
 [![Gemini AI](https://img.shields.io/badge/Google_Gemini-3.8_Flash-8E75B2?style=flat-square&logo=google&logoColor=white)](https://ai.google.dev)
 [![License](https://img.shields.io/badge/License-MIT-green.style=flat-square)](#license)
 
-> **TripMax** is an autonomous, multi-agent AI travel operating system that eliminates the chaos of juggling 20+ browser tabs when planning travel. Unlike standard AI chatbots that generate generic, hallucinated lists of attractions, TripMax orchestrates a team of specialized AI agents that dynamically research, verify, price, schedule, audit, and package complete end-to-end journeys with real flight and scenic rail routes, vetted boutique accommodations (>= 9.0/10 rating standard), geocoded itineraries, multi-currency budget calculators, milestone checklists, and one-click Word/PDF export.
+> **TripMax** is an autonomous, multi-agent AI travel operating system that eliminates the chaos of juggling 20+ browser tabs when planning and booking travel. Unlike standard AI chatbots that generate hallucinated text lists, TripMax orchestrates a collaborative network of specialized AI subagents backed by **real-time visual browser automation (Playwright)**, **Firecrawl MCP**, **deep-web pricing models**, and **autonomous 1-click cart auto-booking**. It visually researches, verifies, prices, schedules, audits, and reserves complete end-to-end journeys with real flight corridors, scenic rail routes, vetted boutique accommodations, geocoded itineraries, multi-currency budget calculators, and one-click Word/PDF export.
 
 ---
 
@@ -19,91 +20,102 @@
 1. [Why TripMax? (The Problem vs Solution)](#-why-tripmax-the-problem-vs-solution)
 2. [Core Features & Highlights](#-core-features--highlights)
 3. [Autonomous Multi-Agent Architecture](#-autonomous-multi-agent-architecture)
-4. [Agent Hierarchy & Responsibilities](#-agent-hierarchy--responsibilities)
-5. [User Interface & Interactive Tabs](#-user-interface--interactive-tabs)
-6. [Tech Stack & Tooling](#-tech-stack--tooling)
-7. [System Architecture Diagram](#-system-architecture-diagram)
-8. [Project File Structure](#-project-file-structure)
-9. [REST API Documentation](#-rest-api-documentation)
-10. [Local Development & Setup](#-local-development--setup)
-11. [Environment Variables Reference](#-environment-variables-reference)
-12. [Export Engine (Word & PDF)](#-export-engine-word--pdf)
-13. [Authentication & Persistence](#-authentication--persistence)
-14. [Deployment Guide](#-deployment-guide)
-15. [Troubleshooting & FAQ](#-troubleshooting--faq)
-16. [License](#-license)
+4. [Playwright Visual Browser Subagent & Auto-Booking](#-playwright-visual-browser-subagent--auto-booking)
+5. [Agent Hierarchy & Responsibilities](#-agent-hierarchy--responsibilities)
+6. [User Interface & Interactive Tabs](#-user-interface--interactive-tabs)
+7. [Tech Stack & Tooling](#-tech-stack--tooling)
+8. [System Architecture Diagram](#-system-architecture-diagram)
+9. [Project File Structure](#-project-file-structure)
+10. [REST API Documentation](#-rest-api-documentation)
+11. [Local Development & Setup](#-local-development--setup)
+12. [Environment Variables Reference](#-environment-variables-reference)
+13. [Export Engine (Word & PDF)](#-export-engine-word--pdf)
+14. [Authentication & Persistence](#-authentication--persistence)
+15. [Deployment Guide](#-deployment-guide)
+16. [Troubleshooting & FAQ](#-troubleshooting--faq)
+17. [License](#-license)
 
 ---
 
 ## 💡 Why TripMax? (The Problem vs Solution)
 
 ### The Pain of Modern Travel Planning
-1. **Tab Overload**: Planning a trip usually demands cross-referencing flights (Google Flights, Skyscanner), trains (Trainline, national operators), accommodations (Booking.com, Airbnb), guides (TripAdvisor, Wikitravel), maps, spreadsheets, and packing lists.
-2. **AI Hallucinations**: Standard LLMs routinely recommend closed venues, make up nonexistent train lines, quote unrealistic costs, or hallucinate direct bullet trains across oceans.
-3. **Disconnected Logistics**: Itineraries rarely balance transit times, local mobility (metro passes, taxi apps), or meal timing with nearby sightseeing.
+1. **Tab Overload**: Planning a trip demands cross-referencing flights (Google Flights, Skyscanner), trains (ConfirmTkt, Trainline), hotels (Booking.com, MakeMyTrip, Agoda), sightseeing guides (Holidify, Thrillophilia), maps, and budgets across dozens of open tabs.
+2. **AI Hallucinations**: Standard LLMs routinely recommend closed venues, fabricate nonexistent rail lines, quote unrealistic costs, or hallucinate bullet trains across oceans.
+3. **Disconnected Logistics & Friction**: AI itineraries never check real live availability or place items in your booking carts, leaving you to manually re-type dates, destinations, and traveler counts everywhere.
 
 ### The TripMax Solution
-TripMax introduces a **multi-agent orchestration pipeline** backed by real-time web search, geographical awareness, pricing heuristics, and self-evaluating quality auditing:
-- **No Hallucinated Logistics**: Automatically differentiates between domestic high-speed rail lines and international flight corridors.
-- **Deep Direct Booking Links**: Every flight, train, hotel, and activity has direct, pre-populated booking links with the traveler's exact dates and destinations.
-- **Audited Quality Bar (>= 9.0/10)**: Every stay is evaluated for guest ratings, location convenience, and price-to-value ratio.
-- **Dynamic Pacing Engine**: Crafts realistic Morning, Afternoon, and Evening slots with lunch and dinner gastronomic recommendations showcasing authentic regional cuisine.
+TripMax introduces a **multi-agent orchestration pipeline** backed by real-time visual browser automation, geographical intelligence, and self-evaluating quality auditing:
+- **Headed Browser Automation**: Watch the AI open a real browser window on your screen to extract live flights, stays, and attractions.
+- **Autonomous Auto-Booking**: 1-click **Auto-Book** buttons on Stays, Flights, and Trains that navigate portals, select matching room/fare tiers, place reservations in your session cart, and capture verified screenshot proof.
+- **No Hallucinated Logistics**: Geo-intelligence automatically differentiates between domestic high-speed rail corridors and flight routes.
+- **Multi-Platform Deep Links**: Every flight, train, hotel, and activity features pre-populated deep booking links across Booking.com, MakeMyTrip, Agoda, Skyscanner, Google Flights, and ConfirmTkt.
+- **Audited Quality Bar (>= 9.0/10)**: Every stay is evaluated for verified guest ratings, neighborhood safety, and value-to-price ratio.
+- **Dynamic Gastronomic Pacing**: Crafts realistic Morning, Afternoon, and Evening slots paired with authentic lunch and dinner recommendations.
 
 ---
 
 ## ✨ Core Features & Highlights
 
-### 🤖 1. Conversational Discovery Studio
-- Step-by-step preference profiling via interactive multiple-choice suggestions with custom write-in options.
-- Dynamic question sequencing tailored to destination and origin (destination, origin, dates & duration, party type, travel pace, budget, transit mode, interests, lodging style, and dietary requirements).
-- Natural language refinement: say *"make it more budget-friendly"* or *"prioritize scenic trains over flights"* to dynamically adjust the trip.
+### 🚀 1. Visual Playwright Browser Agent with Live HUD
+- **Headed Execution (`headless=False`)**: When researching or booking, TripMax pops up a live Chromium browser window on your desktop.
+- **In-Page Glassmorphic HUD Overlay**: A floating badge injected into target websites displaying real-time cognitive reasoning:
+  - `LIVE AGENT THINKING`: Displays current route, travel dates, party size, and target budget constraints.
+  - `VERIFIED DECISION`: Highlights chosen flight cards, hotel rooms, and rail berths with glowing boundaries.
+- **Anti-Detection Engine**: Operates with randomized viewport scaling, automated cookie/modal dismissal, and anti-bot stealth scripts.
 
-### 🌐 2. Real-Time Web Intelligence & Search Synthesis
-- Dual-engine web search: **DuckDuckGo Search** (built-in, zero-setup, free) and **Tavily AI** (deep travel-tailored query extraction).
-- Wikipedia REST API integration for authoritative cultural and architectural background.
-- Synthesizes real destination architecture even for off-the-beaten-path locations worldwide.
+### 💳 2. Autonomous Auto-Booking Engine (`/api/booking/auto-book`)
+- Click **Auto-Book** on any Stay, Flight, or Train option.
+- The Playwright agent launches, navigates to the verified provider (Booking.com, Google Flights, Skyscanner, MakeMyTrip, Agoda, ConfirmTkt), selects the matching room or fare tier, and locks the reservation into your session cart.
+- **Instant Proof Capture**: Returns a full-resolution live screenshot of the reserved cart stage along with the direct checkout session URL.
+- **Interactive Modal**: Features a step ticker, live execution audit logs, an expandable screenshot lightbox, and a "Proceed to Checkout" button.
 
-### 🚆✈️ 3. Transit Intelligence (Flights vs. Scenic Rail)
-- Evaluates real airline carriers, baggage tiers, flight numbers, and estimated round-trip costs.
-- Compares flights with high-speed passenger rail (e.g., Shinkansen, TGV, Eurostar, Frecciarossa, Vande Bharat, Rajdhani).
-- Generates pre-populated booking deep links to **Google Flights, Skyscanner, Kayak, Trainline, IRCTC, and Rail Europe**.
-- Full local mobility guide with metro pass recommendations, regional day excursions, and rideshare/taxi apps.
+### 🌐 3. Research Sources & Visited Sites Registry
+- Dedicated **Sources** tab displaying every web portal accessed during research and booking.
+- Interactive filtering: `All`, `Playwright (Live Browsers)`, `Firecrawl (Deep Web MCP)`, and `Partner Passes & Attractions`.
+- Live status badges (`Verified Live`), verification timestamps, and direct deep-links.
 
-### 🏨 4. Lodging & Stays Architecture
-- Strict hospitality standard: recommends properties with guest ratings of **>= 9.0/10** (or 4.5/5 stars).
+### 🏛️ 4. Premier Sightseeing & Discovery Portals
+- Scans premier travel authorities: **Holidify** (ranked tourist attractions, operational hours, entry tickets, and guest scores) and **Thrillophilia** (curated experiences and photography viewpoints).
+- Filters out generic marketing taglines to extract only authoritative, visitable landmarks.
+- Supplementary fallback to **Wikipedia Cultural Archives** and **UNESCO World Heritage**.
+
+### 🚆✈️ 5. Transit Intelligence (Flights vs. Scenic Rail)
+- Evaluates real airline carriers, flight numbers, baggage rules, and round-trip rates on **Google Flights**, **Skyscanner**, and **MakeMyTrip**.
+- Evaluates domestic and intercity rail lines (e.g., Shinkansen, TGV, Eurostar, Vande Bharat, Rajdhani, Shatabdi) with live seat prediction on **ConfirmTkt**.
+- Comprehensive local mobility guide with metro passes, airport express lines, and regional taxi apps.
+
+### 🏨 6. Lodging & Stays Architecture
+- Strict hospitality standard: recommends properties with verified guest ratings of **>= 9.0/10** (or 4.5/5 stars).
 - Covers diverse stay personas: Heritage Boutiques, Grand Luxury, Historic Villas, Modern City Apartments, and High-Value Stays.
-- Provides night-by-night and total stay costs with pre-configured booking URLs to **Booking.com, Airbnb, Agoda, and Expedia**.
+- Provides night-by-night and total stay costs with multi-platform deep links to **Booking.com**, **Airbnb**, **Agoda**, and **MakeMyTrip**.
 
-### 📅 5. Day-by-Day Precision Itinerary
+### 📅 7. Day-by-Day Precision Itinerary
 - Structured daily pacing: **Morning Exploration**, **Afternoon Immersion**, and **Evening Leisure**.
-- Signature dining pairings for every single day: local lunch bistro + evening dining recommendations with signature dishes and ambiance description.
-- Daily mobility and transit tips to avoid traffic bottlenecks and optimize walking routes.
-- High-resolution verified photography for landmarks, neighborhoods, and culinary tastings.
+- Signature dining pairings for every single day: local lunch bistros + authentic evening dinners with regional specialties.
+- Daily walking routes and transit tips to avoid traffic bottlenecks.
 
-### 💳 6. Financial Budget Breakdown & Multi-Currency Engine
-- Transparent categorical breakdown: **Transit**, **Stays**, **Activities & Tickets**, **Food & Dining**, and **Local Buffer/Transit**.
-- Compares total estimated expenditure against the user's target budget, categorizing it as *Within Budget*, *Controlled Stretch*, or *Luxury Splurge*.
+### 💰 8. Financial Budget Breakdown & 10-Currency Engine
+- Categorical breakdown: **Transit**, **Stays**, **Activities & Tickets**, **Food & Dining**, and **Local Buffer**.
+- Compares total estimated expenditure against user budget, categorizing it as *Within Budget*, *Controlled Stretch*, or *Luxury Splurge*.
 - Real-time conversion across **10 global currencies**:
-  - `INR (₹)`, `USD ($)`, `EUR (€)`, `GBP (£)`, `JPY (¥)`, `AUD (A$)`, `CAD (C$)`, `CHF (CHF)`, `SGD (S$)`, `AED (AED)`.
+  `INR (₹)`, `USD ($)`, `EUR (€)`, `GBP (£)`, `JPY (¥)`, `AUD (A$)`, `CAD (C$)`, `CHF (CHF)`, `SGD (S$)`, `AED (AED)`.
 
-### 📋 7. Booking Milestones & Intelligent Packing Assistant
-- Milestone-based checklist divided into actionable phases:
-  - **4 Weeks Before**: Passports, visas, primary flights, and iconic train seats.
-  - **2 Weeks Before**: Lodging reservations, museum priority tickets, and travel insurance.
-  - **3 Days Before**: Smartcard passes, currency exchange, offline maps, and power adapters.
+### 📋 9. Booking Milestones & Intelligent Packing Assistant
+- Milestone-based checklist divided into actionable countdown phases (4 weeks, 2 weeks, 3 days out).
 - Climate-aware, destination-tailored packing lists categorized into **Documents & Finance**, **Clothing & Weather Gear**, **Tech & Adapters**, and **Toiletries & Health**.
 
-### 📄 8. Professional Multi-Format Export
-- **Microsoft Word (`.docx`) Export**: Clean typography, colored tables, callout blocks, and hyperlinked booking URLs ready for sharing with travel companions or clients.
+### 📄 10. Professional Multi-Format Export
+- **Microsoft Word (`.docx`) Export**: Clean typography, colored tables, callout blocks, and hyperlinked booking URLs.
 - **Multi-Page PDF Export**: Formatted with `jspdf` and `jspdf-autotable`, including header branding, category tables, daily timelines, and page numbering.
 
-### 🔐 9. User Authentication & Cloud Synchronization
+### 🔐 11. User Authentication & Cloud Synchronization
 - Modern JWT authentication with Bcrypt password hashing.
 - Cloud database persistence powered by **Neon Serverless PostgreSQL**.
 - Automatically saves generated trips to the authenticated traveler's personal dashboard.
 - Seamless guest mode with immediate local storage fallback.
 
-### 🧐 10. Self-Evaluating Critic Agent
+### 🧐 12. Self-Evaluating Critic Agent
 - Runs an automated **5-Pillar Quality Audit** before presenting the plan:
   1. *Budget Calibration & Spend Efficiency (20 pts)*
   2. *Hospitality Rating Rigor (>= 9.0/10 bar) & Carrier Sanity (20 pts)*
@@ -115,8 +127,6 @@ TripMax introduces a **multi-agent orchestration pipeline** backed by real-time 
 ---
 
 ## 🏛️ Autonomous Multi-Agent Architecture
-
-TripMax operates on a pipeline of specialized agents coordinated by the `AgentOrchestrator`:
 
 ```
                            ┌──────────────────────────┐
@@ -140,11 +150,17 @@ TripMax operates on a pipeline of specialized agents coordinated by the `AgentOr
             ▼                            ▼                             ▼
 ┌──────────────────────┐    ┌──────────────────────┐    ┌──────────────────────┐
 │  Live Research Agent │    │    Transit Agent     │    │      Stay Agent      │
-│ (DDG/Tavily/Wiki)    │    │ (Flight vs Rail)     │    │ (Curated Stays >=9.0)│
+│ (Holidify/Firecrawl) │    │ (Flight vs Rail)     │    │ (Booking.com/Agoda)  │
 └───────────┬──────────┘    └──────────┬───────────┘    └──────────┬───────────┘
             │                          │                           │
-            └───────────────────┐      │      ┌────────────────────┘
-                                ▼      ▼      ▼
+            └───────────┐              │              ┌────────────┘
+                        ▼              ▼              ▼
+                   ┌───────────────────────────────────────┐
+                   │   Playwright Visual Browser Subagent  │
+                   │ (Headed Chromium with Live Agent HUD) │
+                   └───────────────────┬───────────────────┘
+                                       │
+                                       ▼
                            ┌──────────────────────────┐
                            │     Itinerary Agent      │
                            │  (Day-by-Day Logistics)  │
@@ -165,38 +181,57 @@ TripMax operates on a pipeline of specialized agents coordinated by the `AgentOr
                                          ▼
                            ┌──────────────────────────┐
                            │    Final Verified Plan   │
-                           │ (UI Tabs, PDF, Word Doc) │
+                           │(Interactive Tabs/Exports)│
+                           └─────────────┬────────────┘
+                                         │
+                                         ▼ (On "Auto-Book" click)
+                           ┌──────────────────────────┐
+                           │ Autonomous Booking Agent │
+                           │ (Picks Room/Fare & Cart) │
                            └──────────────────────────┘
 ```
 
 ---
 
+## 🎭 Playwright Visual Browser Subagent & Auto-Booking
+
+TripMax bridges the gap between passive AI planning and active autonomous execution:
+
+| Operation | Target Portals | In-Browser Action | Output Artifact |
+| :--- | :--- | :--- | :--- |
+| **Places to Visit** | Holidify, Thrillophilia, UNESCO | Scans ranked attractions, skips taglines, highlights cards with glowing borders | Verified `ResearchSource[]` citations |
+| **Flight Search** | Google Flights, Skyscanner, MakeMyTrip | Inputs Origin, Destination, travel dates; checks direct carriers, fare tiers | Verified `FlightOption[]` with deep links |
+| **Stay Search** | Booking.com, Agoda, MakeMyTrip | Inputs Destination, check-in, check-out dates; enforces guest rating >= 4.5★ | Verified `StayOption[]` with live links |
+| **Train Search** | ConfirmTkt, IRCTC | Queries intercity routes, evaluates seat prediction algorithms | Verified `TrainOption[]` with booking links |
+| **Auto-Booking** | Booking.com, Google Flights, ConfirmTkt | Navigates to listing, dismisses overlays, clicks Reserve/Book, holds room/fare in cart | Verified live screenshot proof + cart URL |
+
+---
+
 ## 👥 Agent Hierarchy & Responsibilities
 
-| Agent Name | Primary Responsibility | Key Inputs / Algorithms | Key Deliverables |
+| Agent Name | Primary Responsibility | Key Inputs / Tools | Key Deliverables |
 | :--- | :--- | :--- | :--- |
-| **Discovery Agent** | Guides the traveler through interactive preference gathering. | Regex date/duration extractors, contextual question state machine. | Updated `TripPreferences`, structured suggested replies. |
-| **Research Agent** | Executes live queries for sights, food, and neighborhood guides. | DuckDuckGo Search API, Tavily AI, Wikipedia REST API. | List of `ResearchSource` objects with snippets and verified URLs. |
-| **Transit Agent** | Compares flights and scenic trains with direct deep booking URLs. | Geo-intelligence distance engine, IATA code resolver. | `FlightOption[]`, `TrainOption[]`, and `LocalMobilityInfo`. |
-| **Stay Agent** | Curates hotels, apartments, and boutique stays meeting quality bars. | Curated knowledge base, rating threshold filter (>= 9.0). | `StayOption[]` with nightly rates, amenities, and booking links. |
-| **Itinerary Agent** | Engineers daily morning, afternoon, and evening schedules with meals. | Pacing heuristics, culinary pairings, photo matching service. | `ItineraryDay[]` with cultural context and transit tips. |
-| **Budget Agent** | Computes categorical financials and prepares checklists. | Pricing intelligence models, seasonal multipliers. | `BudgetBreakdown`, `ChecklistItem[]`, and `PackingItem[]`. |
-| **Critic Agent** | Conducts a 5-pillar self-audit on data integrity and realistic pacing. | 100-point scoring algorithm, date synchronization check. | Verified `Quality Score`, audit badge, and audit findings. |
+| **Discovery Agent** | Guides traveler through interactive preference gathering. | Regex extractors, contextual question state machine. | Updated `TripPreferences`, suggested reply pills. |
+| **Research Agent** | Gathers live attractions and sightseeing spots. | Playwright Headed Browser, Holidify, Firecrawl MCP. | List of `ResearchSource` objects with verified URLs. |
+| **Transit Agent** | Compares flights and scenic rail routes with live rates. | Playwright Google Flights scraper, ConfirmTkt scraper. | `FlightOption[]`, `TrainOption[]`, and `LocalMobilityInfo`. |
+| **Stay Agent** | Curates accommodations meeting the >= 9.0/10 quality bar. | Playwright Booking.com scraper, pricing intelligence. | `StayOption[]` with nightly rates and deep booking links. |
+| **Itinerary Agent** | Engineers daily morning, afternoon, evening schedules. | Pacing heuristics, culinary pairings, photo service. | `ItineraryDay[]` with cultural tips and food pairings. |
+| **Budget Agent** | Computes categorical financials and prepares checklists. | Multi-currency pricing models, seasonal multipliers. | `BudgetBreakdown`, `ChecklistItem[]`, and `PackingItem[]`. |
+| **Critic Agent** | Conducts a 5-pillar self-audit on data integrity and dates. | 100-point scoring algorithm, date synchronization check. | Verified `Quality Score`, audit badge, and audit findings. |
+| **Auto-Booking Agent** | Autonomously navigates booking portals and reserves items. | Playwright Headed Browser, stealth bypass scripts, DOM clicker. | Live session screenshot proof, cart URL, execution logs. |
 
 ---
 
 ## 🖥️ User Interface & Interactive Tabs
 
-The TripMax frontend is built with a responsive navigation sidebar and glassmorphic aesthetic:
-
-1. **💬 Chat Studio**: The interactive conversational concierge with live reasoning bar (`AgentReasoningBar`), suggested quick reply pills, and manual input field.
-2. **📅 Itinerary Tab**: Day-by-day interactive timeline with morning, afternoon, and evening activity cards, high-resolution imagery, direct ticket links, and lunch/dinner recommendations.
-3. **🚆 Transit Hub**: Side-by-side flight vs. high-speed rail cards, carrier comparisons, pros and cons, deep search links, plus a local mobility section (metro passes, cabs, day excursions).
-4. **🏨 Stays Tab**: Hotel showcase with neighborhood tags, guest review ratings, detailed amenity badges, pricing breakdowns, and multi-platform booking options (Booking.com, Airbnb, Agoda).
-5. **💳 Budget Breakdown**: Interactive expense ring chart and category cards (Transit, Lodging, Activities, Food, Buffer) with one-click conversion across 10 currencies.
-6. **📋 Booking Checklist & Packing**: Interactive task list organized by countdown milestones (4 weeks, 2 weeks, 3 days out) and itemized packing checklists.
-7. **📂 Saved Trips**: Cloud-synced trip archive showing saved plans with destination photos, duration, dates, and budget details.
-8. **🔍 Live Search Modal**: Fast modal for querying real-time travel information with instant citation extraction.
+1. **💬 Chat Studio**: Conversational concierge with animated agent reasoning bar (`AgentReasoningBar`), quick reply pills, and prompt input.
+2. **📅 Itinerary Tab**: Day-by-day interactive timeline with morning, afternoon, and evening activity cards, high-res photography, direct ticket links, and culinary pairings.
+3. **🚆 Transit Hub**: Side-by-side flight vs. high-speed rail cards with carrier pros/cons, **Auto-Book** triggers, and local mobility guides.
+4. **🏨 Stays Tab**: Hotel showcase with neighborhood tags, verified guest ratings, amenity badges, price breakdowns, and **Auto-Book** triggers.
+5. **🌐 Sources Tab**: Dedicated registry of all live web portals crawled by Playwright and Firecrawl with live status badges and deep links.
+6. **💳 Budget Breakdown**: Interactive expense ring chart and category cards with one-click conversion across 10 currencies.
+7. **📋 Booking Checklist & Packing**: Interactive task list organized by countdown milestones (4 weeks, 2 weeks, 3 days out) and climate-aware packing checklists.
+8. **📂 Saved Trips**: Cloud-synced trip archive showing saved plans with destination photos, duration, dates, and budget details.
 9. **⚙️ Settings & API Configuration**: Runtime API key management allowing users to supply their own Gemini or Tavily keys.
 
 ---
@@ -217,6 +252,8 @@ The TripMax frontend is built with a responsive navigation sidebar and glassmorp
 - **Framework**: [FastAPI](https://fastapi.tiangolo.com) (Modern asynchronous Python framework)
 - **Web Server**: [Uvicorn](https://www.uvicorn.org)
 - **Package Manager**: [uv](https://github.com/astral-sh/uv) (Ultra-fast Python package resolver)
+- **Browser Automation**: [Playwright](https://playwright.dev) (Async Python API with Chromium engine)
+- **Deep Web MCP**: Firecrawl MCP API Integration
 - **Data Validation & Settings**: [Pydantic v2](https://docs.pydantic.dev) & [pydantic-settings](https://pydantic-docs.helpmanual.io/usage/settings/)
 - **Database & ORM**: [SQLAlchemy 2.0](https://www.sqlalchemy.org) with `psycopg[binary]` (PostgreSQL driver)
 - **Security & Auth**: [PyJWT](https://pyjwt.readthedocs.io) & `bcrypt` password hashing
@@ -237,7 +274,7 @@ The TripMax frontend is built with a responsive navigation sidebar and glassmorp
 │                   Vite + React 19 UI                   │
 │                                                        │
 │  [Chat Studio]   [Itinerary]   [Transit]   [Stays]     │
-│  [Budget Tab]    [Checklist]   [Exports]   [Auth]      │
+│  [Sources Tab]   [Budget Tab]  [Checklist] [Exports]   │
 └───────────────────────────┬────────────────────────────┘
                             │ REST / JSON (Port 5173 -> Proxy /api)
                             ▼
@@ -253,24 +290,26 @@ The TripMax frontend is built with a responsive navigation sidebar and glassmorp
 │     Agent Pipelines      │ │      Database Layer       │
 │                          │ │                           │
 │ • Discovery Agent        │ │ • SQLAlchemy 2.0 ORM      │
-│ • Web Research Agent     │ │ • psycopg3 DB Driver      │
+│ • Research Agent         │ │ • psycopg3 DB Driver      │
 │ • Transit Engine         │ │ • Neon Serverless Postgres│
 │ • Stay Curator           │ │   - users table           │
 │ • Itinerary Architect    │ │   - trip_records table    │
 │ • Budget & Prep Agent    │ └───────────────────────────┘
 │ • Critic & QA Auditor    │
+│ • Auto-Booking Agent     │
 └─────────────┬────────────┘
               │
               ▼
 ┌────────────────────────────────────────────────────────┐
-│                   External Services                    │
+│             External Engine & Web Services             │
 │                                                        │
+│  • Playwright Headed Chromium Browser (Visual Session) │
 │  • Google Gemini 3.8 Flash (Generative Enhancement)   │
-│  • DuckDuckGo Search / Tavily AI (Live Queries)        │
+│  • Holidify & Thrillophilia (Sightseeing Extraction)   │
+│  • Google Flights, Booking.com, ConfirmTkt (Portals)   │
+│  • Firecrawl MCP & DuckDuckGo (Deep Intelligence)      │
 │  • Wikipedia REST API (Cultural Archives)              │
 │  • Unsplash & Wikimedia Commons (Curated Imagery)      │
-│  • Deep Links: Google Flights, Skyscanner, Trainline,  │
-│    Booking.com, Airbnb, Agoda, Viator                  │
 └────────────────────────────────────────────────────────┘
 ```
 
@@ -307,12 +346,13 @@ TripMax/
 │       │   └── orchestrator.py    # Master workflow conductor
 │       │
 │       ├── models/                # Pydantic and SQLAlchemy models
-│       │   ├── trip.py            # Pydantic schemas (TripPlan, Preferences, etc.)
+│       │   ├── trip.py            # Pydantic schemas (TripPlan, Preferences, VisitedSite)
 │       │   ├── db_models.py       # SQLAlchemy ORM models (User, TripRecord)
 │       │   └── auth.py            # Auth payload schemas
 │       │
 │       ├── routes/                # FastAPI endpoint controllers
 │       │   ├── auth.py            # /api/auth (signup, login, me)
+│       │   ├── booking.py         # /api/booking/auto-book (Autonomous Playwright Booking)
 │       │   ├── chat.py            # /api/chat (conversational turns)
 │       │   ├── config.py          # /api/config (key management)
 │       │   ├── planner.py         # /api/plan (generate, refine, sample)
@@ -321,11 +361,14 @@ TripMax/
 │       │
 │       └── services/              # Domain logic & integration services
 │           ├── auth.py            # Password hashing and JWT generation
-│           ├── deep_links.py      # Direct booking URL generation
-│           ├── destination_knowledge.py # Built-in curated destinations knowledge
+│           ├── booking_playwright_agent.py # Autonomous Playwright booking agent
+│           ├── deep_links.py      # Direct multi-platform booking URL generator
+│           ├── destination_knowledge.py # Curated destination intelligence
+│           ├── firecrawl_service.py # Firecrawl MCP deep web scraper
 │           ├── geo_intelligence.py# Geospatial distance and country checks
 │           ├── image_service.py   # High-resolution image curation
 │           ├── link_crawler.py    # IATA code resolution and link verification
+│           ├── playwright_scraper.py # Visual browser scraper with HUD overlay
 │           ├── pricing_intelligence.py # Currency rates and price estimations
 │           ├── search_service.py  # DuckDuckGo and Tavily search wrapper
 │           └── web_search_synthesizer.py # Dynamic destination synthesis
@@ -346,6 +389,7 @@ TripMax/
         ├── components/            # UI components
         │   ├── AgentReasoningBar.tsx # Animated agent status indicator
         │   ├── AuthPage.tsx       # Login and signup modal/card
+        │   ├── AutoBookingModal.tsx # Autonomous Playwright booking modal with live proof
         │   ├── BookingChecklistTab.tsx # Timeline tasks and packing list
         │   ├── BudgetTab.tsx      # Categorical budget ring and cards
         │   ├── ChatStudio.tsx     # Conversational discovery and prompt chat
@@ -355,6 +399,7 @@ TripMax/
         │   ├── ItineraryTab.tsx   # Day-by-day activity and culinary schedule
         │   ├── LiveSearchModal.tsx # Rapid real-time search interface
         │   ├── MinimalNavbar.tsx  # Sleek top navigation
+        │   ├── ResearchSourcesTab.tsx # Visited sites & live Playwright citations registry
         │   ├── ResetTripModal.tsx # Confirmation modal to clear trip
         │   ├── SavedTripsTab.tsx  # Saved trips gallery and loader
         │   ├── SettingsModal.tsx  # Runtime API key modal
@@ -374,36 +419,41 @@ TripMax/
 
 ## 📡 REST API Documentation
 
-### 1. Authentication Endpoints (`/api/auth`)
+### 1. Autonomous Booking Engine (`/api/booking`)
+| Method | Endpoint | Description |
+| :--- | :--- | :--- |
+| `POST` | `/api/booking/auto-book` | Launches the headed Playwright booking agent, navigates to the provider (Booking.com, Google Flights, ConfirmTkt, MakeMyTrip, Agoda), selects room/fare tier, adds to cart, and returns live status, cart URL, and proof screenshot. |
+
+### 2. Authentication Endpoints (`/api/auth`)
 | Method | Endpoint | Description | Auth Required |
 | :--- | :--- | :--- | :--- |
 | `POST` | `/api/auth/signup` | Register a new traveler account with username, email, and password. | No |
 | `POST` | `/api/auth/login` | Authenticate traveler credentials and receive a JWT Bearer token. | No |
 | `GET` | `/api/auth/me` | Fetch authenticated profile details for the current user. | Yes (Bearer) |
 
-### 2. Conversational Discovery (`/api/chat`)
+### 3. Conversational Discovery (`/api/chat`)
 | Method | Endpoint | Description |
 | :--- | :--- | :--- |
 | `POST` | `/api/chat` | Send a chat message with current preferences and history. Returns next questions, updated preferences, and suggested reply pills. |
 
-### 3. Trip Planner Engine (`/api/plan`)
+### 4. Trip Planner Engine (`/api/plan`)
 | Method | Endpoint | Description |
 | :--- | :--- | :--- |
-| `POST` | `/api/plan/generate` | Triggers the full multi-agent pipeline to generate an end-to-end `TripPlan`. Automatically links to the authenticated user's account. |
-| `POST` | `/api/plan/refine` | Refines an existing plan based on a natural language instruction (e.g., *"Make it cheaper"* or *"Add more food spots"*). |
+| `POST` | `/api/plan/generate` | Triggers the multi-agent pipeline with visual browser searches to generate an end-to-end `TripPlan`. Automatically links to the authenticated user. |
+| `POST` | `/api/plan/refine` | Refines an existing plan based on natural language instructions (e.g., *"Make it cheaper"*). |
 
-### 4. Cloud Trips Persistence (`/api/trips`)
+### 5. Cloud Trips Persistence (`/api/trips`)
 | Method | Endpoint | Description | Auth Required |
 | :--- | :--- | :--- | :--- |
 | `GET` | `/api/trips` | Retrieves all saved trips for the authenticated user. | Yes (Bearer) |
 | `POST` | `/api/trips` | Saves or updates a complete trip plan to the database. | Yes (Bearer) |
 | `DELETE`| `/api/trips/{id}` | Deletes a saved trip by ID. | Yes (Bearer) |
 
-### 5. Live Search & Runtime Configuration
+### 6. Live Search & Runtime Configuration
 | Method | Endpoint | Description |
 | :--- | :--- | :--- |
 | `GET` | `/api/search/live?q={query}` | Executes live search queries and returns snippets with verified URLs. |
-| `GET` | `/api/config` | Returns the current configuration status of Gemini and Tavily keys. |
+| `GET` | `/api/config` | Returns configuration status of Gemini, Tavily, and Firecrawl keys. |
 | `POST` | `/api/config` | Updates in-memory runtime API keys on the backend. |
 | `GET` | `/health` | Healthcheck endpoint returning server status (`healthy`). |
 
@@ -412,7 +462,6 @@ TripMax/
 ## 🚀 Local Development & Setup
 
 ### Prerequisites
-Make sure you have the following installed:
 - **Node.js**: v18.0.0 or higher
 - **Python**: v3.12 or higher
 - **Package Managers**:
@@ -448,13 +497,15 @@ cd TripMax
    source .venv/bin/activate
    ```
 
-3. **Install dependencies**:
+3. **Install dependencies and Playwright browser binaries**:
    ```bash
    # Using uv
    uv pip install -e .
+   uv run playwright install chromium
 
    # Or using standard pip
-   pip install -r <(python -c "import tomllib; print('\n'.join(tomllib.load(open('pyproject.toml','rb'))['project']['dependencies']))")
+   pip install -e .
+   playwright install chromium
    ```
 
 4. **Configure backend environment variables**:
@@ -465,6 +516,8 @@ cd TripMax
    DATABASE_URL="postgresql://user:password@host/dbname?sslmode=require"
    GEMINI_API_KEY="your-google-gemini-api-key"
    TAVILY_API_KEY="your-tavily-api-key-optional"
+   FIRECRAWL_API_KEY="your-firecrawl-key-optional"
+   PLAYWRIGHT_HEADLESS=false
    ```
 
 5. **Start the backend server**:
@@ -509,11 +562,13 @@ cd TripMax
 
 | Variable | Required? | Default | Description |
 | :--- | :---: | :--- | :--- |
-| `PORT` | Optional | `8000` | The port on which the FastAPI Uvicorn server runs. |
+| `PORT` | Optional | `8000` | Port for the FastAPI Uvicorn server. |
 | `CLIENT_URL` | Optional | `http://localhost:5173` | Allowed origin for CORS headers. |
-| `DATABASE_URL` | **Yes** | — | PostgreSQL connection URI (e.g. Neon connection string with `sslmode=require`). |
-| `GEMINI_API_KEY`| Optional | `""` | Google Gemini API key used for editorial enhancement and synthesis. Can also be set via the UI Settings modal. |
-| `TAVILY_API_KEY`| Optional | `""` | Tavily AI search key. If omitted, the engine automatically falls back to DuckDuckGo. |
+| `DATABASE_URL` | **Yes** | — | PostgreSQL connection URI (e.g., Neon connection string with `sslmode=require`). |
+| `GEMINI_API_KEY`| Optional | `""` | Google Gemini API key used for editorial enhancement and synthesis. Can also be set in UI Settings. |
+| `TAVILY_API_KEY`| Optional | `""` | Tavily AI search key. Falls back to DuckDuckGo if omitted. |
+| `FIRECRAWL_API_KEY`| Optional | `""` | Firecrawl MCP API key for deep web document crawling. |
+| `PLAYWRIGHT_HEADLESS`| Optional | `false` | When `false`, opens a real browser window on your desktop so you can watch research and auto-booking live. |
 | `DEFAULT_CURRENCY` | Optional | `INR` | Default currency code for pricing models. |
 
 ### Frontend (`frontend/.env`)
@@ -579,6 +634,8 @@ TripMax is configured for deployment on [Vercel](https://vercel.com):
      - `DATABASE_URL`
      - `GEMINI_API_KEY`
      - `TAVILY_API_KEY`
+     - `FIRECRAWL_API_KEY`
+     - `PLAYWRIGHT_HEADLESS=true` (for headless serverless environments)
 
 ---
 
@@ -586,12 +643,13 @@ TripMax is configured for deployment on [Vercel](https://vercel.com):
 
 ### Q1: Do I need a paid API key to use TripMax?
 **No.** TripMax is fully functional out of the box without paid API keys:
+- Visual browser automation runs directly on your machine via Playwright Chromium.
 - Web search runs automatically via the free, built-in **DuckDuckGo Search** engine.
 - If no Gemini key is provided, the system uses high-fidelity base synthesis algorithms and curated knowledge bases to engineer authentic itineraries.
-- Adding a Gemini key or Tavily key simply provides enhanced editorial prose and additional query depth.
+- Adding a Gemini key, Tavily key, or Firecrawl key simply provides enhanced editorial prose and extra query depth.
 
-### Q2: What happens if I search for an unusual or small destination?
-The `WebSearchSynthesizer` dynamically queries live travel databases, Wikipedia, and search APIs, extracting authentic local landmarks, verified hotels, regional dishes, and real transit hubs to construct an accurate plan.
+### Q2: Why does a browser window pop up when I search or click Auto-Book?
+This is by design! TripMax defaults to **Headed Browser Mode** (`PLAYWRIGHT_HEADLESS=false`) so you can visually inspect the AI agent navigating websites, selecting flight fares, and reserving hotel rooms with the live in-browser HUD overlay. If you prefer background execution, set `PLAYWRIGHT_HEADLESS=true` in `backend/.env`.
 
 ### Q3: How does the system prevent hallucinated trains?
 The `geo_intelligence` service evaluates whether the trip is domestic, cross-country, or trans-oceanic:
@@ -609,5 +667,5 @@ This project is licensed under the **MIT License**. You are free to modify, dist
 ---
 
 <p align="center">
-  Crafted with care by <b>TripMax Engineering</b> • Powered by Multi-Agent AI
+  Crafted with care by <b>TripMax Engineering</b> • Powered by Multi-Agent AI & Playwright
 </p>
