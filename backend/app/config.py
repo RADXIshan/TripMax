@@ -17,6 +17,8 @@ class Settings(BaseSettings):
     CLIENT_URL: str = "http://localhost:5173"
     GEMINI_API_KEY: Optional[str] = None
     TAVILY_API_KEY: Optional[str] = None
+    FIRECRAWL_URL: Optional[str] = None
+    FIRECRAWL_API_KEY: Optional[str] = None
     DEFAULT_CURRENCY: str = "INR"
 
     class Config:
@@ -28,7 +30,9 @@ settings = Settings()
 # Runtime in-memory key overrides
 runtime_keys = {
     "gemini": os.getenv("GEMINI_API_KEY") or settings.GEMINI_API_KEY or "",
-    "tavily": os.getenv("TAVILY_API_KEY") or settings.TAVILY_API_KEY or ""
+    "tavily": os.getenv("TAVILY_API_KEY") or settings.TAVILY_API_KEY or "",
+    "firecrawl_url": os.getenv("FIRECRAWL_URL") or settings.FIRECRAWL_URL or "https://mcp.firecrawl.dev/v2/mcp-oauth",
+    "firecrawl_key": os.getenv("FIRECRAWL_API_KEY") or settings.FIRECRAWL_API_KEY or ""
 }
 
 def get_gemini_key() -> str:
@@ -67,8 +71,34 @@ def get_tavily_key() -> str:
                     pass
     return key.strip() if key else ""
 
-def set_runtime_keys(gemini: Optional[str] = None, tavily: Optional[str] = None):
+def get_firecrawl_url() -> str:
+    url = runtime_keys.get("firecrawl_url") or os.getenv("FIRECRAWL_URL") or getattr(settings, "FIRECRAWL_URL", None) or "https://mcp.firecrawl.dev/v2/mcp-oauth"
+    return url.strip()
+
+def get_firecrawl_key() -> str:
+    key = runtime_keys.get("firecrawl_key") or os.getenv("FIRECRAWL_API_KEY") or getattr(settings, "FIRECRAWL_API_KEY", None) or ""
+    if not key:
+        for env_path in [backend_dir / ".env", root_dir / ".env", Path(".env")]:
+            if env_path.exists():
+                try:
+                    from dotenv import dotenv_values
+                    vals = dotenv_values(env_path)
+                    val = vals.get("FIRECRAWL_API_KEY")
+                    if val and val.strip():
+                        key = val.strip()
+                        runtime_keys["firecrawl_key"] = key
+                        os.environ["FIRECRAWL_API_KEY"] = key
+                        break
+                except Exception:
+                    pass
+    return key.strip() if key else ""
+
+def set_runtime_keys(gemini: Optional[str] = None, tavily: Optional[str] = None, firecrawl_key: Optional[str] = None, firecrawl_url: Optional[str] = None):
     if gemini is not None:
         runtime_keys["gemini"] = gemini.strip()
     if tavily is not None:
         runtime_keys["tavily"] = tavily.strip()
+    if firecrawl_key is not None:
+        runtime_keys["firecrawl_key"] = firecrawl_key.strip()
+    if firecrawl_url is not None:
+        runtime_keys["firecrawl_url"] = firecrawl_url.strip()

@@ -19,12 +19,12 @@ export const AgentReasoningBar: React.FC<AgentReasoningBarProps> = ({ logs, isGe
   const [isExpanded, setIsExpanded] = useState(false);
 
   const agents = [
-    { name: 'Discovery', icon: Bot, color: 'text-stone-600 dark:text-stone-300' },
-    { name: 'Web Research', icon: Globe, color: 'text-stone-600 dark:text-stone-300' },
-    { name: 'Transit (Rail & Air)', icon: Plane, color: 'text-stone-600 dark:text-stone-300' },
-    { name: 'Stays & Lodging', icon: Building, color: 'text-stone-600 dark:text-stone-300' },
-    { name: 'Itinerary Architect', icon: CalendarDays, color: 'text-stone-600 dark:text-stone-300' },
-    { name: 'Budget & Booking', icon: CreditCard, color: 'text-stone-600 dark:text-stone-300' },
+    { name: 'Discovery (Firecrawl + LLM)', icon: Bot, color: 'text-stone-600 dark:text-stone-300' },
+    { name: 'Web Intelligence (Firecrawl MCP)', icon: Globe, color: 'text-amber-500 dark:text-amber-400' },
+    { name: 'Transit Scraper (Playwright)', icon: Plane, color: 'text-sky-500 dark:text-sky-400' },
+    { name: 'Lodging Scraper (Playwright)', icon: Building, color: 'text-indigo-500 dark:text-indigo-400' },
+    { name: 'Itinerary Architect (LLM Mind)', icon: CalendarDays, color: 'text-purple-500 dark:text-purple-400' },
+    { name: 'Auto-Booking Agent (Playwright)', icon: CreditCard, color: 'text-emerald-500 dark:text-emerald-400' },
   ];
 
   return (

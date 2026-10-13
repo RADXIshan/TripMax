@@ -263,38 +263,26 @@ class LinkCrawler:
             price_hint=f"Live Price Comparison{price_tag}"
         ))
 
-        # (C) Regional OTA (MakeMyTrip & Goibibo for India / Asia)
-        if is_india:
-            try:
-                from datetime import datetime
-                d_in = datetime.strptime(checkin, "%Y-%m-%d").strftime("%m%d%Y") if checkin else ""
-                d_out = datetime.strptime(checkout, "%Y-%m-%d").strftime("%m%d%Y") if checkout else ""
-                d_in_ymd = datetime.strptime(checkin, "%Y-%m-%d").strftime("%Y%m%d") if checkin else ""
-                d_out_ymd = datetime.strptime(checkout, "%Y-%m-%d").strftime("%Y%m%d") if checkout else ""
-            except Exception:
-                d_in, d_out, d_in_ymd, d_out_ymd = "", "", "", ""
+        # (C) Regional & Global OTA: MakeMyTrip
+        try:
+            from datetime import datetime
+            d_in = datetime.strptime(checkin, "%Y-%m-%d").strftime("%m%d%Y") if checkin else ""
+            d_out = datetime.strptime(checkout, "%Y-%m-%d").strftime("%m%d%Y") if checkout else ""
+        except Exception:
+            d_in, d_out = "", ""
 
-            mmt_dates_param = f"&checkin={d_in}&checkout={d_out}" if d_in and d_out else ""
-            mmt_url = f"https://www.makemytrip.com/hotels/hotel-listing/?city={urllib.parse.quote_plus(destination)}&searchText={encoded_hotel}{mmt_dates_param}"
-            links.append(BookingLink(
-                provider="MakeMyTrip",
-                label="MakeMyTrip Hotels",
-                url=mmt_url,
-                price_hint=f"Special Discounts{price_tag}"
-            ))
+        mmt_dates_param = f"&checkin={d_in}&checkout={d_out}" if d_in and d_out else ""
+        mmt_url = f"https://www.makemytrip.com/hotels/hotel-listing/?city={urllib.parse.quote_plus(destination)}&searchText={encoded_hotel}{mmt_dates_param}"
+        links.append(BookingLink(
+            provider="MakeMyTrip",
+            label="MakeMyTrip Hotels",
+            url=mmt_url,
+            price_hint=f"Special Discounts{price_tag}"
+        ))
 
-            goibibo_dates_param = f"&ci={d_in_ymd}&co={d_out_ymd}" if d_in_ymd and d_out_ymd else ""
-            goibibo_hotel_url = f"https://www.goibibo.com/hotels/hotels-in-{urllib.parse.quote_plus(destination.lower().strip())}/?searchText={encoded_hotel}{goibibo_dates_param}"
-            links.append(BookingLink(
-                provider="Goibibo",
-                label="Goibibo Hotels (Best Deals)",
-                url=goibibo_hotel_url,
-                price_hint=f"Pay@Hotel Deals{price_tag}"
-            ))
-
-        # (D) Agoda
+        # (D) Agoda (with specific verified partner path)
         agoda_dates = f"&checkin={checkin}&checkout={checkout}" if checkin and checkout else ""
-        agoda_url = f"https://www.agoda.com/search?text={encoded_target}{agoda_dates}"
+        agoda_url = f"https://www.agoda.com/en-gb/?ds=bPnn%2FjQ7O8A3kt4p&text={encoded_target}{agoda_dates}"
         links.append(BookingLink(
             provider="Agoda",
             label="Agoda",
@@ -631,20 +619,27 @@ class LinkCrawler:
         skyscanner_url = f"https://www.skyscanner.co.in/transport/flights/{orig_iata.lower()}/{dest_iata.lower()}{date_path}/"
         links.append(BookingLink(
             provider="Skyscanner",
-            label="Skyscanner",
+            label="Skyscanner Flights",
             url=skyscanner_url,
             price_hint="Multi-Carrier Comparison"
         ))
 
-        # (E) Kayak
-        kayak_url = f"https://www.kayak.com/flights/{orig_iata}-{dest_iata}"
-        if depart_date:
-            kayak_url += f"/{depart_date}"
+        # (E) Agoda Flights
+        agoda_flights_url = f"https://www.agoda.com/flights?cid=1834213&tag=b4c0d63e-44dc-4578-b8fa-a7ab100f1a9e&ds=A3OM%2FEnqGsNevpxB"
         links.append(BookingLink(
-            provider="Kayak",
-            label="Kayak",
-            url=kayak_url,
-            price_hint="Hacker Fares"
+            provider="Agoda Flights",
+            label="Agoda Flights",
+            url=agoda_flights_url,
+            price_hint="Exclusive Airline Deals"
+        ))
+
+        # (F) ixigo Flights
+        ixigo_flights_url = f"https://www.ixigo.com/flights?utm_source=Google_Search"
+        links.append(BookingLink(
+            provider="ixigo Flights",
+            label="ixigo Flights",
+            url=ixigo_flights_url,
+            price_hint="Instant Fare Alerts & Smart Cashback"
         ))
 
         if airline_url:

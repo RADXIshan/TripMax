@@ -9,6 +9,7 @@ from app.routes.search import router as search_router
 from app.routes.config import router as config_router
 from app.routes.auth import router as auth_router
 from app.routes.trips import router as trips_router
+from app.routes.booking import router as booking_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -41,6 +42,7 @@ app.include_router(chat_router)
 app.include_router(planner_router)
 app.include_router(search_router)
 app.include_router(config_router)
+app.include_router(booking_router)
 
 @app.get("/")
 def read_root():

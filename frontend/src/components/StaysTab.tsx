@@ -7,9 +7,11 @@ import {
   CheckCircle2,
   Maximize2,
   X,
-  Globe
+  Globe,
+  Sparkles
 } from 'lucide-react';
 import type { TripPlan } from '../types/trip';
+import { AutoBookingModal, type BookingPayload } from './AutoBookingModal';
 
 interface StaysTabProps {
   plan: TripPlan;
@@ -18,6 +20,7 @@ interface StaysTabProps {
 export const StaysTab: React.FC<StaysTabProps> = ({ plan }) => {
   const [lightboxImg, setLightboxImg] = useState<{ url: string; title: string } | null>(null);
   const [failedImages, setFailedImages] = useState<Record<string, boolean>>({});
+  const [autoBookingItem, setAutoBookingItem] = useState<BookingPayload | null>(null);
 
   const handleImageError = (id: string) => {
     setFailedImages((prev) => ({ ...prev, [id]: true }));
@@ -195,21 +198,47 @@ export const StaysTab: React.FC<StaysTabProps> = ({ plan }) => {
                     </div>
                   </div>
 
-                  <a
-                    href={stay.booking_url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="px-3.5 py-2 rounded-xl bg-stone-100 hover:bg-white text-stone-900 text-xs font-semibold flex items-center gap-1.5 transition-all shadow-xs hover:shadow cursor-pointer"
-                  >
-                    <span>Book on {stay.provider}</span>
-                    <ExternalLink className="w-3 h-3" />
-                  </a>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setAutoBookingItem({
+                        itemType: 'stay',
+                        title: stay.name,
+                        provider: stay.provider,
+                        bookingUrl: stay.booking_url,
+                        price: stay.total_price,
+                        currency: stay.currency,
+                        dates: plan.dates
+                      })}
+                      className="px-3 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-stone-950 text-xs font-bold flex items-center gap-1.5 transition-all shadow-xs hover:shadow-md cursor-pointer"
+                      title="Run Playwright agent to auto-book and add this stay to your cart"
+                    >
+                      <Sparkles className="w-3.5 h-3.5" />
+                      <span>Auto-Book</span>
+                    </button>
+
+                    <a
+                      href={stay.booking_url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="px-3 py-2 rounded-xl bg-stone-800 hover:bg-stone-700 text-stone-200 text-xs font-semibold flex items-center gap-1.5 transition-all shadow-xs hover:shadow cursor-pointer border border-stone-700"
+                    >
+                      <span>{stay.provider}</span>
+                      <ExternalLink className="w-3 h-3" />
+                    </a>
+                  </div>
                 </div>
               </div>
             </div>
           );
         })}
       </div>
+
+      {/* Auto-Booking Playwright Agent Modal */}
+      <AutoBookingModal
+        isOpen={!!autoBookingItem}
+        onClose={() => setAutoBookingItem(null)}
+        bookingData={autoBookingItem}
+      />
 
       {/* Lightbox Modal */}
       {lightboxImg && (

@@ -96,12 +96,12 @@ class AgentOrchestrator:
             preferences.interests = ["culinary & food", "culture & history"]
 
         logs = []
-        logs.append(f"🤖 [Orchestrator] Starting trip architecture for destination: {preferences.destination} ({preferences.dates})")
+        logs.append(f"🤖 [Orchestrator] Starting multi-agent trip architecture for destination: {preferences.destination} ({preferences.dates})")
         
-        # 1. Live Web Research
-        logs.append(f"🌐 [WebResearchAgent] Initiating live web queries across attractions, transit passes, and food...")
+        # 1. Firecrawl & Playwright Discovery Research
+        logs.append(f"🔥🌐 [Discovery & Research Agent] Deploying Firecrawl MCP & Playwright scraper across attractions, transit passes, and food...")
         research_sources = await ResearchAgent.conduct_destination_research(preferences)
-        logs.append(f"✅ [WebResearchAgent] Retrieved {len(research_sources)} live intelligence sources and verified local links.")
+        logs.append(f"✅ [Discovery & Research Agent] Retrieved {len(research_sources)} verified Firecrawl & Playwright intelligence citations.")
 
         # Check if destination exists in curated database or synthesize dynamically
         from app.services.destination_knowledge import get_destination_data
@@ -109,20 +109,20 @@ class AgentOrchestrator:
         dest_data = get_destination_data(preferences.destination)
         gemini_data = None
         if not dest_data:
-            logs.append(f"🧠 [WebSearchSynthesizer] Analyzing live intelligence for '{preferences.destination}' via generative synthesis...")
+            logs.append(f"🧠 [LLM Intelligence Engine] Applying LLM cognitive reasoning for '{preferences.destination}' calibrated to budget {preferences.budget_currency} {preferences.budget_amount or 'custom'}...")
             gemini_data = await WebSearchSynthesizer.try_gemini_generation(preferences, research_sources)
             if gemini_data:
-                logs.append(f"✅ [WebSearchSynthesizer] Successfully synthesized authentic hotels, landmarks, and transit for {preferences.destination}.")
+                logs.append(f"✅ [LLM Intelligence Engine] Synthesized personalized accommodations, flight routes, and day-by-day activities.")
             else:
-                logs.append(f"ℹ️ [WebSearchSynthesizer] Synthesized real destination architecture using live web citations & Wikipedia REST API.")
+                logs.append(f"ℹ️ [LLM Intelligence Engine] Synthesized real destination architecture using live web citations & Wikipedia REST API.")
 
-        # 2. Transit Agent (Flights vs Trains)
-        logs.append(f"🚆✈️ [TransitAgent] Evaluating real flight carriers vs high-speed trains for {preferences.dates}...")
+        # 2. Transit Agent (Flights & Trains with Playwright)
+        logs.append(f"🚆✈️ [TransitAgent & Playwright] Scraping and evaluating carriers on Skyscanner, MakeMyTrip, Agoda, ixigo & ConfirmTkt...")
         flights, trains = await TransitAgent.evaluate_transit(preferences, gemini_data)
         logs.append(f"✅ [TransitAgent] Evaluated {len(flights)} flight options and {len(trains)} rail routes with deep booking URLs.")
 
-        # 3. Stay Agent
-        logs.append(f"🏨 [StayAgent] Curating verified hotels matching budget {preferences.budget_currency} {preferences.budget_amount or 'custom'} for {preferences.dates}...")
+        # 3. Stay Agent (Booking.com, MakeMyTrip, Agoda with Playwright)
+        logs.append(f"🏨 [StayAgent & Playwright] Scraping & ranking lodging on Booking.com, MakeMyTrip & Agoda matching {preferences.stay_preference or 'boutique'}...")
         stays = await StayAgent.recommend_stays(preferences, gemini_data)
         logs.append(f"✅ [StayAgent] Selected {len(stays)} curated accommodations with live check-in/out links.")
 

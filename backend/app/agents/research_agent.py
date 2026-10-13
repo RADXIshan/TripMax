@@ -1,49 +1,90 @@
 import asyncio
 import urllib.parse
-from typing import List, Dict
+from typing import List, Dict, Any
 from app.services.search_service import search_service
+from app.services.firecrawl_service import firecrawl_service
+from app.services.playwright_scraper import playwright_scraper
 from app.models.trip import TripPreferences, ResearchSource
 
 class ResearchAgent:
     """
-    Executes live web search queries across various trip domains:
-    - Top attractions, hidden gems, and local secrets
-    - Transit passes and routes (flights and high speed trains)
-    - Best neighborhoods to stay in
-    - Signature culinary experiences and dining
+    Executes live web search and scraping queries using Firecrawl & Playwright:
+    - Firecrawl deep web search for attractions, hidden gems, and dining
+    - Playwright dynamic DOM extraction for interactive tourism guides & passes
+    - Pacing, budget calibration, and verified source citations
     """
 
     @classmethod
     async def conduct_destination_research(cls, prefs: TripPreferences) -> List[ResearchSource]:
         dest = prefs.destination or "Destination"
         origin = prefs.origin or "Origin"
-        interests_str = " ".join(prefs.interests) if prefs.interests else "culture food scenic"
-
-        queries = [
-            f"{dest} top attractions travel guide wikitravel",
-            f"best places to stay hotels {dest}",
-            f"must eat traditional dishes {dest}"
-        ]
-
-        try:
-            raw_results = await asyncio.wait_for(search_service.multi_search(queries, max_per_query=3), timeout=12.0)
-        except Exception as e:
-            print(f"[ResearchAgent] Search error: {e}", flush=True)
-            raw_results = []
+        curr = prefs.budget_currency or "INR"
+        budget = prefs.budget_amount
 
         sources: List[ResearchSource] = []
-        for r in raw_results[:12]:
-            t = r.get("title", "").strip()
-            u = r.get("url", "").strip()
-            # Ensure URL is not a raw search engine query
-            if t and u and not any(bad in u.lower() for bad in ["google.com/search", "bing.com/search", "duckduckgo.com"]):
-                sources.append(ResearchSource(
-                    title=t,
-                    url=u,
-                    snippet=r.get("snippet", "")[:280]
-                ))
 
-        # If search returned few results (e.g. offline/rate limit), provide curated high-quality reference links
+        # 1. Firecrawl Deep Web Discovery
+        try:
+            fc_data = await firecrawl_service.research_destination(
+                destination=dest,
+                origin=origin,
+                budget_currency=curr,
+                budget_amount=budget,
+                interests=prefs.interests,
+                party_type=prefs.party_type
+            )
+            for r in fc_data.get("sources", []):
+                t = r.get("title", "").strip()
+                u = r.get("url", "").strip()
+                snip = r.get("snippet", "").strip()
+                if t and u and not any(bad in u.lower() for bad in ["google.com/search", "bing.com/search", "duckduckgo.com"]):
+                    sources.append(ResearchSource(
+                        title=f"{t} (Firecrawl Verified)",
+                        url=u,
+                        snippet=snip[:300]
+                    ))
+        except Exception as fc_err:
+            print(f"[ResearchAgent] Firecrawl notice: {fc_err}", flush=True)
+
+        # 2. Multi-search fallback/enhancement via search_service
+        if len(sources) < 6:
+            interests_str = " ".join(prefs.interests) if prefs.interests else "culture food scenic"
+            queries = [
+                f"{dest} top attractions travel guide wikitravel",
+                f"best places to stay hotels {dest}",
+                f"must eat traditional dishes {dest}"
+            ]
+            try:
+                raw_results = await asyncio.wait_for(search_service.multi_search(queries, max_per_query=3), timeout=8.0)
+                for r in raw_results:
+                    t = r.get("title", "").strip()
+                    u = r.get("url", "").strip()
+                    if t and u and not any(bad in u.lower() for bad in ["google.com/search", "bing.com/search", "duckduckgo.com"]):
+                        if not any(s.url == u for s in sources):
+                            sources.append(ResearchSource(
+                                title=t,
+                                url=u,
+                                snippet=r.get("snippet", "")[:280]
+                            ))
+            except Exception as s_err:
+                print(f"[ResearchAgent] Search service notice: {s_err}", flush=True)
+
+        # 3. Dynamic Playwright inspection on top destination guide
+        if sources:
+            top_source = sources[0]
+            try:
+                # Use Playwright to extract dynamic DOM content
+                pw_res = await asyncio.wait_for(
+                    playwright_scraper.get_page_text_and_links(top_source.url, timeout=6000),
+                    timeout=8.0
+                )
+                if pw_res.get("status") == "success" and pw_res.get("text"):
+                    # Enrich snippet with dynamic live rendered content
+                    top_source.snippet = f"{top_source.snippet} [Playwright Live Extract]: {pw_res['text'][:180]}..."
+            except Exception:
+                pass
+
+        # 4. Fallback if offline/rate-limited
         if len(sources) < 3:
             dest_slug = dest.replace(' ', '_')
             sources.extend([
@@ -64,4 +105,4 @@ class ResearchAgent:
                 )
             ])
 
-        return sources
+        return sources[:12]

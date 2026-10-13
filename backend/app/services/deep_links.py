@@ -90,61 +90,49 @@ def get_multi_flight_links(
         price_hint="Live Calendar & Fare Graph"
     ))
 
-    # 3. Regional Leading Flight Portals (MakeMyTrip & EaseMyTrip for India)
-    if is_india:
-        try:
-            d_dt = datetime.strptime(depart_date, "%Y-%m-%d") if depart_date else (datetime.now() + timedelta(days=30))
-            r_dt = datetime.strptime(return_date, "%Y-%m-%d") if return_date else (d_dt + timedelta(days=7))
-            dep_ddmmyyyy = d_dt.strftime("%d/%m/%Y")
-            ret_ddmmyyyy = r_dt.strftime("%d/%m/%Y")
-            dep_yyyymmdd = d_dt.strftime("%Y%m%d")
-            ret_yyyymmdd = r_dt.strftime("%Y%m%d")
-        except Exception:
-            dep_ddmmyyyy, ret_ddmmyyyy = "10/11/2026", "17/11/2026"
-            dep_yyyymmdd, ret_yyyymmdd = "20261110", "20261117"
+    # 3. Leading Flight Portals: MakeMyTrip, Skyscanner, Agoda, ixigo
+    try:
+        d_dt = datetime.strptime(depart_date, "%Y-%m-%d") if depart_date else (datetime.now() + timedelta(days=30))
+        r_dt = datetime.strptime(return_date, "%Y-%m-%d") if return_date else (d_dt + timedelta(days=7))
+        dep_ddmmyyyy = d_dt.strftime("%d/%m/%Y")
+        ret_ddmmyyyy = r_dt.strftime("%d/%m/%Y")
+    except Exception:
+        dep_ddmmyyyy, ret_ddmmyyyy = "10/11/2026", "17/11/2026"
 
-        if return_date:
-            mmt_url = f"https://www.makemytrip.com/flight/search?itinerary={orig_iata}-{dest_iata}-{dep_ddmmyyyy}_{dest_iata}-{orig_iata}-{ret_ddmmyyyy}&tripType=R&paxType=A-1_C-0_I-0&intl=false&cabinClass=E"
-            goibibo_flight_url = f"https://www.goibibo.com/flights/air-{orig_iata}-{dest_iata}-{dep_yyyymmdd}-{dest_iata}-{orig_iata}-{ret_yyyymmdd}-1-0-0-E-D/"
-            emt_url = f"https://flight.easemytrip.com/FlightList/Index?srch={orig_iata}-{dest_iata}-{dep_ddmmyyyy}&r={dest_iata}-{orig_iata}-{ret_ddmmyyyy}&tripType=2"
-        else:
-            mmt_url = f"https://www.makemytrip.com/flight/search?itinerary={orig_iata}-{dest_iata}-{dep_ddmmyyyy}&tripType=O&paxType=A-1_C-0_I-0&intl=false&cabinClass=E"
-            goibibo_flight_url = f"https://www.goibibo.com/flights/air-{orig_iata}-{dest_iata}-{dep_yyyymmdd}--1-0-0-E-D/"
-            emt_url = f"https://flight.easemytrip.com/FlightList/Index?srch={orig_iata}-{dest_iata}-{dep_ddmmyyyy}"
+    if return_date:
+        mmt_url = f"https://www.makemytrip.com/flight/search?itinerary={orig_iata}-{dest_iata}-{dep_ddmmyyyy}_{dest_iata}-{orig_iata}-{ret_ddmmyyyy}&tripType=R&paxType=A-1_C-0_I-0&intl=false&cabinClass=E"
+    else:
+        mmt_url = f"https://www.makemytrip.com/flight/search?itinerary={orig_iata}-{dest_iata}-{dep_ddmmyyyy}&tripType=O&paxType=A-1_C-0_I-0&intl=false&cabinClass=E"
 
-        links.append(BookingLink(
-            provider="MakeMyTrip",
-            label="MakeMyTrip Flights",
-            url=mmt_url,
-            price_hint="Instant Seat Selection & Cashbacks"
-        ))
+    links.append(BookingLink(
+        provider="MakeMyTrip",
+        label="MakeMyTrip Flights",
+        url=mmt_url,
+        price_hint="Instant Seat Selection & Cashbacks"
+    ))
 
-        links.append(BookingLink(
-            provider="Goibibo",
-            label="Goibibo Flights",
-            url=goibibo_flight_url,
-            price_hint="Instant Promo Discounts"
-        ))
-
-        links.append(BookingLink(
-            provider="EaseMyTrip",
-            label="EaseMyTrip",
-            url=emt_url,
-            price_hint="Zero Convenience Fee"
-        ))
-
-    # 4. Skyscanner & Kayak
+    # Skyscanner Flights
     links.append(BookingLink(
         provider="Skyscanner",
-        label="Skyscanner",
+        label="Skyscanner Flights",
         url=get_skyscanner_url(origin, destination, depart_date, return_date),
         price_hint="Cheapest Month Comparison"
     ))
+
+    # Agoda Flights
     links.append(BookingLink(
-        provider="Kayak",
-        label="Kayak",
-        url=get_kayak_url(origin, destination, depart_date, return_date),
-        price_hint="Matrix & Hacker Fares"
+        provider="Agoda Flights",
+        label="Agoda Flights",
+        url="https://www.agoda.com/flights?cid=1834213&tag=b4c0d63e-44dc-4578-b8fa-a7ab100f1a9e&ds=A3OM%2FEnqGsNevpxB",
+        price_hint="Exclusive Airline Deals"
+    ))
+
+    # ixigo Flights
+    links.append(BookingLink(
+        provider="ixigo Flights",
+        label="ixigo Flights",
+        url="https://www.ixigo.com/flights?utm_source=Google_Search",
+        price_hint="Instant Fare Alerts & Smart Cashback"
     ))
 
     return links
@@ -222,39 +210,29 @@ def get_multi_stay_links(
         price_hint="Live Rates Across All Sellers"
     ))
 
-    # Regional OTA (MakeMyTrip & Goibibo for India / Asia)
-    if is_india:
-        try:
-            d_in = datetime.strptime(checkin, "%Y-%m-%d").strftime("%m%d%Y") if checkin else ""
-            d_out = datetime.strptime(checkout, "%Y-%m-%d").strftime("%m%d%Y") if checkout else ""
-            d_in_ymd = datetime.strptime(checkin, "%Y-%m-%d").strftime("%Y%m%d") if checkin else ""
-            d_out_ymd = datetime.strptime(checkout, "%Y-%m-%d").strftime("%Y%m%d") if checkout else ""
-        except Exception:
-            d_in, d_out, d_in_ymd, d_out_ymd = "", "", "", ""
+    # MakeMyTrip Hotels
+    try:
+        d_in = datetime.strptime(checkin, "%Y-%m-%d").strftime("%m%d%Y") if checkin else ""
+        d_out = datetime.strptime(checkout, "%Y-%m-%d").strftime("%m%d%Y") if checkout else ""
+    except Exception:
+        d_in, d_out = "", ""
 
-        mmt_dates_param = f"&checkin={d_in}&checkout={d_out}" if d_in and d_out else ""
-        mmt_hotel_url = f"https://www.makemytrip.com/hotels/hotel-listing/?city={urllib.parse.quote_plus(destination)}&searchText={urllib.parse.quote_plus(hotel_name)}{mmt_dates_param}"
-        links.append(BookingLink(
-            provider="MakeMyTrip",
-            label="MakeMyTrip Hotels",
-            url=mmt_hotel_url,
-            price_hint="Pay@Hotel & Live Deals"
-        ))
-        goibibo_dates_param = f"&ci={d_in_ymd}&co={d_out_ymd}" if d_in_ymd and d_out_ymd else ""
-        goibibo_hotel_url = f"https://www.goibibo.com/hotels/hotels-in-{urllib.parse.quote_plus(destination.lower().strip())}/?searchText={urllib.parse.quote_plus(hotel_name)}{goibibo_dates_param}"
-        links.append(BookingLink(
-            provider="Goibibo",
-            label="Goibibo Hotels (Best Deals)",
-            url=goibibo_hotel_url,
-            price_hint="Pay@Hotel & Secret Rates"
-        ))
+    mmt_dates_param = f"&checkin={d_in}&checkout={d_out}" if d_in and d_out else ""
+    mmt_hotel_url = f"https://www.makemytrip.com/hotels/hotel-listing/?city={urllib.parse.quote_plus(destination)}&searchText={urllib.parse.quote_plus(hotel_name)}{mmt_dates_param}"
+    links.append(BookingLink(
+        provider="MakeMyTrip",
+        label="MakeMyTrip Hotels",
+        url=mmt_hotel_url,
+        price_hint="Pay@Hotel & Live Deals"
+    ))
 
-    # Agoda
+    # Agoda Hotels
     agoda_dates = f"&checkin={checkin}&checkout={checkout}" if checkin and checkout else ""
+    agoda_partner_url = f"https://www.agoda.com/en-gb/?ds=bPnn%2FjQ7O8A3kt4p&text={urllib.parse.quote_plus(target)}{agoda_dates}"
     links.append(BookingLink(
         provider="Agoda",
-        label="Agoda",
-        url=f"{get_agoda_url(hotel_name, destination)}{agoda_dates}",
+        label="Agoda Hotels",
+        url=agoda_partner_url,
         price_hint="VIP Exclusive Rates"
     ))
 
