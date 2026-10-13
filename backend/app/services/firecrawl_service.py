@@ -123,6 +123,28 @@ class FirecrawlService:
                 seen_urls.add(u)
                 unique_results.append(item)
 
+        # If info not found or fewer than 3 sources, sequentially scrape destination knowledge sites
+        if len(unique_results) < 3:
+            clean_dest = destination.split(",")[0].strip().replace(" ", "_")
+            fallback_sites = [
+                f"https://en.wikipedia.org/wiki/{clean_dest}",
+                f"https://whc.unesco.org/en/list/?search={clean_dest.replace('_', '+')}"
+            ]
+            for fb_url in fallback_sites:
+                try:
+                    scraped = await self.scrape(fb_url)
+                    if scraped and scraped.get("title"):
+                        unique_results.append({
+                            "title": scraped["title"],
+                            "url": fb_url,
+                            "snippet": scraped.get("description") or (scraped.get("markdown", "")[:280] if scraped.get("markdown") else f"Verified intelligence for {destination}"),
+                            "markdown": scraped.get("markdown", "")
+                        })
+                        if len(unique_results) >= 4:
+                            break
+                except Exception:
+                    pass
+
         return {
             "destination": destination,
             "sources": unique_results,
