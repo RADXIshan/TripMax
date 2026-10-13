@@ -12,6 +12,7 @@ import {
   ChevronRight, 
   FolderArchive,
   MapPin,
+  Globe,
   LogOut,
   LogIn,
   User as UserIcon
@@ -237,6 +238,25 @@ export const Sidebar: React.FC<SidebarProps> = ({
           >
             <CheckSquare className="w-4 h-4 shrink-0" />
             {!collapsed && <span className="truncate">Booking & Packing</span>}
+          </button>
+
+          {/* Visited Sites & Sources */}
+          <button
+            onClick={() => onViewChange('sources')}
+            title={collapsed ? 'Visited Sites & Sources' : undefined}
+            className={getNavItemClass(currentView === 'sources')}
+          >
+            <Globe className="w-4 h-4 shrink-0" />
+            {!collapsed && (
+              <>
+                <span className="truncate flex-1 text-left">Visited Sites</span>
+                {plan && (
+                  <span className="text-[10px] px-1.5 py-0.2 rounded-md bg-stone-700 text-amber-300 font-bold font-mono">
+                    {plan.visited_sites?.length || plan.research_sources?.length || 0}
+                  </span>
+                )}
+              </>
+            )}
           </button>
         </div>
       </div>

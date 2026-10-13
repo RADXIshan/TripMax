@@ -17,6 +17,7 @@ import { StaysTab } from './components/StaysTab';
 import { BudgetTab } from './components/BudgetTab';
 import { BookingChecklistTab } from './components/BookingChecklistTab';
 import { SavedTripsTab, type SavedTripRecord } from './components/SavedTripsTab';
+import { ResearchSourcesTab } from './components/ResearchSourcesTab';
 import { LiveSearchModal } from './components/LiveSearchModal';
 import { ResetTripModal } from './components/ResetTripModal';
 import { ExportModal } from './components/ExportModal';
@@ -731,11 +732,18 @@ export const App = () => {
             <div className="max-w-6xl mx-auto p-4 sm:p-6 lg:p-8">
               {plan ? (
                 <>
-                  {(currentView === 'itinerary' || currentView === 'sources') && <ItineraryTab plan={plan} />}
+                  {currentView === 'itinerary' && <ItineraryTab plan={plan} />}
                   {currentView === 'transit' && <TransitTab plan={plan} />}
                   {currentView === 'stays' && <StaysTab plan={plan} />}
                   {currentView === 'budget' && <BudgetTab plan={plan} />}
                   {currentView === 'checklist' && <BookingChecklistTab plan={plan} />}
+                  {currentView === 'sources' && (
+                    <ResearchSourcesTab 
+                      sources={plan.research_sources || []} 
+                      visitedSites={plan.visited_sites || []} 
+                      destination={plan.destination} 
+                    />
+                  )}
                 </>
               ) : (
                 <div className="py-16 text-center max-w-md mx-auto space-y-4">

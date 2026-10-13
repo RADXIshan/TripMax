@@ -468,6 +468,7 @@ GLOBAL_DESTINATIONS: Dict[str, Dict[str, Any]] = {
                     "cost": 5,
                     "tags": ["UNESCO Subak", "Rice Terraces", "Jungle Walk"],
                     "wiki_query": "Tegallalang Rice Terrace",
+                    "image_url": "https://upload.wikimedia.org/wikipedia/commons/8/8a/Rice_terraces%2C_Bali.jpg",
                     "source_name": "UNESCO World Heritage Cultural Landscape of Bali",
                     "source_url": "https://whc.unesco.org/en/list/1194",
                     "source_snippet": "The Subak system of democratic water management dates back to the 9th century in Bali."
@@ -476,6 +477,7 @@ GLOBAL_DESTINATIONS: Dict[str, Dict[str, Any]] = {
                     "place": "Locavore NXT / Bebek Bengil (Dirty Duck Diner)",
                     "dish": "Bebek Betutu (Crispy Spiced Duck with Sambal Matah & Lawar)",
                     "vibe": "Open-air pavilion set in lotus gardens and rice paddies",
+                    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e3/Bebek_Betutu_Bali.jpg/1200px-Bebek_Betutu_Bali.jpg",
                     "source_name": "Asia's 50 Best Restaurants Guide",
                     "source_url": "https://www.theworlds50best.com/",
                     "source_snippet": "Legendary Ubud institution acclaimed for slow-braised duck in traditional Balinese spices."
@@ -489,6 +491,7 @@ GLOBAL_DESTINATIONS: Dict[str, Dict[str, Any]] = {
                     "cost": 6,
                     "tags": ["Monkey Forest", "Ancient Banyan Trees", "Temple Shrines"],
                     "wiki_query": "Ubud Monkey Forest",
+                    "image_url": "https://upload.wikimedia.org/wikipedia/commons/3/30/Grooming%2C_Macaca_fascicularis%2C_Ubud_Monkey_Forest%2C_Bali%2C_20220822_1022_9965.jpg",
                     "source_name": "Padangtegal Sacred Forest Trust",
                     "source_url": "https://monkeyforestubud.com/",
                     "source_snippet": "Sanctuary preserving Tri Hita Karana philosophy balancing humans, nature, and spirits."
@@ -502,6 +505,7 @@ GLOBAL_DESTINATIONS: Dict[str, Dict[str, Any]] = {
                     "cost": 8,
                     "tags": ["Legong Dance", "Ubud Palace", "Gamelan Music"],
                     "wiki_query": "Ubud Palace",
+                    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e0/Puri_Saren_Agung_Ubud_Bali.jpg/1200px-Puri_Saren_Agung_Ubud_Bali.jpg",
                     "source_name": "Puri Saren Royal Cultural Foundation",
                     "source_url": "https://www.indonesia.travel/",
                     "source_snippet": "Seat of the historical Sukawati royal family and primary center for traditional arts."
@@ -510,6 +514,7 @@ GLOBAL_DESTINATIONS: Dict[str, Dict[str, Any]] = {
                     "place": "Hujan Locale / Nusantara by Locavore",
                     "dish": "Rendang Sapi (Slow-Cooked Sumatran Beef) & Sate Lilit Ikan",
                     "vibe": "Elegant colonial double-height dining room in central Ubud",
+                    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d4/Rendang_daging_sapi_asli_Padang.jpg/1200px-Rendang_daging_sapi_asli_Padang.jpg",
                     "source_name": "Michelin & Southeast Asia Culinary Archive",
                     "source_url": "https://www.locavorenext.com/",
                     "source_snippet": "Modern Indonesian farm-to-table cuisine honoring heritage archipelago recipes."

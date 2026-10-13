@@ -23,6 +23,22 @@ class ResearchAgent:
 
         sources: List[ResearchSource] = []
 
+        # 1. Live Visual Playwright Discovery Browser Session
+        try:
+            visual_discoveries = await playwright_scraper.visual_discovery_search(
+                destination=dest,
+                interests=prefs.interests,
+                pace=prefs.travel_pace or "balanced"
+            )
+            for vd in visual_discoveries:
+                sources.append(ResearchSource(
+                    title=f"{vd['title']} (Playwright Live Verified)",
+                    url=vd['url'],
+                    snippet=vd['snippet']
+                ))
+        except Exception as vd_err:
+            print(f"[ResearchAgent] Visual discovery notice: {vd_err}", flush=True)
+
         # 1. Firecrawl Deep Web Discovery
         try:
             fc_data = await firecrawl_service.research_destination(

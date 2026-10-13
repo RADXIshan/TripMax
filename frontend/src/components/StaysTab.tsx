@@ -65,6 +65,7 @@ export const StaysTab: React.FC<StaysTabProps> = ({ plan }) => {
                 <img
                   src={displayImg}
                   alt={stay.name}
+                  referrerPolicy="no-referrer"
                   onError={() => handleImageError(stay.id)}
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                   loading="lazy"
@@ -207,7 +208,9 @@ export const StaysTab: React.FC<StaysTabProps> = ({ plan }) => {
                         bookingUrl: stay.booking_url,
                         price: stay.total_price,
                         currency: stay.currency,
-                        dates: plan.dates
+                        dates: plan.dates,
+                        origin: plan.origin,
+                        destination: plan.destination
                       })}
                       className="px-3 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-stone-950 text-xs font-bold flex items-center gap-1.5 transition-all shadow-xs hover:shadow-md cursor-pointer"
                       title="Run Playwright agent to auto-book and add this stay to your cart"
@@ -259,6 +262,7 @@ export const StaysTab: React.FC<StaysTabProps> = ({ plan }) => {
             <img
               src={lightboxImg.url}
               alt={lightboxImg.title}
+              referrerPolicy="no-referrer"
               className="w-full h-auto max-h-[75vh] object-contain bg-black"
             />
             <div className="p-4 bg-stone-900 text-white">

@@ -27,11 +27,11 @@ class ItineraryAgent:
         m_title = m["title"]
         a_title = a["title"]
         e_title = e["title"]
-        m_img = image_service.get_image_for_query(m.get("wiki_query") or m_title, category="temple", destination=dest)
-        a_img = image_service.get_image_for_query(a.get("wiki_query") or a_title, category="museum", destination=dest)
-        e_img = image_service.get_image_for_query(e.get("wiki_query") or e_title, category="sunset", destination=dest)
-        food_img_1 = image_service.get_image_for_query(l.get("wiki_query") or l["dish"], category="food", destination=dest)
-        food_img_2 = image_service.get_image_for_query(din.get("wiki_query") or din["dish"], category="food", destination=dest)
+        m_img = m.get("image_url") or image_service.get_image_for_query(m.get("wiki_query") or m_title, category="temple", destination=dest)
+        a_img = a.get("image_url") or image_service.get_image_for_query(a.get("wiki_query") or a_title, category="museum", destination=dest)
+        e_img = e.get("image_url") or image_service.get_image_for_query(e.get("wiki_query") or e_title, category="sunset", destination=dest)
+        food_img_1 = l.get("image_url") or image_service.get_image_for_query(l.get("wiki_query") or l["dish"], category="food", destination=dest)
+        food_img_2 = din.get("image_url") or image_service.get_image_for_query(din.get("wiki_query") or din["dish"], category="food", destination=dest)
 
         m_cost = resolve_attraction_cost(m_title, dest, curr)
         a_cost = resolve_attraction_cost(a_title, dest, curr)

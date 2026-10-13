@@ -176,6 +176,15 @@ export interface PackingItem {
   items: string[];
 }
 
+export interface VisitedSite {
+  name: string;
+  url: string;
+  category: string;
+  status: string;
+  timestamp?: string;
+  snippet?: string;
+}
+
 export interface ResearchSource {
   title: string;
   url: string;
@@ -229,6 +238,7 @@ export interface TripPlan {
   checklist: ChecklistItem[];
   packing_list: PackingItem[];
   research_sources: ResearchSource[];
+  visited_sites?: VisitedSite[];
   agent_logs: string[];
   quality_score?: number;
   quality_badge?: string;

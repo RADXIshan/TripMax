@@ -191,6 +191,7 @@ export const TransitTab: React.FC<TransitTabProps> = ({ plan }) => {
                   <img
                     src={displayImg}
                     alt={f.airline}
+                    referrerPolicy="no-referrer"
                     onError={() => handleImageError(flightKey)}
                     className="w-full h-full object-cover"
                     loading="lazy"
@@ -318,7 +319,9 @@ export const TransitTab: React.FC<TransitTabProps> = ({ plan }) => {
                           bookingUrl: f.booking_url,
                           price: f.estimated_price,
                           currency: f.currency,
-                          dates: f.dates || plan.dates
+                          dates: f.dates || plan.dates,
+                          origin: plan.origin,
+                          destination: plan.destination
                         })}
                         className="px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-stone-950 text-xs font-bold flex items-center gap-1.5 transition-all shadow-xs hover:shadow-md cursor-pointer"
                         title="Run Playwright agent to auto-book flight and add to cart"
@@ -372,6 +375,7 @@ export const TransitTab: React.FC<TransitTabProps> = ({ plan }) => {
                   <img
                     src={displayImg}
                     alt={t.train_name}
+                    referrerPolicy="no-referrer"
                     onError={() => handleImageError(trainKey)}
                     className="w-full h-full object-cover"
                     loading="lazy"
@@ -482,7 +486,9 @@ export const TransitTab: React.FC<TransitTabProps> = ({ plan }) => {
                           bookingUrl: t.booking_url,
                           price: t.estimated_price,
                           currency: t.currency,
-                          dates: t.dates || plan.dates
+                          dates: t.dates || plan.dates,
+                          origin: plan.origin,
+                          destination: plan.destination
                         })}
                         className="px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-stone-950 text-xs font-bold flex items-center gap-1.5 transition-all shadow-xs hover:shadow-md cursor-pointer"
                         title="Run Playwright agent to auto-book train and add to cart"

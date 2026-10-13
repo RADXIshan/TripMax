@@ -20,6 +20,8 @@ export interface BookingPayload {
   price: number;
   currency: string;
   dates: string;
+  origin?: string;
+  destination?: string;
   partyType?: string;
 }
 
@@ -41,10 +43,10 @@ export const AutoBookingModal: React.FC<AutoBookingModalProps> = ({
   const [isScreenshotExpanded, setIsScreenshotExpanded] = useState(false);
 
   const steps = [
-    { title: 'Initializing Playwright Engine', desc: 'Spawning headless browser with anti-detection headers' },
-    { title: `Navigating to ${bookingData?.provider || 'Booking Portal'}`, desc: 'Bypassing overlays and loading live availability' },
-    { title: 'Evaluating Personalized Rates', desc: 'Matching traveler budget, party size, and dates' },
-    { title: 'Adding to Booking Cart', desc: 'Selecting room/fare tier and reserving item in cart' },
+    { title: 'Launching Headed Playwright Browser', desc: 'Opening browser directly on your screen with anti-detection headers' },
+    { title: `Navigating to ${bookingData?.provider || 'Booking Portal'}`, desc: `Searching live inventory for ${bookingData?.title}` },
+    { title: 'Executing Preference & Rate Selection', desc: 'Matching traveler budget, party size, and dates' },
+    { title: 'Reserving in Session Cart', desc: 'Selecting room/fare tier and locking reservation' },
     { title: 'Capturing Verified Live Proof', desc: 'Extracting live screenshot & direct checkout session' }
   ];
 
@@ -81,6 +83,8 @@ export const AutoBookingModal: React.FC<AutoBookingModalProps> = ({
             price: bookingData.price,
             currency: bookingData.currency,
             dates: bookingData.dates,
+            origin: bookingData.origin || '',
+            destination: bookingData.destination || '',
             party_type: bookingData.partyType || 'Travelers'
           })
         });

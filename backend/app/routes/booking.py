@@ -14,6 +14,8 @@ class AutoBookRequest(BaseModel):
     price: float = 0.0
     currency: str = "INR"
     dates: Optional[str] = ""
+    origin: Optional[str] = ""
+    destination: Optional[str] = ""
     party_type: Optional[str] = "Travelers"
     preferences: Optional[TripPreferences] = None
 
@@ -33,6 +35,8 @@ async def auto_book_item(payload: AutoBookRequest):
             price=payload.price,
             currency=payload.currency,
             dates=payload.dates or "",
+            origin=payload.origin or "",
+            destination=payload.destination or "",
             party_type=payload.party_type or "Travelers",
             preferences=payload.preferences
         )

@@ -178,6 +178,14 @@ class StayOption(BaseModel):
     def _validate_amenities(cls, v: Any) -> List[str]:
         return _coerce_str_list(v)
 
+class VisitedSite(BaseModel):
+    name: str
+    url: str
+    category: str  # "Stays (Playwright)", "Flights (Playwright)", "Trains (Playwright)", "Attractions (Firecrawl MCP)", "Official Tourism (Playwright)"
+    status: str = "Verified Live"
+    timestamp: Optional[str] = None
+    snippet: Optional[str] = None
+
 class ResearchSource(BaseModel):
     title: str
     url: str
@@ -277,6 +285,7 @@ class TripPlan(BaseModel):
     checklist: List[ChecklistItem] = Field(default_factory=list)
     packing_list: List[PackingItem] = Field(default_factory=list)
     research_sources: List[ResearchSource] = Field(default_factory=list)
+    visited_sites: List[VisitedSite] = Field(default_factory=list)
     agent_logs: List[str] = Field(default_factory=list)
     quality_score: int = 98
     quality_badge: str = "Verified Exceptional (98/100)"

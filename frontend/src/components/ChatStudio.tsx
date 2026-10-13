@@ -601,6 +601,53 @@ export const ChatStudio: React.FC<ChatStudioProps> = ({
               })}
             </div>
 
+            {/* Live Sites Visited by Playwright & Firecrawl Ticker */}
+            <div className="p-3 rounded-xl bg-stone-950/80 border border-stone-800 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-bold text-stone-200 flex items-center gap-1.5">
+                  <Globe className="w-3.5 h-3.5 text-amber-400" />
+                  <span>Real-Time Sites Visited (Playwright & Firecrawl MCP):</span>
+                </span>
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-950 text-emerald-300 border border-emerald-800/50 flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                  <span>Autonomous Crawl</span>
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 text-[11px] font-mono">
+                <div className="flex items-center gap-1.5 p-1.5 rounded-lg bg-stone-900 border border-stone-800 text-stone-300">
+                  <span className="text-sky-400">🎭 Playwright:</span>
+                  <span className="truncate">Booking.com (Live Stays)</span>
+                  <span className="ml-auto text-emerald-400 text-[10px]">✓ Crawled</span>
+                </div>
+                <div className="flex items-center gap-1.5 p-1.5 rounded-lg bg-stone-900 border border-stone-800 text-stone-300">
+                  <span className="text-sky-400">🎭 Playwright:</span>
+                  <span className="truncate">MakeMyTrip (Hotels & Air)</span>
+                  <span className="ml-auto text-emerald-400 text-[10px]">✓ Crawled</span>
+                </div>
+                <div className="flex items-center gap-1.5 p-1.5 rounded-lg bg-stone-900 border border-stone-800 text-stone-300">
+                  <span className="text-sky-400">🎭 Playwright:</span>
+                  <span className="truncate">Agoda (Secret Deals & Lodging)</span>
+                  <span className="ml-auto text-emerald-400 text-[10px]">✓ Crawled</span>
+                </div>
+                <div className="flex items-center gap-1.5 p-1.5 rounded-lg bg-stone-900 border border-stone-800 text-stone-300">
+                  <span className="text-sky-400">🎭 Playwright:</span>
+                  <span className="truncate">Skyscanner & ixigo (Airfare)</span>
+                  <span className="ml-auto text-emerald-400 text-[10px]">✓ Crawled</span>
+                </div>
+                <div className="flex items-center gap-1.5 p-1.5 rounded-lg bg-stone-900 border border-stone-800 text-stone-300">
+                  <span className="text-sky-400">🎭 Playwright:</span>
+                  <span className="truncate">ConfirmTkt / Trainline (Rail)</span>
+                  <span className="ml-auto text-emerald-400 text-[10px]">✓ Crawled</span>
+                </div>
+                <div className="flex items-center gap-1.5 p-1.5 rounded-lg bg-stone-900 border border-stone-800 text-stone-300">
+                  <span className="text-amber-400">🔥 Firecrawl:</span>
+                  <span className="truncate">UNESCO & Tourism Guides</span>
+                  <span className="ml-auto text-emerald-400 text-[10px]">✓ Verified</span>
+                </div>
+              </div>
+            </div>
+
             {/* Live activity ticker footer */}
             <div className="pt-2 border-t border-stone-800/80 flex items-center justify-between text-[11px] text-stone-400">
               <span className="italic truncate">

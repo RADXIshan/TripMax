@@ -17,11 +17,40 @@ class ImageService:
     _async_client: Optional[httpx.AsyncClient] = None
 
     HEADERS = {
-        "User-Agent": "TripMaxTravelAssistant/2.0 (https://tripmax.travel; contact@tripmax.travel)"
+        "User-Agent": "TripMaxBot/1.0 (https://tripmax.travel; info@tripmax.travel)"
     }
 
     # Curated landmark & attraction high-res photography (Only exact multi-word / distinct keys)
     VERIFIED_LANDMARK_IMAGES: Dict[str, str] = {
+        # Bali & Southeast Asia Landmarks
+        "tegallalang": "https://upload.wikimedia.org/wikipedia/commons/8/8a/Rice_terraces%2C_Bali.jpg",
+        "tegalalang": "https://upload.wikimedia.org/wikipedia/commons/8/8a/Rice_terraces%2C_Bali.jpg",
+        "rice terrace": "https://upload.wikimedia.org/wikipedia/commons/8/8a/Rice_terraces%2C_Bali.jpg",
+        "rice terraces": "https://upload.wikimedia.org/wikipedia/commons/8/8a/Rice_terraces%2C_Bali.jpg",
+        "ubud monkey forest": "https://upload.wikimedia.org/wikipedia/commons/3/30/Grooming%2C_Macaca_fascicularis%2C_Ubud_Monkey_Forest%2C_Bali%2C_20220822_1022_9965.jpg",
+        "monkey forest": "https://upload.wikimedia.org/wikipedia/commons/3/30/Grooming%2C_Macaca_fascicularis%2C_Ubud_Monkey_Forest%2C_Bali%2C_20220822_1022_9965.jpg",
+        "tanah lot": "https://upload.wikimedia.org/wikipedia/commons/d/dc/Bali_-_Pura_Tanah_Lot%2C_20220827_0957_1108.jpg",
+        "uluwatu temple": "https://upload.wikimedia.org/wikipedia/commons/a/a1/Kuta_Bali_Indonesia_Pura-Luhur-Uluwatu-02.jpg",
+        "uluwatu": "https://upload.wikimedia.org/wikipedia/commons/a/a1/Kuta_Bali_Indonesia_Pura-Luhur-Uluwatu-02.jpg",
+        "mount batur": "https://upload.wikimedia.org/wikipedia/commons/8/81/Mount_Batur_Sunrise.jpg",
+        "pura ulun danu": "https://upload.wikimedia.org/wikipedia/commons/c/c0/Brantan_Bali_Pura-Ulun-Danu-Bratan-01.jpg",
+        "ulun danu": "https://upload.wikimedia.org/wikipedia/commons/c/c0/Brantan_Bali_Pura-Ulun-Danu-Bratan-01.jpg",
+        "kelingking beach": "https://upload.wikimedia.org/wikipedia/commons/e/ee/Kelingking-beach.jpg",
+        "nusa penida": "https://upload.wikimedia.org/wikipedia/commons/e/ee/Kelingking-beach.jpg",
+        "campuhan ridge": "https://upload.wikimedia.org/wikipedia/commons/3/3a/Campuhan_Ridge_Walk%2C_Ubud%2C_Bali%2C_20220822_1422_0140.jpg",
+        "tirta empul": "https://upload.wikimedia.org/wikipedia/commons/2/23/Pura_Tirta_Empul_Bali.jpg",
+        "pura besakih": "https://upload.wikimedia.org/wikipedia/commons/0/05/Pura_Besakih_Bali.jpg",
+        "besakih": "https://upload.wikimedia.org/wikipedia/commons/0/05/Pura_Besakih_Bali.jpg",
+        "babi guling": "https://upload.wikimedia.org/wikipedia/commons/a/a9/Babi_Guling_-_Roasted_Suckling_Pig.jpg",
+        "nasi goreng": "https://upload.wikimedia.org/wikipedia/commons/4/4b/Nasi_Goreng_Indonesia.jpg",
+        "nasi campur": "https://upload.wikimedia.org/wikipedia/commons/5/52/Nasi_Campur_Bali.jpg",
+        "satay lilit": "https://upload.wikimedia.org/wikipedia/commons/0/0b/Sate_Lilit_Bali.jpg",
+        "sate lilit": "https://upload.wikimedia.org/wikipedia/commons/0/0b/Sate_Lilit_Bali.jpg",
+        "ubud palace": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e0/Puri_Saren_Agung_Ubud_Bali.jpg/1200px-Puri_Saren_Agung_Ubud_Bali.jpg",
+        "puri saren": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e0/Puri_Saren_Agung_Ubud_Bali.jpg/1200px-Puri_Saren_Agung_Ubud_Bali.jpg",
+        "bebek betutu": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e3/Bebek_Betutu_Bali.jpg/1200px-Bebek_Betutu_Bali.jpg",
+        "rendang": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d4/Rendang_daging_sapi_asli_Padang.jpg/1200px-Rendang_daging_sapi_asli_Padang.jpg",
+
         # Indian Destinations & Heritage
         "lingaraj temple": "https://upload.wikimedia.org/wikipedia/commons/5/5d/Lingaraj_Temple_%2C_Bhubaneswar.jpg",
         "mukteshvara temple": "https://upload.wikimedia.org/wikipedia/commons/7/7c/Muktesvar_Temple.jpg",
@@ -139,7 +168,7 @@ class ImageService:
         "heritage_hotel": "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=1200&q=80",
         "market": "https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?auto=format&fit=crop&w=1200&q=80",
         "museum": "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?auto=format&fit=crop&w=1200&q=80",
-        "viewpoint": "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?auto=format&fit=crop&w=1200&q=80",
+        "viewpoint": "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1200&q=80",
         "sunset": "https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?auto=format&fit=crop&w=1200&q=80",
         "nature": "https://images.unsplash.com/photo-1530122037265-a5f1f91d3b99?auto=format&fit=crop&w=1200&q=80"
     }
@@ -152,10 +181,10 @@ class ImageService:
         "heritage_hotel": "https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=1200&q=80",
         "temple": "https://images.unsplash.com/photo-1626014903704-58a36c641fc8?auto=format&fit=crop&w=1200&q=80",
         "museum": "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?auto=format&fit=crop&w=1200&q=80",
-        "viewpoint": "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?auto=format&fit=crop&w=1200&q=80",
+        "viewpoint": "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1200&q=80",
         "sunset": "https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?auto=format&fit=crop&w=1200&q=80",
         "market": "https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?auto=format&fit=crop&w=1200&q=80",
-        "nature": "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?auto=format&fit=crop&w=1200&q=80"
+        "nature": "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1200&q=80"
     }
 
     @classmethod
@@ -280,6 +309,86 @@ class ImageService:
 
         return True
 
+
+    @classmethod
+    def _fetch_commons_image_sync(cls, query: str, category: str = "general", destination: str = "") -> Optional[str]:
+        clean_q = cls.clean_query_title(query, category)
+        if not clean_q or len(clean_q) < 3:
+            return None
+
+        cache_k = f"commons_{clean_q.lower()}_{destination.lower()}"
+        if cache_k in cls._cache:
+            return cls._cache[cache_k]
+
+        client = cls._get_sync_client()
+        attempts = [clean_q]
+        words = clean_q.split()
+        if len(words) > 3:
+            attempts.append(' '.join(words[:3]))
+            attempts.append(' '.join(words[:2]))
+        if destination and destination.lower() not in clean_q.lower():
+            attempts.append(f"{clean_q} {destination}")
+            if len(words) > 1:
+                attempts.append(f"{words[0]} {destination}")
+
+        for q in attempts:
+            url = f"https://commons.wikimedia.org/w/api.php?action=query&generator=search&gsrsearch={urllib.parse.quote(q)}&gsrnamespace=6&gsrlimit=6&prop=imageinfo&iiprop=url|size&format=json"
+            try:
+                resp = client.get(url)
+                if resp.status_code == 200:
+                    pages = resp.json().get('query', {}).get('pages', {})
+                    for pid, p in pages.items():
+                        ii = p.get('imageinfo', [{}])[0]
+                        img_url = ii.get('url', '')
+                        clean_url = img_url.split('?')[0].lower()
+                        title = p.get('title', '').lower()
+                        if not any(bad in title for bad in ['.svg', '.gif', 'map', 'flag', 'icon', 'diagram', 'locator', 'coat_of_arms']):
+                            if clean_url.endswith(('.jpg', '.jpeg', '.png', '.webp')):
+                                cls._cache[cache_k] = img_url
+                                return img_url
+            except Exception:
+                pass
+        return None
+
+    @classmethod
+    async def _fetch_commons_image_async(cls, query: str, category: str = "general", destination: str = "") -> Optional[str]:
+        clean_q = cls.clean_query_title(query, category)
+        if not clean_q or len(clean_q) < 3:
+            return None
+
+        cache_k = f"commons_{clean_q.lower()}_{destination.lower()}"
+        if cache_k in cls._cache:
+            return cls._cache[cache_k]
+
+        client = cls._get_async_client()
+        attempts = [clean_q]
+        words = clean_q.split()
+        if len(words) > 3:
+            attempts.append(' '.join(words[:3]))
+            attempts.append(' '.join(words[:2]))
+        if destination and destination.lower() not in clean_q.lower():
+            attempts.append(f"{clean_q} {destination}")
+            if len(words) > 1:
+                attempts.append(f"{words[0]} {destination}")
+
+        for q in attempts:
+            url = f"https://commons.wikimedia.org/w/api.php?action=query&generator=search&gsrsearch={urllib.parse.quote(q)}&gsrnamespace=6&gsrlimit=6&prop=imageinfo&iiprop=url|size&format=json"
+            try:
+                resp = await client.get(url)
+                if resp.status_code == 200:
+                    pages = resp.json().get('query', {}).get('pages', {})
+                    for pid, p in pages.items():
+                        ii = p.get('imageinfo', [{}])[0]
+                        img_url = ii.get('url', '')
+                        clean_url = img_url.split('?')[0].lower()
+                        title = p.get('title', '').lower()
+                        if not any(bad in title for bad in ['.svg', '.gif', 'map', 'flag', 'icon', 'diagram', 'locator', 'coat_of_arms']):
+                            if clean_url.endswith(('.jpg', '.jpeg', '.png', '.webp')):
+                                cls._cache[cache_k] = img_url
+                                return img_url
+            except Exception:
+                pass
+        return None
 
     @classmethod
     def _fetch_wikipedia_image_sync(cls, query: str, category: str = "general") -> Optional[str]:
@@ -428,7 +537,13 @@ class ImageService:
                 cls._cache[cache_key] = img_url
                 return img_url
 
-        # 2. Live Wikipedia Image Retrieval (Sync)
+        # 2. Live Wikimedia Commons Image Retrieval (Exact Landmark/Attraction/Food Photo)
+        commons_img = cls._fetch_commons_image_sync(query, category=cat_lower, destination=destination)
+        if commons_img:
+            cls._cache[cache_key] = commons_img
+            return commons_img
+
+        # 3. Live Wikipedia Image Retrieval (Sync)
         wiki_img = cls._fetch_wikipedia_image_sync(query, category=cat_lower)
         if wiki_img:
             cls._cache[cache_key] = wiki_img
@@ -442,7 +557,7 @@ class ImageService:
                 cls._cache[cache_key] = wiki_img2
                 return wiki_img2
 
-        # 3. Dedicated Category-Specific Fallbacks
+        # 4. Dedicated Category-Specific Fallbacks
         combined_text = f"{query} {destination}".lower()
         if cat_lower in ["food", "lunch", "dinner", "dining"]:
             if cls._is_india(combined_text):
@@ -474,7 +589,7 @@ class ImageService:
             cls._cache[cache_key] = img
             return img
 
-        # 4. Region-based architectural fallback
+        # 5. Region-based architectural fallback
         if cls._is_india(combined_text):
             img = cls.INDIA_CATEGORY_FALLBACKS.get(cat_lower, cls.INDIA_CATEGORY_FALLBACKS["temple"])
         elif cls._is_east_asia(combined_text):
@@ -482,7 +597,7 @@ class ImageService:
         elif cls._is_europe(combined_text):
             img = cls.EUROPE_CATEGORY_FALLBACKS.get(cat_lower, cls.EUROPE_CATEGORY_FALLBACKS["temple"])
         else:
-            img = cls.GENERIC_CATEGORY_FALLBACKS.get(cat_lower, "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?auto=format&fit=crop&w=1200&q=80")
+            img = cls.GENERIC_CATEGORY_FALLBACKS.get(cat_lower, "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1200&q=80")
 
         cls._cache[cache_key] = img
         return img
@@ -505,7 +620,13 @@ class ImageService:
                 cls._cache[cache_key] = img_url
                 return img_url
 
-        # 2. Live Wikipedia Image Retrieval (Async)
+        # 2. Live Wikimedia Commons Image Retrieval (Async)
+        commons_img = await cls._fetch_commons_image_async(query, category=cat_lower, destination=destination)
+        if commons_img:
+            cls._cache[cache_key] = commons_img
+            return commons_img
+
+        # 3. Live Wikipedia Image Retrieval (Async)
         wiki_img = await cls._fetch_wikipedia_image_async(query, category=cat_lower)
         if wiki_img:
             cls._cache[cache_key] = wiki_img
@@ -518,7 +639,7 @@ class ImageService:
                 cls._cache[cache_key] = wiki_img2
                 return wiki_img2
 
-        # 3. Category Fallbacks
+        # 4. Category Fallbacks
         combined_text = f"{query} {destination}".lower()
         if cat_lower in ["food", "lunch", "dinner", "dining"]:
             if cls._is_india(combined_text):
@@ -557,7 +678,10 @@ class ImageService:
         elif cls._is_europe(combined_text):
             img = cls.EUROPE_CATEGORY_FALLBACKS.get(cat_lower, cls.EUROPE_CATEGORY_FALLBACKS["temple"])
         else:
-            img = cls.GENERIC_CATEGORY_FALLBACKS.get(cat_lower, "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?auto=format&fit=crop&w=1200&q=80")
+            img = cls.GENERIC_CATEGORY_FALLBACKS.get(cat_lower, "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1200&q=80")
+
+        cls._cache[cache_key] = img
+        return img
 
         cls._cache[cache_key] = img
         return img

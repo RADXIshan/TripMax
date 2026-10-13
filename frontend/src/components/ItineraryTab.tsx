@@ -80,7 +80,8 @@ export const ItineraryTab: React.FC<ItineraryTabProps> = ({ plan }) => {
     if (category === 'evening') {
       return 'https://images.unsplash.com/photo-1514565131-fce0801e5785?auto=format&fit=crop&w=1000&q=80';
     }
-    return 'https://images.unsplash.com/photo-1488646953014-85cb44e25828?auto=format&fit=crop&w=1000&q=80';
+    // High-resolution authentic scenic landscape fallback (Never camera or flatlay equipment)
+    return 'https://images.unsplash.com/photo-1537996194471-e657df975ab4?auto=format&fit=crop&w=1000&q=80';
   };
 
   const renderActivityCard = (
@@ -103,6 +104,7 @@ export const ItineraryTab: React.FC<ItineraryTabProps> = ({ plan }) => {
           <img
             src={displayImg}
             alt={activity.title}
+            referrerPolicy="no-referrer"
             onError={() => handleImageError(imgKey)}
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
             loading="lazy"
@@ -291,6 +293,7 @@ export const ItineraryTab: React.FC<ItineraryTabProps> = ({ plan }) => {
           <img
             src={displayImg}
             alt={dining.place}
+            referrerPolicy="no-referrer"
             onError={() => handleImageError(imgKey)}
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
             loading="lazy"
@@ -505,6 +508,7 @@ export const ItineraryTab: React.FC<ItineraryTabProps> = ({ plan }) => {
               <img
                 src={currentDay.image_url}
                 alt={currentDay.title}
+                referrerPolicy="no-referrer"
                 className="w-full h-full object-cover group-hover:scale-103 transition-transform duration-700"
               />
               <div className="absolute inset-0 bg-linear-to-t from-black/80 via-black/30 to-black/10" />
